@@ -1,7 +1,6 @@
 /*******************************************************************************
  * File: main.c
  *
- * Version : 1.2
  *
  * Description: 
  *  This is a source code for basic functionality of VDAC8.
@@ -292,6 +291,7 @@ for(;;){
     AMux_1_Select(shape);
     shape = (shape+1)%3;
 }
+#endif   
 
     for(;;){
         uint8 cursorx=QuadDec_1_GetCounter()+128;
@@ -308,7 +308,6 @@ for(;;){
         
 
     }
-#endif   
 
 }
 
