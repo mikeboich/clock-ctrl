@@ -66,35 +66,35 @@ seg_or_flag *this_seg = SpaceChar;
 typedef enum{start, looping, blanked}  draw_state;  // States of the draw loop/interrupt code
 
 uint8 current_mask;
-draw_state current_state = blanked;
-uint8 cursor_x,cursor_y;
+volatile draw_state current_state = blanked;
+uint8 cursor_x=0,cursor_y=0;
 uint8 shape_to_mux[] = {2,0,1};
 uint8 masks[] = {0x1,3,7,15,31,63,127,255};  
-int times_to_loop = 0;
-int ready=1;
+volatile int times_to_loop = 0;
+volatile int ready=1;
 
 CY_ISR_PROTO(wave_started);
 
 void wave_started(){
   isr_1_ClearPending();       // clear the interrupt
-#undef ztest   
+#undef ztest
 #ifndef ztest
   switch(current_state){
 
-  case (start):{
+  case start:
     ShiftReg_1_WriteData(current_mask);
+    strobe_LDAC();
+
     current_state = looping;
     break;
-  }
+  
 
-   case (blanked):{
+   case blanked:
     ready = 1;
     break;
-}
-      
-
-  case(looping):{
-    times_to_loop--;
+    
+  case looping:
+    times_to_loop -= 1;
     if(times_to_loop==0){
 	  ShiftReg_1_WriteData(0x0);  // blank on the next cycle
 	  current_state = blanked;
@@ -103,9 +103,6 @@ void wave_started(){
 	  ShiftReg_1_WriteData(current_mask);
       }
     break;
-    }
-    
-
   }
 #else
     ShiftReg_1_WriteData(current_mask);
@@ -249,33 +246,88 @@ void show_test_pattern(){
   void preload_DAC_to_seg(seg_or_flag *s){
     setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
     setImmediate(DAC_Reg_B | DAC_Pre_Load | s->seg_data.y_size);
-    setImmediate(DAC_Reg_C | DAC_Pre_Load | 255-(s->seg_data.x_offset + cursor_x));
-    setImmediate(DAC_Reg_D | DAC_Pre_Load | 255-(s->seg_data.y_offset + cursor_y));
+    setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + cursor_x)));
+    setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + cursor_y)));
 
   }
 
-seg_or_flag *successor(seg_or_flag *s){
+seg_or_flag *successor(seg_or_flag *s, seg_or_flag *startS){
     ++s;
     if (s->seg_data.x_offset < 0x80){
         return s;
     }
     else{
-        return Aster;
+        return startS;
     }
 }
 
 void diag_test(){
     vector_font diag_line ={
-    {10,10,30,30,pos,0x99},
+    {10,10,30,30,pos,0x55},
     {.flag=0x82}};
     
-    this_seg = BigA;
+   vector_font test_pat= {
+    {8,06,8,12,cir,0x03},
+    {00,06,8,8,cir,0x30},
+    {00,14,8,8,cir,0xc0},
+    {16,14,8,12,cir,0x0c},
+    {00,06,8,12,cir,0xc0},
+    {16,06,8,8,cir,0x0c},
+    {16,14,8,8,cir,0x03},
+    {8,14,8,12,cir,0x30},
+    {.flag=0x88}
+
+};
+    seg_or_flag *origSeg;
+    
+    this_seg = origSeg = Dollar ;
     for(;;){
-        uint8 cursor_x=128;
-        uint8 cursor_y=128;
+        cursor_x=0;
+        cursor_y=0;
 
         if(ready!=0){  // otherwise wait until current_state==blanked
-           int int_status = CyEnterCriticalSection();
+           uint8 int_status = CyEnterCriticalSection();
+            
+            preload_DAC_to_seg(this_seg);
+            //CyDelayUs(12);
+
+            AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
+            current_mask = this_seg->seg_data.mask;
+            if(this_seg->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
+            times_to_loop = 10;
+            ready=0;
+            this_seg = successor(this_seg,origSeg);
+            current_state = start;
+            
+           CyExitCriticalSection(int_status);
+
+
+}
+
+    }    
+    
+}
+
+void circle_test(){
+    vector_font test_circle ={
+    {10,10,0x80,0x80,cir,0x01},
+    //{10,10,0x80,0x80,cir,0x02},
+    //{10,10,0x80,0x80,cir,0x4},
+    //{10,10,0x80,0x80,cir,0x08},
+   // {10,10,0x80,0x80,cir,0x10},
+   // {10,10,0x80,0x80,cir,0x20},
+   // {10,10,0x80,0x80,cir,0x40},
+    {10,10,0x80,0x80,cir,0x80},
+    {.flag=0x82}};
+    seg_or_flag *origSeg;
+    
+    this_seg = origSeg = test_circle ;
+    for(;;){
+        cursor_x=0;
+        cursor_y=0;
+
+        if(ready!=0){  // otherwise wait until current_state==blanked
+           uint8 int_status = CyEnterCriticalSection();
             
             preload_DAC_to_seg(this_seg);
             //CyDelayUs(12);
@@ -283,9 +335,9 @@ void diag_test(){
 
             AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
             current_mask = this_seg->seg_data.mask;
-            times_to_loop = 3;
+            times_to_loop = 1;
             ready=0;
-            this_seg = successor(this_seg);
+            this_seg = successor(this_seg,origSeg);
             current_state = start;
             
            CyExitCriticalSection(int_status);
@@ -343,19 +395,22 @@ int main()
   SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x00);
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
 
-  //diag_test();
+#ifndef ztest
+  diag_test();
+  circle_test();
+#endif
 
 #undef ANIMATE
 #define SCOPE_DELAY_SHORT 96
 #ifdef ztest
     for(;;){
-        uint8 cursorx=192;
+        uint8 cursorx=0;
         uint8 cursory=0;
         uint8 savedx;
         vector_font *f;
         int i,j;
         for(i=0;i<105;i++){
-            for(j=0;j<10;j++){
+            for(j=0;j<30;j++){
                 drawLetter(i,cursorx,cursory);
             }
         }
@@ -387,25 +442,26 @@ for(;;){
 }
 #endif
 #ifndef ztest
-    this_seg = Aster;
+    this_seg = SemiCol;
     for(;;){
         uint8 cursor_x=128;
         uint8 cursor_y=128;
         uint8 savedx;
+        int int_status;
 
-        CyEnterCriticalSection();
-        if(ready){  // otherwise wait until ready
-            preload_DAC_to_seg(this_seg);
+        //int_status = CyEnterCriticalSection();
+        if(ready == 1){  // otherwise wait until ready
+            preload_DAC_to_seg(this_seg);  // 48 bits at 6 mbps + overhead ~ 8-10 uSec
             strobe_LDAC();
             uint8 int_status = CyEnterCriticalSection();
             AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
             current_mask = this_seg->seg_data.mask;
             //current_mask = 0xff;
-            times_to_loop = 1;
-            this_seg = successor(this_seg);
+            times_to_loop = 3;
+            this_seg = successor(this_seg,this_seg);
             current_state = start;
             ready=0;
-          CyExitCriticalSection(int_status);
+        // CyExitCriticalSection(int_status);
 
   }
 
