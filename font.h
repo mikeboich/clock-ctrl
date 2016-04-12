@@ -882,7 +882,7 @@ void init_font(){
     system_font[105] = (seg_or_flag*)&JTEST;
 }
 
-#ifdef foo
+#ifdef char_test
 
 vector_font *TenPoint[] = {
 SpaceChar,

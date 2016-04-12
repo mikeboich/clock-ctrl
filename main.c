@@ -30,47 +30,90 @@
 #include "font.h"
 #include "max509.h"
 
+int test_index=0;
 
-/* Define the end-of-arc interrupt routine 
+int knob_position;
+void setImmediate(uint16 spi_data){
+  // spin if the fifo is full:
+  while((SPIM_1_ReadTxStatus() & TX_FIFO_NOT_FULL) == 0){
+  }
+  SPIM_1_WriteTxData(spi_data);
+
+}
+
+void setOrigin(uint8 x,uint8 y){
+    setImmediate(DAC_Reg_C | DAC_Load_Now |  x);
+    setImmediate(DAC_Reg_D | DAC_Load_Now |  y);
+}
+
+void setRadius(uint8 x,uint8 y){
+    setImmediate(DAC_Reg_A | DAC_Load_Now |  x);
+    setImmediate(DAC_Reg_B | DAC_Load_Now |  y);
+}
+/* Define the start-of-segment interrupt routine 
    This routine loads the next 8 bit segment mask from the display list,
    and will eventually program the DACS for xCenter, yCenter, xRadius, and yRadius as well.
 */
-CY_ISR_PROTO(wave_finished);
 
-void wave_finished(){
-  static uint8 mask[8] = {255,127,63,31,15,7,3,0};  //test data for now
-  static uint8 index = 0;
-    
+
+void strobe_LDAC(){
+    LDAC_Write(0u);
+    LDAC_Write(1u);
+}
+seg_or_flag *this_seg = SpaceChar;
+
+
+typedef enum{start, looping, blanked}  draw_state;  // States of the draw loop/interrupt code
+
+uint8 current_mask;
+draw_state current_state = blanked;
+uint8 cursor_x,cursor_y;
+uint8 shape_to_mux[] = {2,0,1};
+uint8 masks[] = {0x1,3,7,15,31,63,127,255};  
+int times_to_loop = 0;
+int ready=1;
+
+CY_ISR_PROTO(wave_started);
+
+void wave_started(){
   isr_1_ClearPending();       // clear the interrupt
-  ShiftReg_1_WriteData(mask[index]);  // and pre-load the next mask
- 
-  index = (index + 1) % 8;
-}
+#undef ztest   
+#ifndef ztest
+  switch(current_state){
 
-void rings(){
-  int v1 = 240;
-  int v2 = 120;
-  int i;
-        
-  for(i=0;i<4;i++){
-    SPIM_1_WriteTxData(DAC_Reg_B | DAC_Pre_Load | v1);
-    SPIM_1_WriteTxData(DAC_Reg_A | DAC_Pre_Load | v1);
-    ldac_pin_Write(0u);
-    ldac_pin_Write(1u);
-    CyDelay(100);
+  case (start):{
+    ShiftReg_1_WriteData(current_mask);
+    current_state = looping;
+    break;
   }
 
-  for(i=0;i<4;i++){
-    SPIM_1_WriteTxData(DAC_Reg_B | DAC_Pre_Load | v2);
-    SPIM_1_WriteTxData(DAC_Reg_A | DAC_Pre_Load | v2);
-    ldac_pin_Write(0u);
-    CyDelayUs(1);
-    ldac_pin_Write(1u);
-    CyDelay(100);
-  }
-
-   
+   case (blanked):{
+    ready = 1;
+    break;
 }
+      
+
+  case(looping):{
+    times_to_loop--;
+    if(times_to_loop==0){
+	  ShiftReg_1_WriteData(0x0);  // blank on the next cycle
+	  current_state = blanked;
+      }
+    else {
+	  ShiftReg_1_WriteData(current_mask);
+      }
+    break;
+    }
+    
+
+  }
+#else
+    ShiftReg_1_WriteData(current_mask);
+#endif
+}
+    
+  
+
 
 void wiggle(){
   int amplitudes[8] = {2,4,8,16,32,64,128,255};
@@ -92,23 +135,7 @@ void wiggle(){
   }
 
 }
-void setImmediate(uint16 spi_data){
-  // spin if the fifo is full:
-  while((SPIM_1_ReadTxStatus() & TX_FIFO_NOT_FULL) == 0){
-  }
-  SPIM_1_WriteTxData(spi_data);
 
-}
-
-void setOrigin(uint8 x,uint8 y){
-    setImmediate(DAC_Reg_C | DAC_Load_Now |  x);
-    setImmediate(DAC_Reg_D | DAC_Load_Now |  y);
-}
-
-void setRadius(uint8 x,uint8 y){
-    setImmediate(DAC_Reg_A | DAC_Load_Now |  x);
-    setImmediate(DAC_Reg_B | DAC_Load_Now |  y);
-}
 void frameDisplay(){
     AMux_1_Select(0);
     setRadius(255,0);
@@ -168,14 +195,14 @@ void bounce(){
 }
 
 void draw_seg(vc_segment s,uint8 x, uint8 y){
-    static uint8 seg_to_seg[] = {2,0,1};
+    static uint8 shape_to_mux[] = {2,0,1};
     setImmediate(DAC_Reg_A | DAC_Pre_Load | s.x_size);
     setImmediate(DAC_Reg_B | DAC_Pre_Load | s.y_size);
     setImmediate(DAC_Reg_C | DAC_Pre_Load | 255-(s.x_offset + x));
     setImmediate(DAC_Reg_D | DAC_Pre_Load | 255-(s.y_offset + y));
     while((SPIM_1_ReadTxStatus() & TX_FIFO_NOT_FULL) == 0){
     }
-    AMux_1_Select(seg_to_seg[(uint8) s.arc_type]);
+    AMux_1_Select(shape_to_mux[(uint8) s.arc_type]);
     LDAC_Write(0u);
     LDAC_Write(1u);
     CyDelay(16);
@@ -198,6 +225,7 @@ int drawLetter(uint8 i,uint8 x, uint8 y){
     seg_or_flag *char_info = system_font[i];
     
      while(char_info->seg_data.x_offset < 0x80){
+        current_mask = char_info->seg_data.mask;
         draw_seg(char_info->seg_data,x,y);
         char_info++;
     }
@@ -218,8 +246,56 @@ void show_test_pattern(){
     drawLetter(38,192,192);
     
 }
+  void preload_DAC_to_seg(seg_or_flag *s){
+    setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
+    setImmediate(DAC_Reg_B | DAC_Pre_Load | s->seg_data.y_size);
+    setImmediate(DAC_Reg_C | DAC_Pre_Load | 255-(s->seg_data.x_offset + cursor_x));
+    setImmediate(DAC_Reg_D | DAC_Pre_Load | 255-(s->seg_data.y_offset + cursor_y));
 
-int main()
+  }
+
+seg_or_flag *successor(seg_or_flag *s){
+    ++s;
+    if (s->seg_data.x_offset < 0x80){
+        return s;
+    }
+    else{
+        return Aster;
+    }
+}
+
+void diag_test(){
+    vector_font diag_line ={
+    {10,10,30,30,pos,0x99},
+    {.flag=0x82}};
+    
+    this_seg = BigA;
+    for(;;){
+        uint8 cursor_x=128;
+        uint8 cursor_y=128;
+
+        if(ready!=0){  // otherwise wait until current_state==blanked
+           int int_status = CyEnterCriticalSection();
+            
+            preload_DAC_to_seg(this_seg);
+            //CyDelayUs(12);
+            strobe_LDAC();
+
+            AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
+            current_mask = this_seg->seg_data.mask;
+            times_to_loop = 3;
+            ready=0;
+            this_seg = successor(this_seg);
+            current_state = start;
+            
+           CyExitCriticalSection(int_status);
+
+}
+
+    }    
+    
+}
+int main() 
 {
   /* Start up the SPI interface: */
   SPIM_1_Start();
@@ -241,13 +317,13 @@ int main()
   /* Initialize the shift register: */
   ShiftReg_1_Start();
     
-  ShiftReg_1_WriteData(0xaa);  // not really needed..
+  //ShiftReg_1_WriteData(0xaa);  // not really needed..
 
 // Start the quad decoder:
    QuadDec_1_Start();
     
   /* Initialize Interrupt: */
-  isr_1_StartEx(wave_finished);
+  isr_1_StartEx(wave_started);
   CyGlobalIntEnable;
  /* initialize sysfont: */
   init_font();
@@ -267,8 +343,26 @@ int main()
   SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x00);
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
 
+  //diag_test();
+
 #undef ANIMATE
 #define SCOPE_DELAY_SHORT 96
+#ifdef ztest
+    for(;;){
+        uint8 cursorx=192;
+        uint8 cursory=0;
+        uint8 savedx;
+        vector_font *f;
+        int i,j;
+        for(i=0;i<105;i++){
+            for(j=0;j<10;j++){
+                drawLetter(i,cursorx,cursory);
+            }
+        }
+        
+
+    }
+#endif
 #ifdef ANIMATE
   for(;;) show_test_pattern();
 
@@ -291,24 +385,32 @@ for(;;){
     AMux_1_Select(shape);
     shape = (shape+1)%3;
 }
-#endif   
-
+#endif
+#ifndef ztest
+    this_seg = Aster;
     for(;;){
-        uint8 cursorx=QuadDec_1_GetCounter()+128;
-        uint8 cursory=128;
+        uint8 cursor_x=128;
+        uint8 cursor_y=128;
         uint8 savedx;
-        vector_font *f;
-        int i,j;
-        for(i=0;i<105;i++){
-            for(j=0;j<10;j++){
-                cursorx=cursory=QuadDec_1_GetCounter()+128;
-                drawLetter(i,cursorx,cursory);
-            }
-        }
-        
+
+        CyEnterCriticalSection();
+        if(ready){  // otherwise wait until ready
+            preload_DAC_to_seg(this_seg);
+            strobe_LDAC();
+            uint8 int_status = CyEnterCriticalSection();
+            AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
+            current_mask = this_seg->seg_data.mask;
+            //current_mask = 0xff;
+            times_to_loop = 1;
+            this_seg = successor(this_seg);
+            current_state = start;
+            ready=0;
+          CyExitCriticalSection(int_status);
+
+  }
 
     }
-
+#endif
 }
 
 
