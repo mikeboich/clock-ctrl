@@ -91,9 +91,7 @@ vector_font Amper={
 
 };
 vector_font Apost={
-{pos,03,19,02,02,cir},
-{.flag=0xff},
-
+{03,19,02,02,cir,0xff},
 {00,19,8,12,cir,0xc0},
 {.flag=0x84},
 
