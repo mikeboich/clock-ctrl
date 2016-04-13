@@ -73,10 +73,13 @@ uint8 masks[] = {0x1,3,7,15,31,63,127,255};
 volatile int times_to_loop = 0;
 volatile int ready=1;
 
+volatile long cycleCount=0;  // poor man's timer
+
 CY_ISR_PROTO(wave_started);
 
 void wave_started(){
   isr_1_ClearPending();       // clear the interrupt
+  cycleCount++;
 #undef ztest
 #ifndef ztest
   switch(current_state){
@@ -261,7 +264,8 @@ seg_or_flag *successor(seg_or_flag *s, seg_or_flag *startS){
     }
 }
 
-void diag_test(){
+void diag_test(uint8 char_code){
+    long start_count = cycleCount;
     vector_font diag_line ={
     {10,10,30,30,pos,0x55},
     {.flag=0x82}};
@@ -280,8 +284,8 @@ void diag_test(){
 };
     seg_or_flag *origSeg;
     
-    this_seg = origSeg = Dollar ;
-    for(;;){
+    this_seg = origSeg = system_font[char_code] ;
+    while(cycleCount-start_count < 8000){
         cursor_x=0;
         cursor_y=0;
 
@@ -294,7 +298,7 @@ void diag_test(){
             AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
             current_mask = this_seg->seg_data.mask;
             if(this_seg->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
-            times_to_loop = 10;
+            times_to_loop = 4;
             ready=0;
             this_seg = successor(this_seg,origSeg);
             current_state = start;
@@ -396,7 +400,14 @@ int main()
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
 
 #ifndef ztest
-  diag_test();
+ uint8 cc = 0;
+ for(;;){
+     diag_test(cc);
+    //diag_test(QuadDec_1_GetCounter() % 104);
+     cc = (cc + 1);
+    if(cc>104) cc=0;
+}
+   
   circle_test();
 #endif
 
@@ -442,30 +453,8 @@ for(;;){
 }
 #endif
 #ifndef ztest
-    this_seg = SemiCol;
-    for(;;){
-        uint8 cursor_x=128;
-        uint8 cursor_y=128;
-        uint8 savedx;
-        int int_status;
 
-        //int_status = CyEnterCriticalSection();
-        if(ready == 1){  // otherwise wait until ready
-            preload_DAC_to_seg(this_seg);  // 48 bits at 6 mbps + overhead ~ 8-10 uSec
-            strobe_LDAC();
-            uint8 int_status = CyEnterCriticalSection();
-            AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
-            current_mask = this_seg->seg_data.mask;
-            //current_mask = 0xff;
-            times_to_loop = 3;
-            this_seg = successor(this_seg,this_seg);
-            current_state = start;
-            ready=0;
-        // CyExitCriticalSection(int_status);
 
-  }
-
-    }
 #endif
 }
 

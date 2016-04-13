@@ -991,6 +991,5 @@ JSat,
 JYear,
 JTEST};
 #endif
-seg_or_flag* sys_font[] = {SpaceChar};
 
 /* [] END OF FILE */
