@@ -41,15 +41,7 @@ void setImmediate(uint16 spi_data){
 
 }
 
-void setOrigin(uint8 x,uint8 y){
-    setImmediate(DAC_Reg_C | DAC_Load_Now |  x);
-    setImmediate(DAC_Reg_D | DAC_Load_Now |  y);
-}
 
-void setRadius(uint8 x,uint8 y){
-    setImmediate(DAC_Reg_A | DAC_Load_Now |  x);
-    setImmediate(DAC_Reg_B | DAC_Load_Now |  y);
-}
 /* Define the start-of-segment interrupt routine 
    This routine loads the next 8 bit segment mask from the display list,
    and will eventually program the DACS for xCenter, yCenter, xRadius, and yRadius as well.
@@ -69,7 +61,6 @@ uint8 current_mask;
 volatile draw_state current_state = blanked;
 uint8 cursor_x=0,cursor_y=0;
 uint8 shape_to_mux[] = {2,0,1};
-uint8 masks[] = {0x1,3,7,15,31,63,127,255};  
 volatile int times_to_loop = 0;
 volatile int ready=1;
 
@@ -115,142 +106,11 @@ void wave_started(){
   
 
 
-void wiggle(){
-  int amplitudes[8] = {2,4,8,16,32,64,128,255};
-  int i;
-  uint8 status_bits = 0;
-  //get tall:
-  for(i=0;i<255;i+=8){
-    SPIM_1_WriteTxData(DAC_Reg_A | DAC_Pre_Load  | i);
-    while((SPIM_1_ReadTxStatus() & TX_FIFO_NOT_FULL) == 0){
-    }
-    SPIM_1_WriteTxData(DAC_Reg_B | DAC_Pre_Load  | i);
-    while((SPIM_1_ReadTxStatus() & TX_FIFO_NOT_FULL) == 0){
-    }
-    //CyDelayUs(2);
-    LDAC_Write(0u);
-    CyDelayUs(1);
-    LDAC_Write(1u);
-    CyDelayUs(10000);
-  }
-
-}
-
-void frameDisplay(){
-    AMux_1_Select(0);
-    setRadius(255,0);
-    setOrigin(128,0);
-    CyDelayUs(128);
-    setOrigin(128,255);
-    CyDelayUs(128); 
-    
-    setRadius(0,255);
-    setOrigin(0,128);
-    CyDelayUs(128);
-    setOrigin(255,128);
-    CyDelayUs(128);
-}
-
-void bigCircle(){
-    AMux_1_Select(1);
-    setRadius(128,128);
-    setOrigin(128,128);
-    CyDelayUs(128);
-    
-}
-
-void bounce(){
-  static uint8 grid_points[] = {32,223};
-  static uint8 radii[] = {64,80,96,112,128,144};
-  static int x=0,y=0,r=3;
-  static int xincr=2;
-  static int yincr=1;
-  static int rincr = 1;
-    
-  for(;;){
-    setImmediate(DAC_Reg_C | DAC_Load_Now |  x);
-    setImmediate(DAC_Reg_D | DAC_Load_Now |  y); 
-    setImmediate(DAC_Reg_A | DAC_Load_Now | r);
-    setImmediate(DAC_Reg_B | DAC_Load_Now | r);
-
-    CyDelay(16);
-    x = x+xincr;
-    y = y+ yincr;
-    
-    if(x>=253 || x<2) xincr = -xincr;;
-    if(y>=254 || y<1) {
-      yincr = -yincr;
-    }
-
-
-    r += rincr;
-    if(r>127 || r<1) rincr = -rincr;
-
-  }
-
-  //whichWave = (whichWave+1) % 3;
-  //CyDelayUs(32);  
-   
-    
-}
-
-void draw_seg(vc_segment s,uint8 x, uint8 y){
-    static uint8 shape_to_mux[] = {2,0,1};
-    setImmediate(DAC_Reg_A | DAC_Pre_Load | s.x_size);
-    setImmediate(DAC_Reg_B | DAC_Pre_Load | s.y_size);
-    setImmediate(DAC_Reg_C | DAC_Pre_Load | 255-(s.x_offset + x));
-    setImmediate(DAC_Reg_D | DAC_Pre_Load | 255-(s.y_offset + y));
-    while((SPIM_1_ReadTxStatus() & TX_FIFO_NOT_FULL) == 0){
-    }
-    AMux_1_Select(shape_to_mux[(uint8) s.arc_type]);
-    LDAC_Write(0u);
-    LDAC_Write(1u);
-    CyDelay(16);
-}
-
-
-void drawVectorChar(vector_font ch,uint8 *x, uint8 *y){
-    seg_or_flag *cp=ch;
-    
-        while(cp->seg_data.x_offset < 0x80){
-        draw_seg(cp->seg_data,*x,*y);
-        cp++;
-    }
-    *x += (cp->flag & 0x7f);
-
-    
-}
-
-int drawLetter(uint8 i,uint8 x, uint8 y){
-    seg_or_flag *char_info = system_font[i];
-    
-     while(char_info->seg_data.x_offset < 0x80){
-        current_mask = char_info->seg_data.mask;
-        draw_seg(char_info->seg_data,x,y);
-        char_info++;
-    }
-    return(x + (char_info->flag & 0x7f));       
-}
-
-void show_test_pattern(){
-    frameDisplay();
-    CyDelay(16);
-    bigCircle();
-    CyDelay(16);
-    drawLetter(36,192,64);
-    CyDelay(16);
-    drawLetter(36,192,64);
-    CyDelay(16);
-    drawLetter(37,64,192);
-    CyDelay(16);
-    drawLetter(38,192,192);
-    
-}
-  void preload_DAC_to_seg(seg_or_flag *s){
-    setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
-    setImmediate(DAC_Reg_B | DAC_Pre_Load | s->seg_data.y_size);
-    setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + cursor_x)));
-    setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + cursor_y)));
+  void preload_DAC_to_seg(seg_or_flag *s,int magnify){
+    setImmediate(DAC_Reg_A | DAC_Pre_Load | magnify*s->seg_data.x_size);
+    setImmediate(DAC_Reg_B | DAC_Pre_Load | magnify*s->seg_data.y_size);
+    setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-magnify*(s->seg_data.x_offset + cursor_x)));
+    setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-magnify*(s->seg_data.y_offset + cursor_y)));
 
   }
 
@@ -266,33 +126,28 @@ seg_or_flag *successor(seg_or_flag *s, seg_or_flag *startS){
 
 void diag_test(uint8 char_code){
     long start_count = cycleCount;
-    vector_font diag_line ={
-    {10,10,30,30,pos,0x55},
-    {.flag=0x82}};
-    
+   
    vector_font test_pat= {
-    {8,06,8,12,cir,0x03},
-    {00,06,8,8,cir,0x30},
-    {00,14,8,8,cir,0xc0},
-    {16,14,8,12,cir,0x0c},
-    {00,06,8,12,cir,0xc0},
-    {16,06,8,8,cir,0x0c},
-    {16,14,8,8,cir,0x03},
-    {8,14,8,12,cir,0x30},
+    {64,64,128,128,cir,0xff},
+    {00,00,32,32,cir,0xff},
+    {00,127,32,32,cir,0xff},
+    {127,0,32,32,cir,0xff},
+    {127,127,32,32,cir,0xff},
     {.flag=0x88}
 
 };
     seg_or_flag *origSeg;
-    
+
     this_seg = origSeg = system_font[char_code] ;
-    while(cycleCount-start_count < 8000){
-        cursor_x=0;
-        cursor_y=0;
+    //this_seg = origSeg = test_pat;
+    while(cycleCount-start_count < 12000){
+        //cursor_x=0;
+        //cursor_y=0;
 
         if(ready!=0){  // otherwise wait until current_state==blanked
            uint8 int_status = CyEnterCriticalSection();
             
-            preload_DAC_to_seg(this_seg);
+            preload_DAC_to_seg(this_seg,1);
             //CyDelayUs(12);
 
             AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
@@ -302,6 +157,7 @@ void diag_test(uint8 char_code){
             ready=0;
             this_seg = successor(this_seg,origSeg);
             current_state = start;
+            
             
            CyExitCriticalSection(int_status);
 
@@ -333,7 +189,7 @@ void circle_test(){
         if(ready!=0){  // otherwise wait until current_state==blanked
            uint8 int_status = CyEnterCriticalSection();
             
-            preload_DAC_to_seg(this_seg);
+            preload_DAC_to_seg(this_seg,1);
             //CyDelayUs(12);
             strobe_LDAC();
 
