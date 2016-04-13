@@ -140,20 +140,20 @@ void diag_test(uint8 char_code){
 
     this_seg = origSeg = system_font[char_code] ;
     //this_seg = origSeg = test_pat;
-    while(cycleCount-start_count < 12000){
+    while(cycleCount-start_count < 4000){
         //cursor_x=0;
         //cursor_y=0;
 
         if(ready!=0){  // otherwise wait until current_state==blanked
            uint8 int_status = CyEnterCriticalSection();
             
-            preload_DAC_to_seg(this_seg,1);
+            preload_DAC_to_seg(this_seg,3);
             //CyDelayUs(12);
 
             AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
             current_mask = this_seg->seg_data.mask;
             if(this_seg->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
-            times_to_loop = 4;
+            times_to_loop = 2;
             ready=0;
             this_seg = successor(this_seg,origSeg);
             current_state = start;
