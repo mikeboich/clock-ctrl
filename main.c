@@ -130,7 +130,7 @@ int char_width(char c){
 int stringWidth(char s[],uint8 mag){
     int width=0,index=0;
     
-    while(s[index++]) width+=char_width(*s)+3;    
+    while(s[index++]) width+=char_width(*s)+kerning;    
     return mag*width;
 }
 
@@ -157,7 +157,7 @@ void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 mag){  // tur
           dst_ptr++;
         }
         
-        x = pin(x+ mag*(char_width(*s)+3));
+        x = pin(x+ mag*(char_width(*s)+kerning));
         s++; 
     }
     dst_ptr->seg_data.x_offset = 0xff;       //used as a flag, but width not used
@@ -199,8 +199,8 @@ void initTime(){
 //    time_record.Min = 5;
 //    time_record.Sec = 30;
 //    time_record.Year = 2016;
-    RTC_1_WriteHour(10);
-    RTC_1_WriteMinute(31);
+    RTC_1_WriteHour(13);
+    RTC_1_WriteMinute(53);
     RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
     
 }
@@ -285,7 +285,7 @@ int main()
         int hours = RTC_1_ReadHour();
         
         char sec_string[32];
-        sprintf(sec_string,"%i:%02i:%02i AM",hours,minutes,seconds);
+        sprintf(sec_string,"%i:%02i:%02i",hours,minutes,seconds);
         compileString(sec_string,0,0,2);
     }
     long end_time = cycleCount;
