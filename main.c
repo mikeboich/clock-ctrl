@@ -24,9 +24,15 @@
 #include <device.h>
 #include "font.h"
 #include "max509.h"
+#include <stdio.h>
 
 // SPI constants:
 #define TX_FIFO_NOT_FULL 4 
+
+// Real time clock variables:
+RTC_1_TIME_DATE time_record;
+volatile int time_has_passed = 0;
+int led_state = 0;  // we blink this once/second
 
 int knob_position;
 char test_string[] = "Hello!";
@@ -96,7 +102,11 @@ void wave_started(){
   }
 }
     
-  
+  uint8 pin(int x){
+    if(x<0)x=0;
+    if(x>255)x=255;
+    return x;
+}
 
 
   void preload_DAC_to_seg(seg_or_flag *s,uint8 x, uint8 y){
@@ -107,77 +117,8 @@ void wave_started(){
 
   }
 
-seg_or_flag *successor(seg_or_flag *s, seg_or_flag *startS){
-    ++s;
-    if (s->seg_data.x_offset < 0x80){
-        return s;
-    }
-    else{
-        return startS;
-    }
-}
-
-void diag_test(uint8 char_code, uint8 cursor_x, uint8 cursor_y){
-    long start_count = cycleCount;
-   
-   vector_font test_pat= {
-    {64,64,128,128,cir,0xff},
-    {00,00,32,32,cir,0xff},
-    {00,127,32,32,cir,0xff},
-    {127,0,32,32,cir,0xff},
-    {127,127,32,32,cir,0xff},
-    {.flag=0x88}
-
-};
-vector_font test_pat2={
-{00,10,00,30,pos,0x99},
-{12,10,00,30,pos,0x99},
-{06,10,18,00,pos,0x99},
-
-{22,06,10,12,cir,0xbf},
-{22,06,15,00,pos,0x99},
-
-{31,10,00,30,pos,0x99},
-
-{36,10,00,30,pos,0x99},
-
-{46,06,10,12,cir,0xff},
-
-{56,13,00,22,pos,0x99},
-{56,01,02,02,cir,0xff},
-{.flag=0x82},
-};
-
-    seg_or_flag *orig_seg, *this_seg;
-
-    this_seg = orig_seg = test_pat2;
-    while(cycleCount-start_count <3000){
-        //cursor_x=0;
-        //cursor_y=0;
-
-        if(ready!=0){  // otherwise wait until current_state==blanked
-           uint8 int_status = CyEnterCriticalSection();
-            
-            preload_DAC_to_seg(this_seg,cursor_x,cursor_y);
-            //CyDelayUs(12);
-
-            AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
-            current_mask = this_seg->seg_data.mask;
-            if(this_seg->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
-            times_to_loop = 2;
-            ready=0;
-            this_seg = successor(this_seg,orig_seg);
-            current_state = start;
-            
-            
-           CyExitCriticalSection(int_status);
 
 
-}
-
-    }    
-    
-}
 // returns the width of a single vector character:
 int char_width(char c){
     seg_or_flag *seg_ptr = system_font[((uint8) c)-32];    // map from char code to segment list
@@ -199,24 +140,24 @@ void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 mag){  // tur
     int num_segs=0;     // so we don't overrun our fixed-size buffer
     
     int string_width = stringWidth(s,mag);
-    uint8 x = 128 - (string_width / 2);    //center on 128 wide for now
+    uint8 x = pin(128 - (string_width / 2));    //center on 128 wide for now
     //x=0;
     dst_ptr = seg_buffer[buffer_index];
     while(*s && num_segs<200){
         num_segs++;
         src_ptr = system_font[((uint8)*s)-32];
         while(src_ptr->seg_data.x_offset<0x80){
-          dst_ptr->seg_data.x_offset = mag*src_ptr->seg_data.x_offset+x;
-          dst_ptr->seg_data.y_offset = mag*src_ptr->seg_data.y_offset+y_coord;
-          dst_ptr->seg_data.x_size = mag*src_ptr->seg_data.x_size;
-          dst_ptr->seg_data.y_size = mag*src_ptr->seg_data.y_size;
+          dst_ptr->seg_data.x_offset = pin(mag*src_ptr->seg_data.x_offset+x);
+          dst_ptr->seg_data.y_offset = pin(mag*src_ptr->seg_data.y_offset+y_coord);
+          dst_ptr->seg_data.x_size = pin(mag*src_ptr->seg_data.x_size);
+          dst_ptr->seg_data.y_size = pin(mag*src_ptr->seg_data.y_size);
           dst_ptr->seg_data.arc_type = src_ptr->seg_data.arc_type;
           dst_ptr->seg_data.mask = src_ptr->seg_data.mask;
           src_ptr++;
           dst_ptr++;
         }
         
-        x += mag*(char_width(*s)+3);
+        x = pin(x+ mag*(char_width(*s)+3));
         s++; 
     }
     dst_ptr->seg_data.x_offset = 0xff;       //used as a flag, but width not used
@@ -251,6 +192,19 @@ void display_buffer(uint8 which_buffer){
     }
 }
 
+void initTime(){
+//    time_record.DayOfMonth = 14;
+//    time_record.DayOfWeek = 5;
+//    time_record.Hour = 9;
+//    time_record.Min = 5;
+//    time_record.Sec = 30;
+//    time_record.Year = 2016;
+    RTC_1_WriteHour(10);
+    RTC_1_WriteMinute(31);
+    RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
+    
+}
+
 int main() 
 {
   /* Start up the SPI interface: */
@@ -277,10 +231,18 @@ int main()
 
 // Start the quad decoder:
    QuadDec_1_Start();
+
     
   /* Initialize Interrupt: */
   isr_1_StartEx(wave_started);
   CyGlobalIntEnable;
+
+// start the real-time clock component (which is what this is all about..)
+   RTC_1_Start();
+   LED_Reg_Write(1);
+   initTime();
+   
+
  /* initialize sysfont: */
   init_font();
     
@@ -301,8 +263,8 @@ int main()
 
  uint8 cc = 0;
  compileString("12:35 PM",0,0,2);
- compileString("4/13/2016",80,1,2);
- compileString("Wed",160,2,2);
+ compileString("4/14/2016",90,1,2);
+ compileString("Thursday",180,2,2);
  for(;;){
 //    diag_test(QuadDec_1_GetCounter() % 104,32,32);
 //     cc = (cc + 1);
@@ -313,6 +275,19 @@ int main()
     display_buffer(0);
     display_buffer(1);
     display_buffer(2);
+    if(time_has_passed){
+        led_state = 1-led_state;
+        LED_Reg_Write(led_state);
+        time_has_passed = 0;
+        
+        int seconds = RTC_1_ReadSecond();
+        int minutes = RTC_1_ReadMinute();
+        int hours = RTC_1_ReadHour();
+        
+        char sec_string[32];
+        sprintf(sec_string,"%i:%02i:%02i AM",hours,minutes,seconds);
+        compileString(sec_string,0,0,2);
+    }
     long end_time = cycleCount;
     total_time = end_time-start_time;
     total_time +=1;
