@@ -191,7 +191,7 @@ void display_buffer(uint8 which_buffer){
             next_shape = seg_ptr->seg_data.arc_type;
            next_mask = seg_ptr->seg_data.mask;
             if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
-            times_to_loop = 2;
+            times_to_loop = 4;
             primed=1;
             seg_ptr++;
             //if(seg_ptr->seg_data.x_offset > 0xfe) seg_ptr = seg_buffer[which_buffer];
