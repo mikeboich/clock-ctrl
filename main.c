@@ -99,11 +99,11 @@ void wave_started(){
   
 
 
-  void preload_DAC_to_seg(seg_or_flag *s,int magnify,uint8 x, uint8 y){
-    setImmediate(DAC_Reg_A | DAC_Pre_Load | magnify*s->seg_data.x_size);
-    setImmediate(DAC_Reg_B | DAC_Pre_Load | magnify*s->seg_data.y_size);
-    setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-magnify*(s->seg_data.x_offset + x)));
-    setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-magnify*(s->seg_data.y_offset + y)));
+  void preload_DAC_to_seg(seg_or_flag *s,uint8 x, uint8 y){
+    setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
+    setImmediate(DAC_Reg_B | DAC_Pre_Load |s->seg_data.y_size);
+    setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x)));
+    setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y)));
 
   }
 
@@ -158,7 +158,7 @@ vector_font test_pat2={
         if(ready!=0){  // otherwise wait until current_state==blanked
            uint8 int_status = CyEnterCriticalSection();
             
-            preload_DAC_to_seg(this_seg,2,cursor_x,cursor_y);
+            preload_DAC_to_seg(this_seg,cursor_x,cursor_y);
             //CyDelayUs(12);
 
             AMux_1_Select(shape_to_mux[this_seg->seg_data.arc_type]);
@@ -189,34 +189,34 @@ int char_width(char c){
 int stringWidth(char s[],uint8 mag){
     int width=0,index=0;
     
-    while(s[index++]) width+=char_width(*s)+4;    
+    while(s[index++]) width+=char_width(*s)+3;    
     return mag*width;
 }
 
-void compileString(char *s, uint8 y_coord,uint8 buffer_index){  // turns a string into a display  list 
-    uint8  mag=1;
+void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 mag){  // turns a string into a display  list 
     seg_or_flag *src_ptr;
     seg_or_flag *dst_ptr;
     int num_segs=0;     // so we don't overrun our fixed-size buffer
     
     int string_width = stringWidth(s,mag);
-    uint8 x = 64 - (string_width / 2);    //center on 128 wide for now
+    uint8 x = 128 - (string_width / 2);    //center on 128 wide for now
+    //x=0;
     dst_ptr = seg_buffer[buffer_index];
     while(*s && num_segs<200){
         num_segs++;
         src_ptr = system_font[((uint8)*s)-32];
         while(src_ptr->seg_data.x_offset<0x80){
-          dst_ptr->seg_data.x_offset = src_ptr->seg_data.x_offset+x;
-          dst_ptr->seg_data.y_offset = src_ptr->seg_data.y_offset+y_coord;
-          dst_ptr->seg_data.x_size = src_ptr->seg_data.x_size;
-          dst_ptr->seg_data.y_size = src_ptr->seg_data.y_size;
+          dst_ptr->seg_data.x_offset = mag*src_ptr->seg_data.x_offset+x;
+          dst_ptr->seg_data.y_offset = mag*src_ptr->seg_data.y_offset+y_coord;
+          dst_ptr->seg_data.x_size = mag*src_ptr->seg_data.x_size;
+          dst_ptr->seg_data.y_size = mag*src_ptr->seg_data.y_size;
           dst_ptr->seg_data.arc_type = src_ptr->seg_data.arc_type;
           dst_ptr->seg_data.mask = src_ptr->seg_data.mask;
           src_ptr++;
           dst_ptr++;
         }
         
-        x += char_width(*s)+4;
+        x += mag*(char_width(*s)+3);
         s++; 
     }
     dst_ptr->seg_data.x_offset = 0xff;       //used as a flag, but width not used
@@ -231,7 +231,7 @@ void display_buffer(uint8 which_buffer){
         if(ready){  // otherwise wait until current_state==blanked
            uint8 int_status = CyEnterCriticalSection();
             
-            preload_DAC_to_seg(seg_ptr,2,0,0);
+            preload_DAC_to_seg(seg_ptr,0,0);
             //CyDelayUs(12);
 
             AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
@@ -300,9 +300,9 @@ int main()
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
 
  uint8 cc = 0;
- compileString("12:35 PM",0,0);
- compileString("April 1",50,1);
- compileString("Monday",100,2);
+ compileString("12:35 PM",0,0,2);
+ compileString("4/13/2016",80,1,2);
+ compileString("Wed",160,2,2);
  for(;;){
 //    diag_test(QuadDec_1_GetCounter() % 104,32,32);
 //     cc = (cc + 1);
