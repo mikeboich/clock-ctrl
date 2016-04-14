@@ -53,14 +53,13 @@ void strobe_LDAC(){
 
 
 
-typedef enum{start, looping, blanked}  draw_state;  // States of the draw loop/interrupt code
+typedef enum{blank_unprimed,blank_primed,drawing}  draw_state;  // States of the draw loop/interrupt code
 
-uint8 current_mask;
-volatile draw_state current_state = blanked;
+uint8 current_mask=0;
+volatile draw_state current_state = blank_unprimed;
 uint8 cursor_x=0,cursor_y=0;
 uint8 shape_to_mux[] = {2,0,1};
 volatile int times_to_loop = 0;
-volatile int ready=1;
 
 volatile long cycleCount=0;  // poor man's timer
 long total_time=0;
@@ -77,23 +76,21 @@ void wave_started(){
   cycleCount++;
   switch(current_state){
 
-  case start:
-    ShiftReg_1_WriteData(current_mask);
-    strobe_LDAC();
+   case blank_unprimed:
+    break;
 
-    current_state = looping;
+    case blank_primed:
+    current_state = drawing;
+    strobe_LDAC();
     break;
   
 
-   case blanked:
-    ready = 1;
-    break;
     
-  case looping:
+  case drawing:
     times_to_loop -= 1;
     if(times_to_loop==0){
 	  ShiftReg_1_WriteData(0x0);  // blank on the next cycle
-	  current_state = blanked;
+	  current_state = blank_unprimed;
       }
     else {
 	  ShiftReg_1_WriteData(current_mask);
@@ -167,23 +164,20 @@ void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 mag){  // tur
 void display_buffer(uint8 which_buffer){
     //long start_count = cycleCount;
     seg_or_flag *seg_ptr = seg_buffer[which_buffer];
-    while(seg_ptr->seg_data.x_offset<0xff){
+    while(seg_ptr->seg_data.x_offset != 0xff){
 
-        if(ready){  // otherwise wait until current_state==blanked
+        if(current_state==blank_unprimed){  // otherwise wait until current_state==blanked
            uint8 int_status = CyEnterCriticalSection();
             
             preload_DAC_to_seg(seg_ptr,0,0);
-            //CyDelayUs(12);
-
             AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
             current_mask = seg_ptr->seg_data.mask;
             if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
-            times_to_loop = 2;
-            ready=0;
+            times_to_loop = 1;
+            current_state = blank_primed;
             seg_ptr++;
-            //if(seg_ptr->seg_data.x_offset > 0xfe) seg_ptr = seg_buffer[which_buffer];
-            current_state = start;
-            
+            ShiftReg_1_WriteData(current_mask);
+
             
            CyExitCriticalSection(int_status);
 
@@ -271,10 +265,9 @@ int main()
 //    if(cc>104) cc=0;
     while(SixtyHz_Read() != 0);  // sync to 60Hz for eliminate shimmer...
     //while(SixtyHz_Read() == 0);
-    long start_time = cycleCount;
     display_buffer(0);
-    display_buffer(1);
-    display_buffer(2);
+    //display_buffer(1);
+    //display_buffer(2);
     if(time_has_passed){
         led_state = 1-led_state;
         LED_Reg_Write(led_state);
@@ -287,11 +280,8 @@ int main()
         char sec_string[32];
         sprintf(sec_string,"%i:%02i:%02i",hours,minutes,seconds);
         compileString(sec_string,0,0,2);
-    }
-    long end_time = cycleCount;
-    total_time = end_time-start_time;
-    total_time +=1;
-    
+        compileString("/",0,0,2);
+    }    
 }
    
 
