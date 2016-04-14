@@ -34,6 +34,9 @@ RTC_1_TIME_DATE time_record;
 volatile int time_has_passed = 0;
 int led_state = 0;  // we blink this once/second
 
+// global screensaver offsets:
+uint8 ss_x_offset=0, ss_y_offset=0;
+
 int knob_position;
 char test_string[] = "Hello!";
 seg_or_flag seg_buffer[3][200];
@@ -53,15 +56,16 @@ void strobe_LDAC(){
 
 
 
-typedef enum{start, looping, blanked}  draw_state;  // States of the draw loop/interrupt code
+typedef enum{idle, looping, blanked}  draw_state;  // States of the draw loop/interrupt code
 
-uint8 current_mask;
+uint8 current_mask=0,next_mask=0;
+
 volatile draw_state current_state = blanked;
 uint8 cursor_x=0,cursor_y=0;
 uint8 shape_to_mux[] = {2,0,1};
 volatile int times_to_loop = 0;
-volatile int ready=1;
-
+volatile int primed=0;
+shape next_shape=cir;
 volatile long cycleCount=0;  // poor man's timer
 long total_time=0;
 
@@ -77,16 +81,25 @@ void wave_started(){
   cycleCount++;
   switch(current_state){
 
-  case start:
+  case idle:
+    current_mask = next_mask;
     ShiftReg_1_WriteData(current_mask);
     strobe_LDAC();
-
+    AMux_1_Select(next_shape);
     current_state = looping;
     break;
   
 
    case blanked:
-    ready = 1;
+   if(primed){
+    current_mask=next_mask;
+    ShiftReg_1_WriteData(next_mask);
+    AMux_1_Select(next_shape);
+
+    strobe_LDAC();
+    primed=0;
+}
+
     break;
     
   case looping:
@@ -112,8 +125,8 @@ void wave_started(){
   void preload_DAC_to_seg(seg_or_flag *s,uint8 x, uint8 y){
     setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
     setImmediate(DAC_Reg_B | DAC_Pre_Load |s->seg_data.y_size);
-    setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x)));
-    setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y)));
+    setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x + ss_x_offset)));
+    setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y + ss_y_offset)));
 
   }
 
@@ -130,7 +143,7 @@ int char_width(char c){
 int stringWidth(char s[],uint8 mag){
     int width=0,index=0;
     
-    while(s[index++]) width+=char_width(*s)+3;    
+    while(s[index++]) width+=char_width(*s)+kerning;    
     return mag*width;
 }
 
@@ -157,7 +170,7 @@ void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 mag){  // tur
           dst_ptr++;
         }
         
-        x = pin(x+ mag*(char_width(*s)+3));
+        x = pin(x+ mag*(char_width(*s)+kerning));
         s++; 
     }
     dst_ptr->seg_data.x_offset = 0xff;       //used as a flag, but width not used
@@ -169,20 +182,20 @@ void display_buffer(uint8 which_buffer){
     seg_or_flag *seg_ptr = seg_buffer[which_buffer];
     while(seg_ptr->seg_data.x_offset<0xff){
 
-        if(ready){  // otherwise wait until current_state==blanked
+        if(!primed){  // otherwise wait until current_state==blanked
            uint8 int_status = CyEnterCriticalSection();
             
             preload_DAC_to_seg(seg_ptr,0,0);
             //CyDelayUs(12);
-
-            AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
-            current_mask = seg_ptr->seg_data.mask;
+            
+            next_shape = seg_ptr->seg_data.arc_type;
+           next_mask = seg_ptr->seg_data.mask;
             if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
             times_to_loop = 2;
-            ready=0;
+            primed=1;
             seg_ptr++;
             //if(seg_ptr->seg_data.x_offset > 0xfe) seg_ptr = seg_buffer[which_buffer];
-            current_state = start;
+            //current_state = idle;
             
             
            CyExitCriticalSection(int_status);
@@ -199,8 +212,8 @@ void initTime(){
 //    time_record.Min = 5;
 //    time_record.Sec = 30;
 //    time_record.Year = 2016;
-    RTC_1_WriteHour(10);
-    RTC_1_WriteMinute(31);
+    RTC_1_WriteHour(12);
+    RTC_1_WriteMinute(52);
     RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
     
 }
@@ -284,9 +297,17 @@ int main()
         int minutes = RTC_1_ReadMinute();
         int hours = RTC_1_ReadHour();
         
-        char sec_string[32];
-        sprintf(sec_string,"%i:%02i:%02i AM",hours,minutes,seconds);
-        compileString(sec_string,0,0,2);
+        char time_string[32];
+        if(hours < 12)
+          sprintf(time_string,"%i:%02i:%02iAM",hours,minutes,seconds);
+        else
+          sprintf(time_string,"%i:%02i:%02iPM",hours,minutes,seconds);
+        
+        compileString(time_string,0,0,2);
+        
+        // update screen saver offsets:
+        //ss_x_offset = (ss_x_offset + 2) % 6;
+        ss_y_offset = (ss_y_offset + 2) % 12;
     }
     long end_time = cycleCount;
     total_time = end_time-start_time;
