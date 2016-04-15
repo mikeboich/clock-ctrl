@@ -769,6 +769,21 @@ vector_font JTEST={
 {28,19,37,32,cir,0x02},
 {.flag=0x92}}; 
 
+vector_font TestBox={
+{128,254, 128,0,pos,0x99},
+{128,0, 128,0 ,pos,0x99},
+{0,128,128,0,pos,0x99},
+{254,128,128,0,pos,0x99},
+{.flag=0x84},
+
+};
+
+vector_font TestCircle={
+{128,128, 128,128,pos,0xff},
+{.flag=0x84},
+
+};
+
 seg_or_flag *system_font[128];
 
 void init_font(){

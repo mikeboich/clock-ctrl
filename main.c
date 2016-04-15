@@ -124,11 +124,11 @@ int char_width(char c){
 }
 
 // returns the width (sum of character widths) of a string:
-int stringWidth(char s[],uint8 mag){
+uint8 stringWidth(char s[],uint8 mag){
     int width=0,index=0;
     
-    while(s[index++]) width += mag*char_width(*s )+ kerning;    
-    return width-kerning; // we subtract the spacing after the trailing character...
+    while(s[index++]) width += char_width(*s);    
+    return pin(width*mag); // we subtract the spacing after the trailing character...
 }
 
 void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 mag){  // turns a string into a display  list 
@@ -172,13 +172,17 @@ void display_buffer(uint8 which_buffer){
             CyDelayUs(12);
             AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
             
-            times_to_loop = 3;
+            if(seg_ptr->seg_data.x_size>8 || seg_ptr->seg_data.y_size>8)
+              times_to_loop = 4;
+            else
+              times_to_loop = 2;
 
             current_mask = seg_ptr->seg_data.mask;
             if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
             ShiftReg_1_WriteData(current_mask);
 
             current_state = blank_primed;
+            CyDelayUs(4);
             strobe_LDAC();
             seg_ptr++;
           
@@ -198,8 +202,8 @@ void initTime(){
     the_time->DayOfWeek=6;
     the_time->Year = 2016;
 
-    the_time->Hour = 11;
-    the_time->Min = 00;
+    the_time->Hour = 15;
+    the_time->Min = 58;
     the_time->Sec = 00;
     
     RTC_1_WriteTime(the_time);
@@ -234,18 +238,25 @@ void updateTimeDisplay(){
     
     
     sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
-    compileString(time_string,0,0,2);
+    compileString(time_string,64,0,2);
     //compileString("0",0,0,2);
     
-    sprintf(date_string,"%2i/%02i/%04i",month,day_of_month,year);
-    compileString(date_string,80,1,1);
+    sprintf(date_string,"%02i/%02i/%i",month,day_of_month,year);
+    compileString(date_string,0,1,1);
    // compileString("Hi Mom!",80,1,1);
     
     char dw[12];
     sprintf(dw,"%s",day_names[day_of_week-1]);
-    compileString(dw,160,2,1);
+    compileString(dw,160,2,2);
 
 }
+
+void diagPattern(){
+    system_font[0] = (seg_or_flag*)&JFri;
+    compileString(" ",0,0,1);
+    for(;;) display_buffer(0);
+}
+
 int main() 
 {
   /* Start up the SPI interface: */
@@ -302,17 +313,19 @@ int main()
   SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x00);
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
 
+// diagPattern();
+
  uint8 cc = 0;
- compileString("12:35 PM",0,0,1);
- compileString("X",0,0,1);
- compileString("4/14/2016",90,1,1);
- compileString("Thursday",180,2,1);
+ compileString("1234",0,0,1);
+ compileString("4567",90,1,1);
+ compileString("890",180,2,1);
  for(;;){
 //    diag_test(QuadDec_1_GetCounter() % 104,32,32);
 //     cc = (cc + 1);
 //    if(cc>104) cc=0;
-    while(SixtyHz_Read() != 0);  // sync to 60Hz for eliminate shimmer...
-    //while(SixtyHz_Read() == 0);
+    //while(SixtyHz_Read() != 0);  // sync to 60Hz for eliminate shimmer...
+    while(SixtyHz_Read() == 0);
+    //CyDelay(16);
     display_buffer(2);
     display_buffer(0);
     display_buffer(1);
