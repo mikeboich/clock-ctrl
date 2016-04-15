@@ -30,7 +30,6 @@
 #define TX_FIFO_NOT_FULL 4 
 
 // Real time clock variables:
-RTC_1_TIME_DATE time_record;
 volatile int time_has_passed = 0;
 int led_state = 0;  // we blink this once/second
 
@@ -48,6 +47,7 @@ void setImmediate(uint16 spi_data){
 // Drops the LDAC signal to load pre-buffered data in to the DAC:
 void strobe_LDAC(){
     LDAC_Write(0u);
+    CyDelayUs(1);
     LDAC_Write(1u);
 }
 
@@ -77,11 +77,11 @@ void wave_started(){
   switch(current_state){
 
    case blank_unprimed:
+      ShiftReg_1_WriteData(0x0);
     break;
 
     case blank_primed:
     current_state = drawing;
-    strobe_LDAC();
     break;
   
 
@@ -120,15 +120,15 @@ void wave_started(){
 int char_width(char c){
     seg_or_flag *seg_ptr = system_font[((uint8) c)-32];    // map from char code to segment list
     while(seg_ptr->seg_data.x_offset<0x80) seg_ptr++;       // skip over segments
-    return seg_ptr->seg_data.x_offset-0x80;                 // end flag - 0x80 + char width
+    return seg_ptr->flag & 0x7f;                 // end flag - 0x80 + char width
 }
 
 // returns the width (sum of character widths) of a string:
 int stringWidth(char s[],uint8 mag){
     int width=0,index=0;
     
-    while(s[index++]) width+=char_width(*s)+kerning;    
-    return mag*width;
+    while(s[index++]) width += mag*char_width(*s )+ kerning;    
+    return width-kerning; // we subtract the spacing after the trailing character...
 }
 
 void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 mag){  // turns a string into a display  list 
@@ -138,11 +138,10 @@ void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 mag){  // tur
     
     int string_width = stringWidth(s,mag);
     uint8 x = pin(128 - (string_width / 2));    //center on 128 wide for now
-    //x=0;
     dst_ptr = seg_buffer[buffer_index];
     while(*s && num_segs<200){
         num_segs++;
-        src_ptr = system_font[((uint8)*s)-32];
+        src_ptr = system_font[((uint8) *s)-32];
         while(src_ptr->seg_data.x_offset<0x80){
           dst_ptr->seg_data.x_offset = pin(mag*src_ptr->seg_data.x_offset+x);
           dst_ptr->seg_data.y_offset = pin(mag*src_ptr->seg_data.y_offset+y_coord);
@@ -154,7 +153,7 @@ void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 mag){  // tur
           dst_ptr++;
         }
         
-        x = pin(x+ mag*(char_width(*s)+kerning));
+        x = pin(x + mag*char_width(*s) + kerning);
         s++; 
     }
     dst_ptr->seg_data.x_offset = 0xff;       //used as a flag, but width not used
@@ -170,15 +169,19 @@ void display_buffer(uint8 which_buffer){
            uint8 int_status = CyEnterCriticalSection();
             
             preload_DAC_to_seg(seg_ptr,0,0);
+            CyDelayUs(12);
             AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
+            
+            times_to_loop = 3;
+
             current_mask = seg_ptr->seg_data.mask;
             if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
-            times_to_loop = 1;
-            current_state = blank_primed;
-            seg_ptr++;
             ShiftReg_1_WriteData(current_mask);
 
-            
+            current_state = blank_primed;
+            strobe_LDAC();
+            seg_ptr++;
+          
            CyExitCriticalSection(int_status);
 
 
@@ -187,18 +190,62 @@ void display_buffer(uint8 which_buffer){
 }
 
 void initTime(){
-//    time_record.DayOfMonth = 14;
-//    time_record.DayOfWeek = 5;
-//    time_record.Hour = 9;
-//    time_record.Min = 5;
-//    time_record.Sec = 30;
-//    time_record.Year = 2016;
-    RTC_1_WriteHour(13);
-    RTC_1_WriteMinute(53);
+    RTC_1_TIME_DATE *the_time = RTC_1_ReadTime();
+    RTC_1_DisableInt();
+    
+    the_time->Month = 4;
+    the_time->DayOfMonth = 15;
+    the_time->DayOfWeek=6;
+    the_time->Year = 2016;
+
+    the_time->Hour = 11;
+    the_time->Min = 00;
+    the_time->Sec = 00;
+    
+    RTC_1_WriteTime(the_time);
+
+//    RTC_1_WriteMonth(4);
+//    RTC_1_WriteDayOfMonth(16);
+//    RTC_1_WriteYear(2016);
+//    RTC_1_WriteHour(23);
+//    RTC_1_WriteMinute(59);
+//    RTC_1_WriteSecond(50);
     RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
+    RTC_1_EnableInt();
     
 }
 
+void updateTimeDisplay(){
+    char time_string[32];
+    char day_of_week_string[12];
+    char date_string[15];
+    char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+
+    RTC_1_TIME_DATE *the_time;
+    the_time = RTC_1_ReadTime();
+    int seconds = the_time->Sec;
+    int minutes = the_time->Min;
+    int hours = the_time->Hour;
+    
+    int day_of_week = the_time->DayOfWeek;
+    int month = the_time->Month;
+    int day_of_month = the_time->DayOfMonth;
+    int year = the_time->Year;
+    
+    
+    sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
+    compileString(time_string,0,0,2);
+    //compileString("0",0,0,2);
+    
+    sprintf(date_string,"%2i/%02i/%04i",month,day_of_month,year);
+    compileString(date_string,80,1,1);
+   // compileString("Hi Mom!",80,1,1);
+    
+    char dw[12];
+    sprintf(dw,"%s",day_names[day_of_week-1]);
+    compileString(dw,160,2,1);
+
+}
 int main() 
 {
   /* Start up the SPI interface: */
@@ -231,7 +278,7 @@ int main()
   isr_1_StartEx(wave_started);
   CyGlobalIntEnable;
 
-// start the real-time clock component (which is what this is all about..)
+ //start the real-time clock component (which is what this is all about..)
    RTC_1_Start();
    LED_Reg_Write(1);
    initTime();
@@ -256,31 +303,25 @@ int main()
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
 
  uint8 cc = 0;
- compileString("12:35 PM",0,0,2);
- compileString("4/14/2016",90,1,2);
- compileString("Thursday",180,2,2);
+ compileString("12:35 PM",0,0,1);
+ compileString("X",0,0,1);
+ compileString("4/14/2016",90,1,1);
+ compileString("Thursday",180,2,1);
  for(;;){
 //    diag_test(QuadDec_1_GetCounter() % 104,32,32);
 //     cc = (cc + 1);
 //    if(cc>104) cc=0;
     while(SixtyHz_Read() != 0);  // sync to 60Hz for eliminate shimmer...
     //while(SixtyHz_Read() == 0);
+    display_buffer(2);
     display_buffer(0);
-    //display_buffer(1);
-    //display_buffer(2);
+    display_buffer(1);
     if(time_has_passed){
         led_state = 1-led_state;
         LED_Reg_Write(led_state);
+        updateTimeDisplay();
         time_has_passed = 0;
         
-        int seconds = RTC_1_ReadSecond();
-        int minutes = RTC_1_ReadMinute();
-        int hours = RTC_1_ReadHour();
-        
-        char sec_string[32];
-        sprintf(sec_string,"%i:%02i:%02i",hours,minutes,seconds);
-        compileString(sec_string,0,0,2);
-        compileString("0",0,0,2);
     }    
 }
    
