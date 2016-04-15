@@ -166,7 +166,7 @@ void display_buffer(uint8 which_buffer){
     seg_or_flag *seg_ptr = seg_buffer[which_buffer];
     while(seg_ptr->seg_data.x_offset != 0xff){
 
-        if(current_state==blank_unprimed){  // otherwise wait until current_state==blanked
+        if(current_state==blank_unprimed){  
            uint8 int_status = CyEnterCriticalSection();
             
             preload_DAC_to_seg(seg_ptr,0,0);
@@ -280,7 +280,7 @@ int main()
         char sec_string[32];
         sprintf(sec_string,"%i:%02i:%02i",hours,minutes,seconds);
         compileString(sec_string,0,0,2);
-        compileString("/",0,0,2);
+        compileString("0",0,0,2);
     }    
 }
    
