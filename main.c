@@ -244,7 +244,8 @@ void updateTimeDisplay(){
     compileString(time_string,64,0,2);
     //compileString("0",0,0,2);
     
-    sprintf(date_string,"%02i/%02i/%i",month,day_of_month,year);
+    //sprintf(date_string,"%02i/%02i/%i",month,day_of_month,year);
+    sprintf(date_string,"April 15, 2016");
     compileString(date_string,0,1,1);
    // compileString("Hi Mom!",80,1,1);
     
@@ -319,7 +320,7 @@ int main()
 // diagPattern();
 
  uint8 cc = 0;
- compileString("1234",0,0,1);
+ compileString("04/15/2016",0,0,1);
  compileString("4567",90,1,1);
  compileString("890",180,2,1);
  for(;;){

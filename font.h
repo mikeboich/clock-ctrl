@@ -43,7 +43,7 @@ typedef  union{
 
 typedef seg_or_flag vector_font[];
 
-const int kerning=4;
+const int kerning=3;
 
 vector_font SpaceChar={
 {.flag=0x86},
