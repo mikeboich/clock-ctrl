@@ -176,7 +176,7 @@ void display_buffer(uint8 which_buffer){
             AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
             
             if(seg_ptr->seg_data.x_size>8 || seg_ptr->seg_data.y_size>8)
-              times_to_loop = 4;
+              times_to_loop = 10;
             else
               times_to_loop = 2;
 
@@ -205,8 +205,8 @@ void initTime(){
     the_time->DayOfWeek=6;
     the_time->Year = 2016;
 
-    the_time->Hour = 15;
-    the_time->Min = 58;
+    the_time->Hour = 17;
+    the_time->Min = 13;
     the_time->Sec = 00;
     
     RTC_1_WriteTime(the_time);
@@ -240,7 +240,7 @@ void updateTimeDisplay(){
     int year = the_time->Year;
     
     
-    sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
+    sprintf(time_string,"%i : %02i : %02i",hours,minutes,seconds);
     compileString(time_string,64,0,2);
     //compileString("0",0,0,2);
     
