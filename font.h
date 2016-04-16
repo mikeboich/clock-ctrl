@@ -43,7 +43,7 @@ typedef  union{
 
 typedef seg_or_flag vector_font[];
 
-const int kerning=3;
+const int kerning=4;
 
 vector_font SpaceChar={
 {.flag=0x86},
@@ -770,18 +770,23 @@ vector_font JTEST={
 {.flag=0x92}}; 
 
 vector_font TestBox={
-{128,254, 128,0,pos,0x99},
-{128,0, 128,0 ,pos,0x99},
-{0,128,128,0,pos,0x99},
-{254,128,128,0,pos,0x99},
+{0,0, 255,0,pos,0x99},
+{0,0, 0,255 ,pos,0x99},
 {.flag=0x84},
 
 };
 
 vector_font TestCircle={
-{128,128, 128,128,pos,0xff},
+{127,127, 2,2,cir,0xff},
 {.flag=0x84},
 
+};
+
+vector_font Test_Pat = {
+{0,0, 255,0,pos,0x99},
+{0,0, 0,255 ,pos,0x99},
+{0,0, 255,255,cir,0xff},
+{.flag=0x84}
 };
 
 seg_or_flag *system_font[128];

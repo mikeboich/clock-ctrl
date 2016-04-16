@@ -40,7 +40,7 @@ int knob_position;
 char test_string[] = "Hello!";
 seg_or_flag seg_buffer[3][200];
 
-// Rountine to send data to the DAC over SPI.  Spins as necessary for full FIFO:
+// Routine to send data to the DAC over SPI.  Spins as necessary for full FIFO:
 void setImmediate(uint16 spi_data){
   while((SPIM_1_ReadTxStatus() & TX_FIFO_NOT_FULL) == 0){   // spin if the fifo is full
     }
@@ -60,7 +60,6 @@ typedef enum{blank_unprimed,blank_primed,drawing}  draw_state;  // States of the
 
 uint8 current_mask=0;
 volatile draw_state current_state = blank_unprimed;
-uint8 cursor_x=0,cursor_y=0;
 uint8 shape_to_mux[] = {2,0,1};
 volatile int times_to_loop = 0;
 
@@ -69,7 +68,7 @@ long total_time=0;
 
 /* Define the start-of-segment interrupt routine 
    This routine loads the next 8 bit segment mask from the display list,
-   and will eventually program the DACS for xCenter, yCenter, xRadius, and yRadius as well.
+   and counts the number of drawing passes/segment.
 */
 
 CY_ISR_PROTO(wave_started);
@@ -86,8 +85,6 @@ void wave_started(){
     case blank_primed:
     current_state = drawing;
     break;
-  
-
     
   case drawing:
     times_to_loop -= 1;
@@ -127,36 +124,40 @@ int char_width(char c){
 }
 
 // returns the width (sum of character widths) of a string:
-uint8 stringWidth(char s[],uint8 mag){
+uint8 stringWidth(char s[],uint8 scale){
     int width=0,index=0;
     
-    while(s[index++]) width += char_width(*s);    
-    return pin(width*mag); // we subtract the spacing after the trailing character...
+    while(*s){
+        width += char_width(*s);
+        s++;
+    }
+    return pin(width*scale); 
 }
 
-void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 mag){  // turns a string into a display  list 
+void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 scale){  // turns a string into a display  list 
     seg_or_flag *src_ptr;
     seg_or_flag *dst_ptr;
     int num_segs=0;     // so we don't overrun our fixed-size buffer
     
-    int string_width = stringWidth(s,mag);
+    int kerning = (scale <= 2) ? 3: 2;
+    int string_width = stringWidth(s,scale) + (strlen(s)-1)*kerning;;
     uint8 x = pin(128 - (string_width / 2));    //center on 128 wide for now
     dst_ptr = seg_buffer[buffer_index];
     while(*s && num_segs<200){
         num_segs++;
         src_ptr = system_font[((uint8) *s)-32];
         while(src_ptr->seg_data.x_offset<0x80){
-          dst_ptr->seg_data.x_offset = pin(mag*src_ptr->seg_data.x_offset+x);
-          dst_ptr->seg_data.y_offset = pin(mag*src_ptr->seg_data.y_offset+y_coord);
-          dst_ptr->seg_data.x_size = pin(mag*src_ptr->seg_data.x_size);
-          dst_ptr->seg_data.y_size = pin(mag*src_ptr->seg_data.y_size);
+          dst_ptr->seg_data.x_offset = pin(scale*src_ptr->seg_data.x_offset+x);
+          dst_ptr->seg_data.y_offset = pin(scale*src_ptr->seg_data.y_offset+y_coord);
+          dst_ptr->seg_data.x_size = pin(scale*src_ptr->seg_data.x_size);
+          dst_ptr->seg_data.y_size = pin(scale*src_ptr->seg_data.y_size);
           dst_ptr->seg_data.arc_type = src_ptr->seg_data.arc_type;
           dst_ptr->seg_data.mask = src_ptr->seg_data.mask;
           src_ptr++;
           dst_ptr++;
         }
         
-        x = pin(x + mag*char_width(*s) + kerning);
+        x = pin(x + scale*char_width(*s) + kerning);
         s++; 
     }
     dst_ptr->seg_data.x_offset = 0xff;       //used as a flag, but width not used
@@ -172,13 +173,14 @@ void display_buffer(uint8 which_buffer){
            uint8 int_status = CyEnterCriticalSection();
             
             preload_DAC_to_seg(seg_ptr,0,0);
-            CyDelayUs(12);
+            //CyDelayUs(12);
             AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
             
+            
             if(seg_ptr->seg_data.x_size>8 || seg_ptr->seg_data.y_size>8)
-              times_to_loop = 10;
+              times_to_loop = 3;
             else
-              times_to_loop = 2;
+              times_to_loop = 3;
 
             current_mask = seg_ptr->seg_data.mask;
             if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
@@ -201,22 +203,14 @@ void initTime(){
     RTC_1_DisableInt();
     
     the_time->Month = 4;
-    the_time->DayOfMonth = 15;
-    the_time->DayOfWeek=6;
+    the_time->DayOfMonth = 16;
+    the_time->DayOfWeek=7;
     the_time->Year = 2016;
-
-    the_time->Hour = 17;
-    the_time->Min = 13;
-    the_time->Sec = 00;
+    the_time->Hour = 10;
+    the_time->Min = 50;
+    the_time->Sec = 45;
     
     RTC_1_WriteTime(the_time);
-
-//    RTC_1_WriteMonth(4);
-//    RTC_1_WriteDayOfMonth(16);
-//    RTC_1_WriteYear(2016);
-//    RTC_1_WriteHour(23);
-//    RTC_1_WriteMinute(59);
-//    RTC_1_WriteSecond(50);
     RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
     RTC_1_EnableInt();
     
@@ -227,6 +221,7 @@ void updateTimeDisplay(){
     char day_of_week_string[12];
     char date_string[15];
     char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+    char *month_names[12] = {"Jan", "Feb", "Mar", "Apr","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
     RTC_1_TIME_DATE *the_time;
     the_time = RTC_1_ReadTime();
@@ -239,24 +234,28 @@ void updateTimeDisplay(){
     int day_of_month = the_time->DayOfMonth;
     int year = the_time->Year;
     
+    //update the interim screen-saver:
+    ss_x_offset = (seconds / 5) % 5;
+    ss_y_offset = ((seconds+5) / 5 ) % 5;
     
-    sprintf(time_string,"%i : %02i : %02i",hours,minutes,seconds);
-    compileString(time_string,64,0,2);
+    
+    sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
+    compileString(time_string,0,0,3);
     //compileString("0",0,0,2);
     
-    //sprintf(date_string,"%02i/%02i/%i",month,day_of_month,year);
-    sprintf(date_string,"April 15, 2016");
-    compileString(date_string,0,1,1);
+    sprintf(date_string,"%s %02i",month_names[month-1],day_of_month);
+    //sprintf(date_string,"April 15, 2016");
+    compileString(date_string,114,1,2);
    // compileString("Hi Mom!",80,1,1);
     
     char dw[12];
     sprintf(dw,"%s",day_names[day_of_week-1]);
-    compileString(dw,160,2,2);
+    compileString(dw,200,2,2);
 
 }
 
 void diagPattern(){
-    system_font[0] = (seg_or_flag*)&JFri;
+    system_font[0] = (seg_or_flag*)&TestCircle;
     compileString(" ",0,0,1);
     for(;;) display_buffer(0);
 }
@@ -317,7 +316,7 @@ int main()
   SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x00);
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
 
-// diagPattern();
+  //diagPattern();
 
  uint8 cc = 0;
  compileString("04/15/2016",0,0,1);
@@ -328,7 +327,7 @@ int main()
 //     cc = (cc + 1);
 //    if(cc>104) cc=0;
     //while(SixtyHz_Read() != 0);  // sync to 60Hz for eliminate shimmer...
-    while(SixtyHz_Read() == 0);
+//    while(SixtyHz_Read() == 0);
     //CyDelay(16);
     display_buffer(2);
     display_buffer(0);
