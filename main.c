@@ -165,6 +165,46 @@ void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 scale){  // t
     dst_ptr->seg_data.mask=0;
 }
 
+// test case data:
+seg_or_flag test_segs[] = {
+    {128,128,255,255,cir,0xff},
+    {128,128,255,255,pos,0x99},
+    {128,128,96,96,neg,0x99},
+    {128,128,96,0,pos,0x99},
+    {128,128,0,96,pos,0x99},
+    {255,255,0,0,cir,0xff},
+};
+
+void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index){  // turns a string into a display  list 
+    seg_or_flag *dst_ptr;
+    int num_segs=0;     // so we don't overrun our fixed-size buffer
+    
+    dst_ptr = seg_buffer[buffer_index];
+    while(src_ptr->seg_data.x_offset != 255 && num_segs<200){
+      num_segs++;
+      dst_ptr->seg_data = src_ptr->seg_data;
+      src_ptr++;
+      dst_ptr++;
+    }
+    dst_ptr->seg_data.x_offset = 0xff;       // sentinel value
+    dst_ptr->seg_data.mask=0;
+}
+
+void UpdateGraphicalTime(int sec){
+    seg_or_flag face[] = {{128,128,255,255,cir,0xff},
+                            {0,0,128,128,pos,0x99},
+                            {.flag=0xff}};
+    float angle = (sec)*2*M_PI/60.0;
+    face[1].seg_data.x_offset = (uint8) (128 + 64*cos(angle));
+    face[1].seg_data.y_offset = (uint8) (128 + 64*sin(angle));
+    face[1].seg_data.x_offset = 128;
+    face[1].seg_data.y_offset = 128;
+    face[1].seg_data.x_size = (uint8) (128 + 64*cos(angle));
+    face[1].seg_data.y_size = (uint8) (128 + 64*sin(angle));
+    compileSegments(face,0);
+}
+
+
 void display_buffer(uint8 which_buffer){
     //long start_count = cycleCount;
     seg_or_flag *seg_ptr = seg_buffer[which_buffer];
@@ -210,8 +250,8 @@ void initTime(){
     the_time->DayOfMonth = 17;
     the_time->DayOfWeek=1;
     the_time->Year = 2016;
-    the_time->Hour = 8;
-    the_time->Min = 50;
+    the_time->Hour = 15;
+    the_time->Min = 12;
     the_time->Sec = 45;
     
     RTC_1_WriteTime(the_time);
@@ -251,6 +291,8 @@ void updateTimeDisplay(){
     //sprintf(date_string,"April 15, 2016");
     compileString(date_string,114,1,2);
    // compileString("Hi Mom!",80,1,1);
+    
+   UpdateGraphicalTime(seconds);
     
     char dw[12];
     sprintf(dw,"%s",day_names[day_of_week-1]);
@@ -322,9 +364,10 @@ int main()
 
   //for(;;);
   //diagPattern();
+compileSegments(test_segs,0);
 
  uint8 cc = 0;
- compileString("04/15/2016",0,0,1);
+// compileString("04/15/2016",0,0,1);
  compileString("4567",90,1,1);
  compileString("890",180,2,1);
  for(;;){
@@ -334,13 +377,13 @@ int main()
     //while(SixtyHz_Read() != 0);  // sync to 60Hz for eliminate shimmer...
 //    while(SixtyHz_Read() == 0);
     //CyDelay(16);
-    display_buffer(2);
+    //display_buffer(2);
     display_buffer(0);
-    display_buffer(1);
+  // display_buffer(1);
     if(time_has_passed){
         led_state = 1-led_state;
         LED_Reg_Write(led_state);
-        updateTimeDisplay();
+       updateTimeDisplay();
         time_has_passed = 0;
         
     }    
