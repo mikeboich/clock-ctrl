@@ -25,6 +25,7 @@
 #include "font.h"
 #include "max509.h"
 #include <stdio.h>
+#include <math.h>
 
 // SPI constants:
 #define TX_FIFO_NOT_FULL 4 
@@ -180,7 +181,10 @@ void display_buffer(uint8 which_buffer){
             if(seg_ptr->seg_data.x_size>8 || seg_ptr->seg_data.y_size>8)
               times_to_loop = 3;
             else
-              times_to_loop = 3;
+              times_to_loop = 1;
+            
+            //int length = sqrt(seg_ptr->seg_data.x_size + seg_ptr->seg_data.y_size);
+            //times_to_loop = length/32 + 1;
 
             current_mask = seg_ptr->seg_data.mask;
             if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
@@ -203,10 +207,10 @@ void initTime(){
     RTC_1_DisableInt();
     
     the_time->Month = 4;
-    the_time->DayOfMonth = 16;
-    the_time->DayOfWeek=7;
+    the_time->DayOfMonth = 17;
+    the_time->DayOfWeek=1;
     the_time->Year = 2016;
-    the_time->Hour = 10;
+    the_time->Hour = 8;
     the_time->Min = 50;
     the_time->Sec = 45;
     
@@ -316,6 +320,7 @@ int main()
   SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x00);
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
 
+  //for(;;);
   //diagPattern();
 
  uint8 cc = 0;
