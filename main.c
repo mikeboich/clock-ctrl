@@ -39,7 +39,9 @@ uint8 ss_x_offset=0, ss_y_offset=0;
 
 int knob_position;
 char test_string[] = "Hello!";
-seg_or_flag seg_buffer[3][200];
+
+#define BUF_ENTRIES 150
+seg_or_flag seg_buffer[4][BUF_ENTRIES];
 
 // Routine to send data to the DAC over SPI.  Spins as necessary for full FIFO:
 void setImmediate(uint16 spi_data){
@@ -55,7 +57,7 @@ void strobe_LDAC(){
     LDAC_Write(1u);
 }
 
-typedef enum{textMode,analogMode} clock_type;
+typedef enum{textMode,analogMode,bothMode} clock_type;
 clock_type display_mode=textMode;
 
 typedef enum{blank_unprimed,blank_primed,drawing}  draw_state;  // States of the draw loop/interrupt code
@@ -145,7 +147,7 @@ void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 scale){  // t
     int string_width = stringWidth(s,scale) + (strlen(s)-1)*kerning;;
     uint8 x = pin(128 - (string_width / 2));    //center on 128 wide for now
     dst_ptr = seg_buffer[buffer_index];
-    while(*s && num_segs<200){
+    while(*s && num_segs<BUF_ENTRIES){
         num_segs++;
         src_ptr = system_font[((uint8) *s)-32];
         while(src_ptr->seg_data.x_offset<0x80){
@@ -181,7 +183,7 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index){  // turns a stri
     int num_segs=0;     // so we don't overrun our fixed-size buffer
     
     dst_ptr = seg_buffer[buffer_index];
-    while(src_ptr->seg_data.x_offset != 255 && num_segs<200){
+    while(src_ptr->seg_data.x_offset != 255 && num_segs<BUF_ENTRIES){
       num_segs++;
       dst_ptr->seg_data = src_ptr->seg_data;
       src_ptr++;
@@ -194,6 +196,9 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index){  // turns a stri
 void UpdateGraphicalTime(int sec){
     seg_or_flag face[] = {{128,128,255,255,cir,0xff},
                             {128,128,255,255,pos,0x99},
+                            {128,128,8,8,pos,0x99},
+                            {125,210,00,30,pos,0x99},
+                            {123,218,06,06,pos,0x99},
                             {.flag=0xff}};
     float angle = (sec/60.0)*2*M_PI;
     int quadrant =(sec / 15) + 1;
@@ -240,7 +245,7 @@ void UpdateGraphicalTime(int sec){
     }
     
     
-    compileSegments(face,0);
+    compileSegments(face,3);
 }
 
 
@@ -257,10 +262,13 @@ void display_buffer(uint8 which_buffer){
             AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
             
             
-            if(seg_ptr->seg_data.x_size>8 || seg_ptr->seg_data.y_size>8)
-              times_to_loop = 3;
-            else
-              times_to_loop = 1;
+            if(seg_ptr->seg_data.x_size>64 || seg_ptr->seg_data.y_size>64)
+              times_to_loop = 6;
+            else{
+                if(seg_ptr->seg_data.x_size>16 || seg_ptr->seg_data.y_size>16)
+                  times_to_loop = 2;
+                else times_to_loop = 2;
+            }
             
             //int length = sqrt(seg_ptr->seg_data.x_size + seg_ptr->seg_data.y_size);
             //times_to_loop = length/32 + 1;
@@ -286,10 +294,10 @@ void initTime(){
     RTC_1_DisableInt();
     
     the_time->Month = 4;
-    the_time->DayOfMonth = 17;
-    the_time->DayOfWeek=1;
+    the_time->DayOfMonth = 18;
+    the_time->DayOfWeek=2;
     the_time->Year = 2016;
-    the_time->Hour = 17;
+    the_time->Hour = 14;
     the_time->Min = 46;
     the_time->Sec = 0;
     
@@ -331,7 +339,7 @@ void updateTimeDisplay(){
     compileString(date_string,114,1,2);
    // compileString("Hi Mom!",80,1,1);
     
-     if(display_mode == analogMode) UpdateGraphicalTime(seconds);
+     if(display_mode == analogMode || display_mode == bothMode) UpdateGraphicalTime(seconds);
     
     char dw[12];
     sprintf(dw,"%s",day_names[day_of_week-1]);
@@ -417,11 +425,15 @@ compileSegments(test_segs,0);
 //    while(SixtyHz_Read() == 0);
     //CyDelay(16);
     
-    if(display_mode == textMode){
+    if(display_mode == textMode || display_mode == bothMode){
         display_buffer(2);
         display_buffer(1);
+        display_buffer(0);
     }
-    display_buffer(0);
+    
+    if(display_mode == analogMode || display_mode == bothMode){
+        display_buffer(3);
+    }
     if(time_has_passed){
         led_state = 1-led_state;
         LED_Reg_Write(led_state);
