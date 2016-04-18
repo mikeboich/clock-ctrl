@@ -197,9 +197,48 @@ void UpdateGraphicalTime(int sec){
                             {.flag=0xff}};
     float angle = (sec/60.0)*2*M_PI;
     int quadrant =(sec / 15) + 1;
+    
+    switch (quadrant){
+        
+        case 1: {
+            //angle += 3*M_PI_2;
+            face[1].seg_data.x_size = (uint8) 128 * sin(angle);
+            face[1].seg_data.y_size = (uint8) 128 * cos(angle);
+            face[1].seg_data.x_offset+=face[1].seg_data.x_size/2;
+            face[1].seg_data.y_offset += face[1].seg_data.y_size/2;;
+            break;
 
-    //face[1].seg_data.x_size = (uint8) 4*sec;
-    face[1].seg_data.y_size = (uint8) 4*sec;
+        }
+        
+        case 2:{
+            angle = angle - M_PI_2;
+            face[1].seg_data.arc_type = neg;
+            face[1].seg_data.x_size = (uint8) 128 * cos(angle);
+            face[1].seg_data.y_size = (uint8) 128 * sin(angle);
+            face[1].seg_data.x_offset+=face[1].seg_data.x_size/2;
+            face[1].seg_data.y_offset -= face[1].seg_data.y_size/2;;
+            break;
+        }
+       case 3: {
+            angle -= M_PI;
+            face[1].seg_data.x_size = (uint8) 128 * sin(angle);
+            face[1].seg_data.y_size = (uint8) 128 * cos(angle);
+            face[1].seg_data.x_offset -= face[1].seg_data.x_size/2;
+            face[1].seg_data.y_offset -= face[1].seg_data.y_size/2;;
+            break;
+
+        }
+            case 4:{
+            angle -= 3*M_PI_2;
+            face[1].seg_data.arc_type = neg;
+            face[1].seg_data.x_size = (uint8) 128 * cos(angle);
+            face[1].seg_data.y_size = (uint8) 128 * sin(angle);
+            face[1].seg_data.x_offset -= face[1].seg_data.x_size/2;
+            face[1].seg_data.y_offset += face[1].seg_data.y_size/2;;
+            break;
+        }
+    }
+    
     
     compileSegments(face,0);
 }
@@ -374,7 +413,7 @@ compileSegments(test_segs,0);
 //    diag_test(QuadDec_1_GetCounter() % 104,32,32);
 //     cc = (cc + 1);
 //    if(cc>104) cc=0;
-    //while(SixtyHz_Read() != 0);  // sync to 60Hz for eliminate shimmer...
+    while(SixtyHz_Read() != 0);  // sync to 60Hz for eliminate shimmer...
 //    while(SixtyHz_Read() == 0);
     //CyDelay(16);
     
@@ -382,14 +421,14 @@ compileSegments(test_segs,0);
         display_buffer(2);
         display_buffer(1);
     }
-    
     display_buffer(0);
     if(time_has_passed){
         led_state = 1-led_state;
         LED_Reg_Write(led_state);
        updateTimeDisplay();
         time_has_passed = 0;     
-    }    
+    } 
+    
 
 }
    
