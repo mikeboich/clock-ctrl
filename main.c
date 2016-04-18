@@ -55,7 +55,8 @@ void strobe_LDAC(){
     LDAC_Write(1u);
 }
 
-
+typedef enum{textMode,analogMode} clock_type;
+clock_type display_mode=textMode;
 
 typedef enum{blank_unprimed,blank_primed,drawing}  draw_state;  // States of the draw loop/interrupt code
 
@@ -192,15 +193,14 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index){  // turns a stri
 
 void UpdateGraphicalTime(int sec){
     seg_or_flag face[] = {{128,128,255,255,cir,0xff},
-                            {0,0,128,128,pos,0x99},
+                            {128,128,255,255,pos,0x99},
                             {.flag=0xff}};
-    float angle = (sec)*2*M_PI/60.0;
-    face[1].seg_data.x_offset = (uint8) (128 + 64*cos(angle));
-    face[1].seg_data.y_offset = (uint8) (128 + 64*sin(angle));
-    face[1].seg_data.x_offset = 128;
-    face[1].seg_data.y_offset = 128;
-    face[1].seg_data.x_size = (uint8) (128 + 64*cos(angle));
-    face[1].seg_data.y_size = (uint8) (128 + 64*sin(angle));
+    float angle = (sec/60.0)*2*M_PI;
+    int quadrant =(sec / 15) + 1;
+
+    //face[1].seg_data.x_size = (uint8) 4*sec;
+    face[1].seg_data.y_size = (uint8) 4*sec;
+    
     compileSegments(face,0);
 }
 
@@ -250,9 +250,9 @@ void initTime(){
     the_time->DayOfMonth = 17;
     the_time->DayOfWeek=1;
     the_time->Year = 2016;
-    the_time->Hour = 15;
-    the_time->Min = 12;
-    the_time->Sec = 45;
+    the_time->Hour = 17;
+    the_time->Min = 46;
+    the_time->Sec = 0;
     
     RTC_1_WriteTime(the_time);
     RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -292,7 +292,7 @@ void updateTimeDisplay(){
     compileString(date_string,114,1,2);
    // compileString("Hi Mom!",80,1,1);
     
-   UpdateGraphicalTime(seconds);
+     if(display_mode == analogMode) UpdateGraphicalTime(seconds);
     
     char dw[12];
     sprintf(dw,"%s",day_names[day_of_week-1]);
@@ -377,16 +377,20 @@ compileSegments(test_segs,0);
     //while(SixtyHz_Read() != 0);  // sync to 60Hz for eliminate shimmer...
 //    while(SixtyHz_Read() == 0);
     //CyDelay(16);
-    //display_buffer(2);
+    
+    if(display_mode == textMode){
+        display_buffer(2);
+        display_buffer(1);
+    }
+    
     display_buffer(0);
-  // display_buffer(1);
     if(time_has_passed){
         led_state = 1-led_state;
         LED_Reg_Write(led_state);
        updateTimeDisplay();
-        time_has_passed = 0;
-        
+        time_has_passed = 0;     
     }    
+
 }
    
 
