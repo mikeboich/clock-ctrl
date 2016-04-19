@@ -266,7 +266,7 @@ void display_buffer(uint8 which_buffer){
               times_to_loop = 6;
             else{
                 if(seg_ptr->seg_data.x_size>16 || seg_ptr->seg_data.y_size>16)
-                  times_to_loop = 2;
+                  times_to_loop = 4;
                 else times_to_loop = 2;
             }
             
@@ -297,9 +297,9 @@ void initTime(){
     the_time->DayOfMonth = 18;
     the_time->DayOfWeek=2;
     the_time->Year = 2016;
-    the_time->Hour = 14;
-    the_time->Min = 46;
-    the_time->Sec = 0;
+    the_time->Hour = 17;
+    the_time->Min = 04;
+    the_time->Sec = 30;
     
     RTC_1_WriteTime(the_time);
     RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
