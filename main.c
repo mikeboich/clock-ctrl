@@ -41,6 +41,7 @@ int knob_position;
 char test_string[] = "Hello!";
 
 #define BUF_ENTRIES 150
+#define DEBUG_BUFFER 3
 seg_or_flag seg_buffer[4][BUF_ENTRIES];
 
 // Routine to send data to the DAC over SPI.  Spins as necessary for full FIFO:
@@ -57,8 +58,8 @@ void strobe_LDAC(){
     LDAC_Write(1u);
 }
 
-typedef enum{textMode,analogMode,bothMode} clock_type;
-clock_type display_mode=textMode;
+typedef enum{textMode,analogMode,debugMode} clock_type;
+clock_type display_mode=analogMode;
 
 typedef enum{blank_unprimed,blank_primed,drawing}  draw_state;  // States of the draw loop/interrupt code
 
@@ -195,7 +196,7 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index){  // turns a stri
     dst_ptr->seg_data.mask=0;
 }
 
-void UpdateGraphicalTime(int sec){
+void updateAnalogClock(int sec){
     seg_or_flag face[] = {{128,128,255,255,cir,0xff},
                             {128,128,255,255,pos,0x99},
                             {128,128,8,8,pos,0x99},
@@ -265,14 +266,14 @@ void display_buffer(uint8 which_buffer){
             
             
             times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
-            seg_ptr->seg_data.x_size/4 : seg_ptr->seg_data.y_size/4;
+            seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
             if(times_to_loop==0) times_to_loop = 1;
             if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
 
             
             //times_to_loop = 4;
             // performance measurement:
-            loops_per_frame+=times_to_loop+1;
+            if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
             
             
             
@@ -300,12 +301,12 @@ void initTime(){
     RTC_1_DisableInt();
     
     the_time->Month = 4;
-    the_time->DayOfMonth = 19;
-    the_time->DayOfWeek=3;
+    the_time->DayOfMonth = 20;
+    the_time->DayOfWeek=4;
     the_time->Year = 2016;
-    the_time->Hour = 18;
-    the_time->Min = 02;
-    the_time->Sec = 30;
+    the_time->Hour = 9;
+    the_time->Min = 23;
+    the_time->Sec = 0;
     
     RTC_1_WriteTime(the_time);
     RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -348,7 +349,7 @@ void updateTimeDisplay(){
     compileString(date_string,114,1,1);
    // compileString("Hi Mom!",80,1,1);
     
-     if(display_mode == analogMode || display_mode == bothMode) UpdateGraphicalTime(seconds);
+     if(display_mode == analogMode || display_mode == debugMode) updateAnalogClock(seconds);
     
     char dw[12];
     sprintf(dw,"%s",day_names[day_of_week-1]);
@@ -434,21 +435,25 @@ compileSegments(test_segs,0);
 //    int phase = SixtyHz_Read();
 //    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
-    if(display_mode == textMode || display_mode == bothMode){
+    if(display_mode == textMode){
         display_buffer(2);
         display_buffer(1);
         display_buffer(0);
     }
+    else{
+        display_buffer(3);
+    }
     
-    if(display_mode == analogMode || display_mode == bothMode){
+    if(display_mode == debugMode){
         int elapsed = (cycle_count-last_refresh);
         char debug_str[32];
-        //sprintf(debug_str,"%i/%i/%i",31250/elapsed,elapsed,loops_per_frame);
-        sprintf(debug_str,"%i",31250/elapsed);
+        sprintf(debug_str,"%i/%i/%i",31250/elapsed,elapsed,loops_per_frame);
+        //sprintf(debug_str,"%i",31250/elapsed);
         compileString(debug_str,230,3,1);
-        last_refresh = cycle_count;
         loops_per_frame=0;
         display_buffer(3);
+        last_refresh = cycle_count;
+
     }
     if(time_has_passed){
         led_state = 1-led_state;
