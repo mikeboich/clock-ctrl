@@ -37,9 +37,6 @@ int led_state = 0;  // we blink this once/second
 // global screensaver offsets:
 uint8 ss_x_offset=0, ss_y_offset=0;
 
-int knob_position;
-char test_string[] = "Hello!";
-
 #define BUF_ENTRIES 120
 #define DEBUG_BUFFER 4
 #define ANALOG_BUFFER 3
@@ -63,7 +60,7 @@ void strobe_LDAC(){
 }
 
 typedef enum{textMode,analogMode,debugMode} clock_type;
-clock_type display_mode=analogMode;
+clock_type display_mode=textMode;
 
 typedef enum{blank_unprimed,blank_primed,drawing}  draw_state;  // States of the draw loop/interrupt code
 
@@ -218,8 +215,7 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append){
 }
 void drawClockHand(int sec, uint8 length){
     seg_or_flag hand[] = {{128,128,255,255,pos,0x99},
-                            {128,128,8,8,pos,0x99},
-                            {.flag=0xff}};
+                           {.flag=0xff}};
     
     float angle = (sec/60.0)*2*M_PI;
     int quadrant =(sec / 15) + 1;
@@ -269,11 +265,10 @@ void drawClockHand(int sec, uint8 length){
 }
 void updateAnalogClock(int hour, int min,int sec){
     int i;
-    float angle=M_PI_2;
+    float angle=0.0;
     static char *nums[12] = {"12","1","2","3","4","5","6","7","8","9","10","11"};
     seg_or_flag face[] = {{128,128,255,255,cir,0xff},
-//                            {128,128,255,255,pos,0x99},
-                            //{128,128,8,8,pos,0x99},
+                            {128,128,8,8,cir,0xff},
                             {.flag=0xff}};
     compileSegments(face,ANALOG_BUFFER,NO_APPEND);
     compileString("12",110,218,ANALOG_BUFFER,1,APPEND);
@@ -282,14 +277,14 @@ void updateAnalogClock(int hour, int min,int sec){
     compileString("9",20,120,ANALOG_BUFFER,1,APPEND);
     
 //    for(i=0;i<12;i++){
-//        uint8 x  = (uint8) (128.0+100.0*sin(angle));
-//        uint8 y = (uint8) (128.0 + 100.0*cos(angle));
-//        angle -= (M_2_PI/12.0);
+//        uint8 x  = (uint8) (128.0+96.0*sin(angle)-8);
+//        uint8 y = (uint8) (128.0 + 96.0*cos(angle)-8);
+//        angle += (6.2830/12.0);
 //        compileString(nums[i],x,y,ANALOG_BUFFER,1,APPEND);
 //    }
-    
-    drawClockHand((hour % 12)*5 + (min/12),96);
-    drawClockHand(min,112);
+//    
+    drawClockHand((hour % 12)*5 + (min/12),72);
+    drawClockHand(min,120);
     drawClockHand(sec,128);
 
 }
@@ -347,9 +342,9 @@ void initTime(){
     the_time->DayOfMonth = 20;
     the_time->DayOfWeek=4;
     the_time->Year = 2016;
-    the_time->Hour = 13;
-    the_time->Min = 8;
-    the_time->Sec = 10;
+    the_time->Hour = 14;
+    the_time->Min = 39;
+    the_time->Sec = 0;
     
     RTC_1_WriteTime(the_time);
     RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
