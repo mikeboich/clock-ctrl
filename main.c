@@ -40,9 +40,13 @@ uint8 ss_x_offset=0, ss_y_offset=0;
 int knob_position;
 char test_string[] = "Hello!";
 
-#define BUF_ENTRIES 150
-#define DEBUG_BUFFER 3
-seg_or_flag seg_buffer[4][BUF_ENTRIES];
+#define BUF_ENTRIES 120
+#define DEBUG_BUFFER 4
+#define ANALOG_BUFFER 3
+seg_or_flag seg_buffer[5][BUF_ENTRIES];
+
+#define NO_APPEND 0
+#define APPEND 1
 
 // Routine to send data to the DAC over SPI.  Spins as necessary for full FIFO:
 void setImmediate(uint16 spi_data){
@@ -141,20 +145,30 @@ uint8 stringWidth(char s[],uint8 scale){
     return pin(width*scale); 
 }
 
-void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 scale){  // turns a string into a display  list 
+// turns a string into a display  list:
+// if the list is non-empty, it appends to the list.
+
+void compileString(char *s, uint8 x_coord, uint8 y_coord,uint8 buffer_index,uint8 scale,int append){  
     seg_or_flag *src_ptr;
     seg_or_flag *dst_ptr;
+    uint8 x;
     int num_segs=0;     // so we don't overrun our fixed-size buffer
     
     int kerning = (scale <= 2) ? 3: 2;
     int string_width = stringWidth(s,scale) + (strlen(s)-1)*kerning;;
-    uint8 x = pin(128 - (string_width / 2));    //center on 128 wide for now
+    if(x_coord==255){
+        x_coord = pin(128 - (string_width / 2));    //center on 128 if x coord has magic value
+    }
     dst_ptr = seg_buffer[buffer_index];
+    while(append && dst_ptr->flag != 255){            // skip over existing entries;
+        dst_ptr++;
+        num_segs++;
+    }
     while(*s && num_segs<BUF_ENTRIES){
         num_segs++;
         src_ptr = system_font[((uint8) *s)-32];
         while(src_ptr->seg_data.x_offset<0x80){
-          dst_ptr->seg_data.x_offset = pin(scale*src_ptr->seg_data.x_offset+x);
+          dst_ptr->seg_data.x_offset = pin(scale*src_ptr->seg_data.x_offset+x_coord);
           dst_ptr->seg_data.y_offset = pin(scale*src_ptr->seg_data.y_offset+y_coord);
           dst_ptr->seg_data.x_size = pin(scale*src_ptr->seg_data.x_size);
           dst_ptr->seg_data.y_size = pin(scale*src_ptr->seg_data.y_size);
@@ -164,7 +178,7 @@ void compileString(char *s, uint8 y_coord,uint8 buffer_index,uint8 scale){  // t
           dst_ptr++;
         }
         
-        x = pin(x + scale*char_width(*s) + kerning);
+        x_coord = pin(x_coord + scale*char_width(*s) + kerning);
         s++; 
     }
     dst_ptr->seg_data.x_offset = 0xff;       //used as a flag, but width not used
@@ -181,11 +195,18 @@ seg_or_flag test_segs[] = {
     {255,255,0,0,cir,0xff},
 };
 
-void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index){  // turns a string into a display  list 
+// compiles a list of segments into a display list.  Unlike CompileString, it doesn't modify them:
+// if the list is non-empty, it appends to the list.
+
+void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append){   
     seg_or_flag *dst_ptr;
     int num_segs=0;     // so we don't overrun our fixed-size buffer
     
     dst_ptr = seg_buffer[buffer_index];
+    while(append && dst_ptr->flag != 255) {
+        dst_ptr++;
+        num_segs++;
+    }
     while(src_ptr->seg_data.x_offset != 255 && num_segs<BUF_ENTRIES){
       num_segs++;
       dst_ptr->seg_data = src_ptr->seg_data;
@@ -195,60 +216,82 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index){  // turns a stri
     dst_ptr->seg_data.x_offset = 0xff;       // sentinel value
     dst_ptr->seg_data.mask=0;
 }
-
-void updateAnalogClock(int sec){
-    seg_or_flag face[] = {{128,128,255,255,cir,0xff},
-                            {128,128,255,255,pos,0x99},
+void drawClockHand(int sec, uint8 length){
+    seg_or_flag hand[] = {{128,128,255,255,pos,0x99},
                             {128,128,8,8,pos,0x99},
-                            {125,210,00,30,pos,0x99},
-                            {123,218,06,06,pos,0x99},
                             {.flag=0xff}};
+    
     float angle = (sec/60.0)*2*M_PI;
     int quadrant =(sec / 15) + 1;
+
     
     switch (quadrant){
         
         case 1: {
             //angle += 3*M_PI_2;
-            face[1].seg_data.x_size = (uint8) 128 * sin(angle);
-            face[1].seg_data.y_size = (uint8) 128 * cos(angle);
-            face[1].seg_data.x_offset+=face[1].seg_data.x_size/2;
-            face[1].seg_data.y_offset += face[1].seg_data.y_size/2;;
+            hand[0].seg_data.x_size = (uint8) length * sin(angle);
+            hand[0].seg_data.y_size = (uint8) length * cos(angle);
+            hand[0].seg_data.x_offset+=hand[0].seg_data.x_size/2;
+            hand[0].seg_data.y_offset += hand[0].seg_data.y_size/2;;
             break;
 
         }
         
         case 2:{
             angle = angle - M_PI_2;
-            face[1].seg_data.arc_type = neg;
-            face[1].seg_data.x_size = (uint8) 128 * cos(angle);
-            face[1].seg_data.y_size = (uint8) 128 * sin(angle);
-            face[1].seg_data.x_offset+=face[1].seg_data.x_size/2;
-            face[1].seg_data.y_offset -= face[1].seg_data.y_size/2;;
+            hand[0].seg_data.arc_type = neg;
+            hand[0].seg_data.x_size = (uint8) length * cos(angle);
+            hand[0].seg_data.y_size = (uint8) length * sin(angle);
+            hand[0].seg_data.x_offset+=hand[0].seg_data.x_size/2;
+            hand[0].seg_data.y_offset -= hand[0].seg_data.y_size/2;;
             break;
         }
        case 3: {
             angle -= M_PI;
-            face[1].seg_data.x_size = (uint8) 128 * sin(angle);
-            face[1].seg_data.y_size = (uint8) 128 * cos(angle);
-            face[1].seg_data.x_offset -= face[1].seg_data.x_size/2;
-            face[1].seg_data.y_offset -= face[1].seg_data.y_size/2;;
+            hand[0].seg_data.x_size = (uint8) length * sin(angle);
+            hand[0].seg_data.y_size = (uint8) length * cos(angle);
+            hand[0].seg_data.x_offset -= hand[0].seg_data.x_size/2;
+            hand[0].seg_data.y_offset -= hand[0].seg_data.y_size/2;;
             break;
 
         }
             case 4:{
             angle -= 3*M_PI_2;
-            face[1].seg_data.arc_type = neg;
-            face[1].seg_data.x_size = (uint8) 128 * cos(angle);
-            face[1].seg_data.y_size = (uint8) 128 * sin(angle);
-            face[1].seg_data.x_offset -= face[1].seg_data.x_size/2;
-            face[1].seg_data.y_offset += face[1].seg_data.y_size/2;;
+            hand[0].seg_data.arc_type = neg;
+            hand[0].seg_data.x_size = (uint8) length * cos(angle);
+            hand[0].seg_data.y_size = (uint8) length * sin(angle);
+            hand[0].seg_data.x_offset -= hand[0].seg_data.x_size/2;
+            hand[0].seg_data.y_offset += hand[0].seg_data.y_size/2;;
             break;
         }
     }
+    compileSegments(hand,ANALOG_BUFFER,APPEND);
+}
+void updateAnalogClock(int hour, int min,int sec){
+    int i;
+    float angle=M_PI_2;
+    static char *nums[12] = {"12","1","2","3","4","5","6","7","8","9","10","11"};
+    seg_or_flag face[] = {{128,128,255,255,cir,0xff},
+//                            {128,128,255,255,pos,0x99},
+                            //{128,128,8,8,pos,0x99},
+                            {.flag=0xff}};
+    compileSegments(face,ANALOG_BUFFER,NO_APPEND);
+    compileString("12",110,218,ANALOG_BUFFER,1,APPEND);
+    compileString("6",118,16,ANALOG_BUFFER,1,APPEND);
+    compileString("3",220,120,ANALOG_BUFFER,1,APPEND);
+    compileString("9",20,120,ANALOG_BUFFER,1,APPEND);
     
+//    for(i=0;i<12;i++){
+//        uint8 x  = (uint8) (128.0+100.0*sin(angle));
+//        uint8 y = (uint8) (128.0 + 100.0*cos(angle));
+//        angle -= (M_2_PI/12.0);
+//        compileString(nums[i],x,y,ANALOG_BUFFER,1,APPEND);
+//    }
     
-    compileSegments(face,3);
+    drawClockHand((hour % 12)*5 + (min/12),96);
+    drawClockHand(min,112);
+    drawClockHand(sec,128);
+
 }
 
 
@@ -304,9 +347,9 @@ void initTime(){
     the_time->DayOfMonth = 20;
     the_time->DayOfWeek=4;
     the_time->Year = 2016;
-    the_time->Hour = 9;
-    the_time->Min = 23;
-    the_time->Sec = 0;
+    the_time->Hour = 13;
+    the_time->Min = 8;
+    the_time->Sec = 10;
     
     RTC_1_WriteTime(the_time);
     RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -338,7 +381,7 @@ void updateTimeDisplay(){
     
     
     sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
-    compileString(time_string,0,0,3);
+    compileString(time_string,255,0,0,3,0);
 
     
 //    sprintf(time_string,"%i:%02i",hours,minutes);
@@ -346,20 +389,20 @@ void updateTimeDisplay(){
 
     sprintf(date_string,"%s %02i, %i",month_names[month-1],day_of_month,year);
     //sprintf(date_string,"April 15, 2016");
-    compileString(date_string,114,1,1);
+    compileString(date_string,255,114,1,1,NO_APPEND);
    // compileString("Hi Mom!",80,1,1);
     
-     if(display_mode == analogMode || display_mode == debugMode) updateAnalogClock(seconds);
+     if(display_mode == analogMode || display_mode == debugMode) updateAnalogClock(hours,minutes,seconds);
     
     char dw[12];
     sprintf(dw,"%s",day_names[day_of_week-1]);
-    compileString(dw,176,2,2);
+    compileString(dw,255,176,2,2,NO_APPEND);
 
 }
 
 void diagPattern(){
     system_font[0] = (seg_or_flag*)&TestCircle;
-    compileString(" ",0,0,1);
+    compileString(" ",255,0,0,1,NO_APPEND);
     for(;;) display_buffer(0);
 }
 
@@ -421,12 +464,12 @@ int main()
 
   //for(;;);
   //diagPattern();
-compileSegments(test_segs,0);
+compileSegments(test_segs,0,NO_APPEND);
 
  uint8 cc = 0;
 // compileString("04/15/2016",0,0,1);
- compileString("4567",90,1,1);
- compileString("890",180,2,1);
+ compileString("4567",255,90,1,1,NO_APPEND);
+ compileString("890",255,180,2,1,NO_APPEND);
  for(;;){
 //    diag_test(QuadDec_1_GetCounter() % 104,32,32);
 //     cc = (cc + 1);
@@ -441,7 +484,7 @@ compileSegments(test_segs,0);
         display_buffer(0);
     }
     else{
-        display_buffer(3);
+        display_buffer(ANALOG_BUFFER);
     }
     
     if(display_mode == debugMode){
@@ -449,9 +492,9 @@ compileSegments(test_segs,0);
         char debug_str[32];
         sprintf(debug_str,"%i/%i/%i",31250/elapsed,elapsed,loops_per_frame);
         //sprintf(debug_str,"%i",31250/elapsed);
-        compileString(debug_str,230,3,1);
+        compileString(debug_str,255,230,DEBUG_BUFFER,1,NO_APPEND);
         loops_per_frame=0;
-        display_buffer(3);
+        display_buffer(DEBUG_BUFFER);
         last_refresh = cycle_count;
 
     }
@@ -462,7 +505,7 @@ compileSegments(test_segs,0);
         time_has_passed = 0;     
     } 
     
-
+  display_mode = QuadDec_1_GetCounter() % 3;
 }
    
 
