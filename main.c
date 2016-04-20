@@ -67,7 +67,9 @@ volatile draw_state current_state = blank_unprimed;
 uint8 shape_to_mux[] = {2,0,1};
 volatile int times_to_loop = 0;
 
-volatile long cycleCount=0;  // poor man's timer
+volatile int cycle_count=0;  // poor man's timer
+int last_refresh=0,loops_per_frame=0;
+
 long total_time=0;
 
 /* Define the start-of-segment interrupt routine 
@@ -79,7 +81,7 @@ CY_ISR_PROTO(wave_started);
 
 void wave_started(){
   isr_1_ClearPending();       // clear the interrupt
-  cycleCount++;
+  cycle_count++;
   switch(current_state){
 
    case blank_unprimed:
@@ -250,7 +252,7 @@ void UpdateGraphicalTime(int sec){
 
 
 void display_buffer(uint8 which_buffer){
-    //long start_count = cycleCount;
+    //long start_count = cycle_count;
     seg_or_flag *seg_ptr = seg_buffer[which_buffer];
     while(seg_ptr->seg_data.x_offset != 0xff){
 
@@ -262,13 +264,17 @@ void display_buffer(uint8 which_buffer){
             AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
             
             
-            if(seg_ptr->seg_data.x_size>64 || seg_ptr->seg_data.y_size>64)
-              times_to_loop = 6;
-            else{
-                if(seg_ptr->seg_data.x_size>16 || seg_ptr->seg_data.y_size>16)
-                  times_to_loop = 4;
-                else times_to_loop = 2;
-            }
+            times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
+            seg_ptr->seg_data.x_size/4 : seg_ptr->seg_data.y_size/4;
+            if(times_to_loop==0) times_to_loop = 1;
+            if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
+
+            
+            //times_to_loop = 4;
+            // performance measurement:
+            loops_per_frame+=times_to_loop+1;
+            
+            
             
             //int length = sqrt(seg_ptr->seg_data.x_size + seg_ptr->seg_data.y_size);
             //times_to_loop = length/32 + 1;
@@ -278,7 +284,7 @@ void display_buffer(uint8 which_buffer){
             ShiftReg_1_WriteData(current_mask);
 
             current_state = blank_primed;
-            CyDelayUs(4);
+            //CyDelayUs(4);
             strobe_LDAC();
             seg_ptr++;
           
@@ -294,11 +300,11 @@ void initTime(){
     RTC_1_DisableInt();
     
     the_time->Month = 4;
-    the_time->DayOfMonth = 18;
-    the_time->DayOfWeek=2;
+    the_time->DayOfMonth = 19;
+    the_time->DayOfWeek=3;
     the_time->Year = 2016;
-    the_time->Hour = 17;
-    the_time->Min = 04;
+    the_time->Hour = 18;
+    the_time->Min = 02;
     the_time->Sec = 30;
     
     RTC_1_WriteTime(the_time);
@@ -312,7 +318,7 @@ void updateTimeDisplay(){
     char day_of_week_string[12];
     char date_string[15];
     char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
-    char *month_names[12] = {"Jan", "Feb", "Mar", "Apr","May","June","July","Aug","Sep","Oct","Nov","Dec"};
+    char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
     RTC_1_TIME_DATE *the_time;
     the_time = RTC_1_ReadTime();
@@ -326,24 +332,27 @@ void updateTimeDisplay(){
     int year = the_time->Year;
     
     //update the interim screen-saver:
-    ss_x_offset = (seconds / 5) % 5;
-    ss_y_offset = ((seconds+5) / 5 ) % 5;
+    ss_x_offset = (minutes) % 5;
+    ss_y_offset =(minutes+2) % 5;
     
     
     sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
     compileString(time_string,0,0,3);
-    //compileString("0",0,0,2);
+
     
-    sprintf(date_string,"%s %02i",month_names[month-1],day_of_month);
+//    sprintf(time_string,"%i:%02i",hours,minutes);
+//    compileString(time_string,0,0,4);
+
+    sprintf(date_string,"%s %02i, %i",month_names[month-1],day_of_month,year);
     //sprintf(date_string,"April 15, 2016");
-    compileString(date_string,114,1,2);
+    compileString(date_string,114,1,1);
    // compileString("Hi Mom!",80,1,1);
     
      if(display_mode == analogMode || display_mode == bothMode) UpdateGraphicalTime(seconds);
     
     char dw[12];
     sprintf(dw,"%s",day_names[day_of_week-1]);
-    compileString(dw,200,2,2);
+    compileString(dw,176,2,2);
 
 }
 
@@ -421,9 +430,9 @@ compileSegments(test_segs,0);
 //    diag_test(QuadDec_1_GetCounter() % 104,32,32);
 //     cc = (cc + 1);
 //    if(cc>104) cc=0;
-    while(SixtyHz_Read() != 0);  // sync to 60Hz for eliminate shimmer...
-//    while(SixtyHz_Read() == 0);
-    //CyDelay(16);
+
+//    int phase = SixtyHz_Read();
+//    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
     if(display_mode == textMode || display_mode == bothMode){
         display_buffer(2);
@@ -432,6 +441,13 @@ compileSegments(test_segs,0);
     }
     
     if(display_mode == analogMode || display_mode == bothMode){
+        int elapsed = (cycle_count-last_refresh);
+        char debug_str[32];
+        //sprintf(debug_str,"%i/%i/%i",31250/elapsed,elapsed,loops_per_frame);
+        sprintf(debug_str,"%i",31250/elapsed);
+        compileString(debug_str,230,3,1);
+        last_refresh = cycle_count;
+        loops_per_frame=0;
         display_buffer(3);
     }
     if(time_has_passed){
