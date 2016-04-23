@@ -3,7 +3,7 @@
  *
  *
  * Description: 
- *  This is a source code for basic functionality of VDAC8.
+ *  This is a source code for basic functionality of Vx1DAC8.
  *  Main function performs following functions:
  *  1. Initializes the LCD and clears the display
  *  2. Start the VDAC8 component
@@ -237,56 +237,26 @@ void line(int x0, int y0, int x1, int y1,int which_buffer){
  
   compile_segments(the_line,which_buffer, APPEND);
 }
-void drawClockHand(int sec, uint8 length){
-  seg_or_flag hand[] = {{128,128,255,255,pos,0x99},
-			{.flag=0xff}};
-    
-  float angle = (sec/60.0)*2*M_PI;
-  int quadrant =(sec / 15) + 1;
 
-    
-  switch (quadrant){
-        
-  case 1: 
-    //angle += 3*M_PI_2;
-    hand[0].seg_data.x_size = (uint8) length * sin(angle);
-    hand[0].seg_data.y_size = (uint8) length * cos(angle);
-    hand[0].seg_data.x_offset+=hand[0].seg_data.x_size/2;
-    hand[0].seg_data.y_offset += hand[0].seg_data.y_size/2;;
-    break;
+#define HR_HAND_WIDTH 8
+#define HR_HAND_LENGTH 96
+#define MIN_HAND_WIDTH 4
+#define MIN_HAND_LENGTH 100
+#define SEC_HAND_LENGTH 128
 
-
-        
-  case 2:
-    angle = angle - M_PI_2;
-    hand[0].seg_data.arc_type = neg;
-    hand[0].seg_data.x_size = (uint8) length * cos(angle);
-    hand[0].seg_data.y_size = (uint8) length * sin(angle);
-    hand[0].seg_data.x_offset+=hand[0].seg_data.x_size/2;
-    hand[0].seg_data.y_offset -= hand[0].seg_data.y_size/2;;
-    break;
-
-  case 3: 
-    angle -= M_PI;
-    hand[0].seg_data.x_size = (uint8) length * sin(angle);
-    hand[0].seg_data.y_size = (uint8) length * cos(angle);
-    hand[0].seg_data.x_offset -= hand[0].seg_data.x_size/2;
-    hand[0].seg_data.y_offset -= hand[0].seg_data.y_size/2;;
-    break;
-
+void drawClockHands(int h, int m, int s){
+  if(hour > 11) hour -= 12;    // hours > 12 folded into 0-11
   
-  case 4:
-    angle -= 3*M_PI_2;
-    hand[0].seg_data.arc_type = neg;
-    hand[0].seg_data.x_size = (uint8) length * cos(angle);
-    hand[0].seg_data.y_size = (uint8) length * sin(angle);
-    hand[0].seg_data.x_offset -= hand[0].seg_data.x_size/2;
-    hand[0].seg_data.y_offset += hand[0].seg_data.y_size/2;;
-    break;
-  
-  }
-  compileSegments(hand,ANALOG_BUFFER,APPEND);
+  float hour_angle = (h/12.0) * M_2_PI + (m/60)*(M_2_PI/12.0);  // hour hand angle (we'll ignore the seconds)
+  float minute_angle = (m/60.0) * M_2_PI + (s/60)*(M_2_PI/12.0);  // minute hand angle
+  float second_angle = (s/60.0)*M_2_PI;
+
+  // not doing the 2-d hands yet, just lines
+  line(128,128,128 + sin(hour_angle)*HR_HAND_LENGTH,128 - cos(hour_angle) * HR_HAND_LENGTH,ANALOG_BUFFER);  // draw the hour hand
+  line((128,128,128 + sin(minuute_angle)*HR_HAND_LENGTH,12 - cos(minute_angle) * HR_HAND_LENGTH),ANALOG_BUFFER);
+  line(128,128,128 + sin(second_angle)*SEC_HAND_LENGTH,12 - cos(second_angle) * SEC_HAND_LENGTH),ANALOG_BUFFER);
 }
+
 void updateAnalogClock(int hour, int min,int sec){
   int i;
   float angle=0.0;
@@ -307,9 +277,8 @@ void updateAnalogClock(int hour, int min,int sec){
   //        compileString(nums[i],x,y,ANALOG_BUFFER,1,APPEND);
   //    }
   //    
-  drawClockHand((hour % 12)*5 + (min/12),72);
-  drawClockHand(min,120);
-  drawClockHand(sec,128);
+
+  drawClockHands(hour,min,sec);
 
 }
 
