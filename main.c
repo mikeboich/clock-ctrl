@@ -226,7 +226,7 @@ void line(int x0, int y0, int x1, int y1,int which_buffer){
   }
   
   the_line.seg_data.x_offset = (x0 + x1) / 2;
-  the_line.seg_data.y_offset = (y1 + y2) / 2;
+  the_line.seg_data.y_offset = (y0 + y1) / 2;
 
   the_line.seg_data.x_size =  x1 - the_line.seg_data.x_offset;
   the_line.seg_data.y_mag = y1 - the_line.seg_data.y_offset;
