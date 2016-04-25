@@ -1,5 +1,5 @@
 /*******************************************************************************
- * File: main.c
+ * FILE53: main.c
  *
  *
  * Description: 
@@ -245,8 +245,7 @@ void line(int x0, int y0, int x1, int y1,int which_buffer){
 #define SEC_HAND_LENGTH 128
 
 void drawClockHands(int h, int m, int s){
-  if(hour > 11) hour -= 12;    // hours > 12 folded into 0-11
-  
+  if(hour > 11) hour -= 12;    // hours > 12 folded into 0-12  
   float hour_angle = (h/12.0) * M_2_PI + (m/60)*(M_2_PI/12.0);  // hour hand angle (we'll ignore the seconds)
   float minute_angle = (m/60.0) * M_2_PI + (s/60)*(M_2_PI/12.0);  // minute hand angle
   float second_angle = (s/60.0)*M_2_PI;
@@ -281,7 +280,70 @@ void updateAnalogClock(int hour, int min,int sec){
   drawClockHands(hour,min,sec);
 
 }
+/* ************* Pong Game ************* */
+typdef struct {
+    int l_paddle=0, r_paddle=0;
+    int puck_velocity[] = {2,0};
+    int puck_position[] = {128,128};
+    int score[] = {0,0};
+  } pong_state;
 
+//returns which edge puck has struck, or zero otherwise:
+// left = 1, right = 2, top = 3, bottom = 4
+  int puck_at_edge(int puck_x){
+    if(puck_position[0] < 4) return(0);
+    if(puck_position[0]>251) return(1);
+    if(puck_position[1] < 4) return(2);
+    if(puck_position[1 ]>251) return(3);
+
+    return(0);
+       
+}
+
+// returns the new y velocity for the puck if it hit a paddle, and 0 otherwise
+int puck_hit_paddle(){
+  
+}
+
+void draw_pong_screen(
+void pong_step(){
+  int i;
+  static struct {
+    int l_paddle=0, r_paddle=0;
+    int puck_velocity[] = {2,0};
+    int puck_position[] = {128,128};
+    int score[] = {0,0};
+  } pong_state;
+
+  // update puck:
+  for(i=0;i<2;i++) puck_position[i] += puck_velocity[i];
+
+  int edge_struck = puck_at_edge(){
+    if(edge==3 || edge==4) puck_velocity[1] = -puck_velocity[1];  // reverse y component when striking top or bottom edges
+
+    if(edge==1 || edge==2){
+      // we're stubbing this out for now, and just reflecting the puck for now to test the rendering
+      puck_velocity[0] = -puck_velocity[0];
+    }
+  }
+  draw_pong_screen(pong_state);
+}
+
+  
+
+
+
+  //update paddle(s):
+  if(puck_velocity[0] > 0){  // pucking is moving to the right
+    r_paddle = r_paddle > puck_position[1] ? r_paddle-1 : r_paddle+1;
+  }
+  else{
+    l_paddle = l_paddle > puck_position[1] ? l_paddle+1 : l_paddle-1;
+  }
+
+  
+
+}
 
 void display_buffer(uint8 which_buffer){
   //long start_count = cycle_count;
