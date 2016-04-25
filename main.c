@@ -342,9 +342,9 @@ void initTime(){
     the_time->DayOfMonth = 20;
     the_time->DayOfWeek=4;
     the_time->Year = 2016;
-    the_time->Hour = 14;
-    the_time->Min = 39;
-    the_time->Sec = 0;
+    the_time->Hour = 19;
+    the_time->Min =2;
+    the_time->Sec = 30;
     
     RTC_1_WriteTime(the_time);
     RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
