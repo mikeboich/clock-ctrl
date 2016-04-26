@@ -116,10 +116,10 @@ uint8 pin(int x){
 
 
 void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
-  setImmediate(DAC_Reg_A | DAC_Load_Now | s->seg_data.x_size);
-  setImmediate(DAC_Reg_B | DAC_Load_Now |s->seg_data.y_size);
-  setImmediate(DAC_Reg_C | DAC_Load_Now | (255-(s->seg_data.x_offset + x + ss_x_offset)));
-  setImmediate(DAC_Reg_D | DAC_Load_Now | (255-(s->seg_data.y_offset + y + ss_y_offset)));
+  setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
+  setImmediate(DAC_Reg_B | DAC_Pre_Load |s->seg_data.y_size);
+  setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x + ss_x_offset)));
+  setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y + ss_y_offset)));
 
 }
 
@@ -215,21 +215,25 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append){
   dst_ptr->seg_data.mask=0;
 }
 
-void line(int x0, int y0, int x1, int y1,int which_buffer){
+void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer){
   seg_or_flag the_line[] = {{0,0,0,0,pos,0x99},
 			{.flag=0xff}};
   // We'd like to assume that x0 is the left-most point, so make it so:
   if(x0 > x1){
-    int tmp = x0;
+    uint8 tmp = x0;
     x0 = x1;
     x1 = tmp;
+    
+    tmp = y0;
+    y0 = y1;
+    y1 = tmp;
   }
   
   the_line->seg_data.x_offset = (x0 + x1) / 2;
   the_line->seg_data.y_offset = (y0 + y1) / 2;
 
-  the_line->seg_data.x_size =  x1 - the_line->seg_data.x_offset;
-  the_line->seg_data.y_size = y1 - the_line->seg_data.y_offset;
+  the_line->seg_data.x_size =  x1-x0;
+  the_line->seg_data.y_size = (y1>y0) ? y1-y0:y0-y1;
 
   if(y1<y0){
     the_line->seg_data.arc_type = neg;
@@ -237,23 +241,31 @@ void line(int x0, int y0, int x1, int y1,int which_buffer){
  
   compileSegments(the_line,which_buffer, APPEND);
 }
+void line_test(){
+ int i;
+    for(i=5;i<250;i+=25){
+        line(0,255-i,i,0,ANALOG_BUFFER);
+        line(250,i,250-i,250,ANALOG_BUFFER);
+    }
+}
 
 #define HR_HAND_WIDTH 8
-#define HR_HAND_LENGTH 96
+#define HR_HAND_LENGTH 60
 #define MIN_HAND_WIDTH 4
-#define MIN_HAND_LENGTH 100
-#define SEC_HAND_LENGTH 128
+#define MIN_HAND_LENGTH 90
+#define SEC_HAND_LENGTH 110
 
 void drawClockHands(int h, int m, int s){
   if(h > 11) h -= 12;    // hours > 12 folded into 0-12  
-  float hour_angle = (h/12.0) * M_2_PI + (m/60)*(M_2_PI/12.0);  // hour hand angle (we'll ignore the seconds)
-  float minute_angle = (m/60.0) * M_2_PI + (s/60)*(M_2_PI/12.0);  // minute hand angle
-  float second_angle = (s/60.0)*M_2_PI;
+  float hour_angle = (h/12.0) * M_PI * 2.0 + (m/60)*(M_2_PI/12.0);  // hour hand angle (we'll ignore the seconds)
+  float minute_angle = (m/60.0) * M_PI*2.0 + (s/60)*(M_2_PI/12.0);  // minute hand angle
+  float second_angle = (s/60.0)*M_PI*2.0;
+
 
   // not doing the 2-d hands yet, just lines
-  line(128,128,128 + sin(hour_angle)*HR_HAND_LENGTH,128 - cos(hour_angle) * HR_HAND_LENGTH,ANALOG_BUFFER);  // draw the hour hand
-  line(128,128,128 + sin(minute_angle)*HR_HAND_LENGTH ,128 - cos(minute_angle) * HR_HAND_LENGTH,ANALOG_BUFFER);
-  line(128,128,128 + sin(second_angle)*SEC_HAND_LENGTH,12 - cos(second_angle) * SEC_HAND_LENGTH,ANALOG_BUFFER);
+  line(128,128,128 + sin(hour_angle)*HR_HAND_LENGTH,128 + cos(hour_angle) * HR_HAND_LENGTH,ANALOG_BUFFER);  // draw the hour hand
+  line(128,128,128 + sin(minute_angle)*MIN_HAND_LENGTH ,128 + cos(minute_angle) * MIN_HAND_LENGTH,ANALOG_BUFFER);
+  line(128,128,128 + sin(second_angle)*SEC_HAND_LENGTH,128 + cos(second_angle) * SEC_HAND_LENGTH,ANALOG_BUFFER);
 }
 
 void updateAnalogClock(int hour, int min,int sec){
@@ -379,7 +391,7 @@ void display_buffer(uint8 which_buffer){
       ShiftReg_1_WriteData(current_mask);
 
       current_state = blank_primed;
-      //CyDelayUs(4);
+      strobe_LDAC();
       seg_ptr++;
           
       CyExitCriticalSection(int_status);
@@ -394,12 +406,12 @@ void initTime(){
   RTC_1_DisableInt();
     
   the_time->Month = 4;
-  the_time->DayOfMonth = 25;
+  the_time->DayOfMonth = 26;
   the_time->DayOfWeek=2;
   the_time->Year = 2016;
-  the_time->Hour = 16;
-  the_time->Min = 10;
-  the_time->Sec = 0;
+  the_time->Hour = 9;
+  the_time->Min = 39;
+  the_time->Sec = 30;
     
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -449,6 +461,8 @@ void updateTimeDisplay(){
   compileString(dw,255,176,2,2,NO_APPEND);
 
 }
+
+
 
 void diagPattern(){
   system_font[0] = (seg_or_flag*)&TestCircle;
