@@ -260,7 +260,7 @@ void line_test(){
 #define HR_HAND_LENGTH 60
 #define MIN_HAND_WIDTH 4
 #define MIN_HAND_LENGTH 100
-#define SEC_HAND_LENGTH 128
+#define SEC_HAND_LENGTH 124
 
 void drawClockHands(int h, int m, int s){
   if(h > 11) h -= 12;    // hours > 12 folded into 0-12  
@@ -422,6 +422,7 @@ void render_pong_buffer(pong_state the_state){
     }
     
 }
+
 void display_buffer(uint8 which_buffer){
   //long start_count = cycle_count;
   seg_or_flag *seg_ptr = seg_buffer[which_buffer];
@@ -431,36 +432,26 @@ void display_buffer(uint8 which_buffer){
       uint8 int_status = CyEnterCriticalSection();
             
       set_DACfor_seg(seg_ptr,0,0);
-      //CyDelayUs(12);
       AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
-            
-            
+              
       times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
 	seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
       if(times_to_loop==0) times_to_loop = 1;
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
 
-            
-      //times_to_loop = 4;
+     
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
             
-            
-            
-      //int length = sqrt(seg_ptr->seg_data.x_size + seg_ptr->seg_data.y_size);
-      //times_to_loop = length/32 + 1;
-
       current_mask = seg_ptr->seg_data.mask;
-      if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);
-      ShiftReg_1_WriteData(current_mask);
+      if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);  // I must have wired something wrong for this to be needed!
+      ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
       strobe_LDAC();
       seg_ptr++;
           
       CyExitCriticalSection(int_status);
-
-
     }
   }
 }
@@ -509,7 +500,6 @@ void updateTimeDisplay(){
   sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
   compileString(time_string,255,0,0,3,0);
 
-    
   //    sprintf(time_string,"%i:%02i",hours,minutes);
   //    compileString(time_string,0,0,4);
 
