@@ -40,9 +40,10 @@ uint8 ss_x_offset=0, ss_y_offset=0;
 #define BUF_ENTRIES 120
 #define DEBUG_BUFFER 4
 #define ANALOG_BUFFER 3
-seg_or_flag seg_buffer[5][BUF_ENTRIES];
+#define PONG_BUFFER 5
+seg_or_flag seg_buffer[6][BUF_ENTRIES];
 
-#define NO_APPEND 0
+#define OVERWRITE 0
 #define APPEND 1
 
 // Routine to send data to the DAC over SPI.  Spins as necessary for full FIFO:
@@ -60,7 +61,7 @@ void strobe_LDAC(){
   LDAC_Write(1u);
 }
 
-typedef enum{textMode,analogMode,debugMode} clock_type;
+typedef enum{textMode,analogMode, pongMode, debugMode} clock_type;
 clock_type display_mode=textMode;
 
 typedef enum{blank_unprimed,blank_primed,drawing}  draw_state;  // States of the draw loop/interrupt code
@@ -257,8 +258,8 @@ void line_test(){
 
 void drawClockHands(int h, int m, int s){
   if(h > 11) h -= 12;    // hours > 12 folded into 0-12  
-  float hour_angle = (h/12.0) * M_PI * 2.0 + (m/60)*(M_2_PI/12.0);  // hour hand angle (we'll ignore the seconds)
-  float minute_angle = (m/60.0) * M_PI*2.0 + (s/60)*(M_2_PI/12.0);  // minute hand angle
+  float hour_angle = (h/12.0) * M_PI * 2.0 + (m/60.0)*(M_PI/6.0);  // hour hand angle (we'll ignore the seconds)
+  float minute_angle = (m/60.0) * M_PI*2.0 + (s/60.0)*(M_PI/30.0);  // minute hand angle
   float second_angle = (s/60.0)*M_PI*2.0;
 
 
@@ -275,7 +276,7 @@ void updateAnalogClock(int hour, int min,int sec){
   seg_or_flag face[] = {{128,128,255,255,cir,0xff},
 			{128,128,8,8,cir,0xff},
 			{.flag=0xff}};
-  compileSegments(face,ANALOG_BUFFER,NO_APPEND);
+  compileSegments(face,ANALOG_BUFFER,OVERWRITE);
   compileString("12",110,218,ANALOG_BUFFER,1,APPEND);
   compileString("6",118,16,ANALOG_BUFFER,1,APPEND);
   compileString("3",220,120,ANALOG_BUFFER,1,APPEND);
@@ -293,71 +294,122 @@ void updateAnalogClock(int hour, int min,int sec){
 }
 
 /* ************* Pong Game ************* */
-//typedef struct{
-//    int l_paddle=0; 
-//    int r_paddle=0;
-//    int puck_velocity[] = {2,0};
-//    int puck_position[] = {128,128};
-//    int score[] = {0,0};
-//  } pong_state;
-//
-////returns which edge puck has struck, or zero otherwise:
-//// left = 1, right = 2, top = 3, bottom = 4
-//  int puck_at_edge(int puck_x){
-//    if(puck_position[0] < 4) return(0);
-//    if(puck_position[0]>251) return(1);
-//    if(puck_position[1] < 4) return(2);
-//    if(puck_position[1 ]>251) return(3);
-//
-//    return(0);
-//       
-//}
-//
-//// returns the new y velocity for the puck if it hit a paddle, and 0 otherwise
-//int puck_hit_paddle(){
-//  
-//}
-//
-//void draw_pong_screen(
-//void pong_step(){
-//  int i;
-//  static struct {
-//    int l_paddle=0, r_paddle=0;
-//    int puck_velocity[] = {2,0};
-//    int puck_position[] = {128,128};
-//    int score[] = {0,0};
-//  } pong_state;
-//
-//  // update puck:
-//  for(i=0;i<2;i++) puck_position[i] += puck_velocity[i];
-//
-//  int edge_struck = puck_at_edge(){
-//    if(edge==3 || edge==4) puck_velocity[1] = -puck_velocity[1];  // reverse y component when striking top or bottom edges
-//
-//    if(edge==1 || edge==2){
-//      // we're stubbing this out for now, and just reflecting the puck for now to test the rendering
-//      puck_velocity[0] = -puck_velocity[0];
-//    }
-//  }
-//  draw_pong_screen(pong_state);
-//}
+#define PADDLE_HEIGHT 24
+#define PADDLE_WIDTH   8
+typedef struct{
+    int paddle_position[2]; 
+    int puck_velocity[2];
+    int puck_position[2];
+    int score[2];
+  } pong_state;
 
-//  
-//
-//
-//
-//  //update paddle(s):
-//  if(puck_velocity[0] > 0){  // pucking is moving to the right
-//    r_paddle = r_paddle > puck_position[1] ? r_paddle-1 : r_paddle+1;
-//  }
-//  else{
-//    l_paddle = l_paddle > puck_position[1] ? l_paddle+1 : l_paddle-1;
-//  }
-//
-//  
-//
-//}
+pong_state game_state = {
+    .paddle_position = {96,140},
+    .puck_velocity = {2,1},
+    .puck_position = {128,200},
+    .score = {0,0}};
 
+//returns which edge puck has struck, or zero otherwise:
+// left = 1, right = 2, top = 3, bottom = 4
+  int puck_at_edge(){
+    if(game_state.puck_position[0] < PADDLE_WIDTH) return(1);
+    if(game_state.puck_position[0]>255-PADDLE_WIDTH) return(2);
+    if(game_state.puck_position[1] < 8) return(3);
+    if(game_state.puck_position[1 ]>247) return(4);
+
+    return(0);
+       
+}
+#define PADDLE_MIN 16
+#define PADDLE_MAX 238
+void update_paddles(){
+ int player;
+    
+    for(player=0;player<2;player++){
+     if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] > PADDLE_MIN )
+        game_state.paddle_position[player] -= 1;
+     
+        if (game_state.paddle_position[player] < game_state.puck_position[1] && \
+                game_state.paddle_position[player] < PADDLE_MAX) game_state.paddle_position[player] += 1;
+    }
+}
+
+// returns the new y velocity for the puck if it hit a paddle, and 0 otherwise
+int puck_hit_paddle(){
+    int which_paddle;
+    int result=0;
+    if(game_state.puck_position[0] < PADDLE_WIDTH)
+      which_paddle = 0;
+    else if(game_state.puck_position[0] > 254-PADDLE_WIDTH)
+      which_paddle=1;
+    else which_paddle = 2;
+    
+  
+    switch(which_paddle){
+        case 0: 
+          result = game_state.puck_position[1]-game_state.paddle_position[0];
+          break;
+        
+        case 1: 
+          result = game_state.puck_position[1]-game_state.paddle_position[1];
+          break;
+        
+    }
+    
+    if (result > PADDLE_HEIGHT/2) result=0;
+    if (result < -PADDLE_HEIGHT/2) result=0;
+    return result / 8;  
+}
+
+void pong_update(){
+    int dim;
+    
+    for(dim=0;dim<2;dim++){
+        game_state.puck_position[dim] += game_state.puck_velocity[dim];  // move the puck
+    }
+    update_paddles();
+    int new_y_velocity = puck_hit_paddle();
+    
+    if(new_y_velocity){
+        game_state.puck_velocity[1] = new_y_velocity;
+        game_state.puck_velocity[0] = -game_state.puck_velocity[0];
+    }
+    int which_edge = puck_at_edge();
+    if(which_edge  && !new_y_velocity){
+        if(which_edge==1 || which_edge==2){
+         // puck is exiting the playing area
+            // just reverse for now:
+          game_state.puck_velocity[0] = -game_state.puck_velocity[0];
+        
+        }
+        if(which_edge == 2 || which_edge==4){  // hit top or bottom edge
+         game_state.puck_velocity[1] = - game_state.puck_velocity[1]; 
+        }
+    }
+    
+}
+
+    
+void clear_buffer(int which_buffer){
+    seg_buffer[which_buffer][0].seg_data.x_offset = 0xff;
+}
+void draw_pong(pong_state the_state){
+    int x,y;
+    
+    clear_buffer(PONG_BUFFER);
+    // draw the left paddle
+    for(y=the_state.paddle_position[0]-(PADDLE_HEIGHT/2);y<the_state.paddle_position[0]+(PADDLE_HEIGHT/2)+1;y++) \
+      line(0,y,PADDLE_WIDTH,y,PONG_BUFFER);
+    // draw the right paddle:
+    for(y=the_state.paddle_position[1]-(PADDLE_HEIGHT/2);y<the_state.paddle_position[1]+(PADDLE_HEIGHT/2)+1;y++) \
+      line(254-PADDLE_WIDTH,y,254,y,PONG_BUFFER);
+    
+    // draw puck:
+    x = the_state.puck_position[0];
+    for(y=the_state.puck_position[1]-2;y<the_state.puck_position[1]+3;y++)
+      line(x-2,y,x+2,y,PONG_BUFFER);
+    
+}
 void display_buffer(uint8 which_buffer){
   //long start_count = cycle_count;
   seg_or_flag *seg_ptr = seg_buffer[which_buffer];
@@ -407,10 +459,10 @@ void initTime(){
     
   the_time->Month = 4;
   the_time->DayOfMonth = 26;
-  the_time->DayOfWeek=2;
+  the_time->DayOfWeek=3;
   the_time->Year = 2016;
-  the_time->Hour = 9;
-  the_time->Min = 39;
+  the_time->Hour = 17;
+  the_time->Min = 51;
   the_time->Sec = 30;
     
   RTC_1_WriteTime(the_time);
@@ -451,14 +503,14 @@ void updateTimeDisplay(){
 
   sprintf(date_string,"%s %02i, %i",month_names[month-1],day_of_month,year);
   //sprintf(date_string,"April 15, 2016");
-  compileString(date_string,255,114,1,1,NO_APPEND);
+  compileString(date_string,255,114,1,1,OVERWRITE);
   // compileString("Hi Mom!",80,1,1);
     
   if(display_mode == analogMode || display_mode == debugMode) updateAnalogClock(hours,minutes,seconds);
     
   char dw[12];
   sprintf(dw,"%s",day_names[day_of_week-1]);
-  compileString(dw,255,176,2,2,NO_APPEND);
+  compileString(dw,255,176,2,2,OVERWRITE);
 
 }
 
@@ -466,7 +518,7 @@ void updateTimeDisplay(){
 
 void diagPattern(){
   system_font[0] = (seg_or_flag*)&TestCircle;
-  compileString(" ",255,0,0,1,NO_APPEND);
+  compileString(" ",255,0,0,1,OVERWRITE);
   for(;;) display_buffer(0);
 }
 
@@ -528,17 +580,13 @@ int main()
 
   //for(;;);
   //diagPattern();
-  compileSegments(test_segs,0,NO_APPEND);
+  compileSegments(test_segs,0,OVERWRITE);
 
   uint8 cc = 0;
   // compileString("04/15/2016",0,0,1);
-  compileString("4567",255,90,1,1,NO_APPEND);
-  compileString("890",255,180,2,1,NO_APPEND);
+  compileString("4567",255,90,1,1,OVERWRITE);
+  compileString("890",255,180,2,1,OVERWRITE);
   for(;;){
-    //    diag_test(QuadDec_1_GetCounter() % 104,32,32);
-    //     cc = (cc + 1);
-    //    if(cc>104) cc=0;
-
     //    int phase = SixtyHz_Read();
     //    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
@@ -547,16 +595,20 @@ int main()
       display_buffer(1);
       display_buffer(0);
     }
-    else{
+    else if(display_mode == analogMode){
       display_buffer(ANALOG_BUFFER);
     }
-    
+    else{
+     if(display_mode == pongMode) display_buffer(PONG_BUFFER);   
+    }
+    pong_update();
+    draw_pong(game_state);
     if(display_mode == debugMode){
       int elapsed = (cycle_count-last_refresh);
       char debug_str[32];
       sprintf(debug_str,"%i/%i/%i",31250/elapsed,elapsed,loops_per_frame);
       //sprintf(debug_str,"%i",31250/elapsed);
-      compileString(debug_str,255,230,DEBUG_BUFFER,1,NO_APPEND);
+      compileString(debug_str,255,230,DEBUG_BUFFER,1,OVERWRITE);
       loops_per_frame=0;
       display_buffer(DEBUG_BUFFER);
       last_refresh = cycle_count;
@@ -569,7 +621,7 @@ int main()
       time_has_passed = 0;     
     } 
     
-    display_mode = QuadDec_1_GetCounter() % 3;
+    display_mode = QuadDec_1_GetCounter() % 4;
   }
    
 
