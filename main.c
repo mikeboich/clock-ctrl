@@ -34,6 +34,10 @@
 volatile int time_has_passed = 0;
 int led_state = 0;  // we blink this once/second
 
+// encoder button state
+int button_state=1;
+int button_last_update=0;
+
 // global screensaver offsets:
 uint8 ss_x_offset=0, ss_y_offset=0;
 
@@ -255,8 +259,8 @@ void line_test(){
 #define HR_HAND_WIDTH 8
 #define HR_HAND_LENGTH 60
 #define MIN_HAND_WIDTH 4
-#define MIN_HAND_LENGTH 90
-#define SEC_HAND_LENGTH 110
+#define MIN_HAND_LENGTH 100
+#define SEC_HAND_LENGTH 128
 
 void drawClockHands(int h, int m, int s){
   if(h > 11) h -= 12;    // hours > 12 folded into 0-12  
@@ -307,7 +311,7 @@ typedef struct{
 
 pong_state game_state = {
     .paddle_position = {96,140},
-    .puck_velocity = {2,1},
+    .puck_velocity = {4,2},
     .puck_position = {128,200},
     .score = {0,0}};
 
@@ -329,10 +333,10 @@ void update_paddles(){
     
     for(player=0;player<2;player++){
      if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] > PADDLE_MIN )
-        game_state.paddle_position[player] -= 1;
+        game_state.paddle_position[player] -= 2;
      
         if (game_state.paddle_position[player] < game_state.puck_position[1] && \
-                game_state.paddle_position[player] < PADDLE_MAX) game_state.paddle_position[player] += 1;
+                game_state.paddle_position[player] < PADDLE_MAX) game_state.paddle_position[player] += 2;
     }
 }
 
@@ -411,6 +415,12 @@ void render_pong_buffer(pong_state the_state){
     for(y=the_state.puck_position[1]-2;y<the_state.puck_position[1]+3;y++)
       line(x-2,y,x+2,y,PONG_BUFFER);
     
+    // draw the centerline:
+    x=128;
+    for(y=240;y>0;y-=16){
+     line(128,y,128,y-8,PONG_BUFFER);   
+    }
+    
 }
 void display_buffer(uint8 which_buffer){
   //long start_count = cycle_count;
@@ -460,12 +470,12 @@ void initTime(){
   RTC_1_DisableInt();
     
   the_time->Month = 4;
-  the_time->DayOfMonth = 26;
+  the_time->DayOfMonth = 27;
   the_time->DayOfWeek=3;
   the_time->Year = 2016;
-  the_time->Hour = 17;
-  the_time->Min = 51;
-  the_time->Sec = 30;
+  the_time->Hour = 8;
+  the_time->Min = 53;
+  the_time->Sec = 0;
     
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -515,7 +525,20 @@ void updateTimeDisplay(){
 
 }
 
+#define BUTTON_DOWN 0
+#define BUTTON_UP 1
+void poll_button(){
+ int new_state = EncoderButton_Read();
+ if(new_state != button_state && cycle_count-button_last_update > 300){
+   button_state = new_state;
+   button_last_update = cycle_count;
+  }
 
+  if(button_state==BUTTON_DOWN){
+     verbose_mode = 1-verbose_mode;
+     button_state=BUTTON_UP;
+  }
+}
 
 void diagPattern(){
   system_font[0] = (seg_or_flag*)&TestCircle;
@@ -625,7 +648,8 @@ int main()
       time_has_passed = 0;     
     } 
     
-    display_mode = QuadDec_1_GetCounter() % 4;
+    display_mode = QuadDec_1_GetCounter() % 3;
+    poll_button();
   }
    
 
