@@ -61,8 +61,10 @@ void strobe_LDAC(){
   LDAC_Write(1u);
 }
 
-typedef enum{textMode,analogMode, pongMode, debugMode} clock_type;
+typedef enum{textMode,analogMode, pongMode} clock_type;
 clock_type display_mode=textMode;
+
+int verbose_mode = 0;
 
 typedef enum{blank_unprimed,blank_primed,drawing}  draw_state;  // States of the draw loop/interrupt code
 
@@ -144,8 +146,9 @@ uint8 stringWidth(char s[],uint8 scale){
   return pin(width*scale); 
 }
 
-// turns a string into a display  list:
-// if the list is non-empty, it appends to the list.
+// turns a string into a display  buffer:
+// if append !=0, it appends to the buffer
+// otherwise it overwrites
 
 void compileString(char *s, uint8 x_coord, uint8 y_coord,uint8 buffer_index,uint8 scale,int append){  
   seg_or_flag *src_ptr;
@@ -187,7 +190,6 @@ void compileString(char *s, uint8 x_coord, uint8 y_coord,uint8 buffer_index,uint
 // test case data:
 seg_or_flag test_segs[] = {
   {128,128,255,255,cir,0xff},
-  {128,128,255,255,pos,0x99},
   {128,128,96,96,neg,0x99},
   {128,128,96,0,pos,0x99},
   {128,128,0,96,pos,0x99},
@@ -195,7 +197,7 @@ seg_or_flag test_segs[] = {
 };
 
 // compiles a list of segments into a display list.  Unlike CompileString, it doesn't modify them:
-// if the list is non-empty, it appends to the list.
+// if append !=0, it appends to the buffer.  Otherwise ir overwrites the buffer:
 
 void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append){   
   seg_or_flag *dst_ptr;
@@ -393,7 +395,7 @@ void pong_update(){
 void clear_buffer(int which_buffer){
     seg_buffer[which_buffer][0].seg_data.x_offset = 0xff;
 }
-void draw_pong(pong_state the_state){
+void render_pong_buffer(pong_state the_state){
     int x,y;
     
     clear_buffer(PONG_BUFFER);
@@ -502,15 +504,14 @@ void updateTimeDisplay(){
   //    compileString(time_string,0,0,4);
 
   sprintf(date_string,"%s %02i, %i",month_names[month-1],day_of_month,year);
-  //sprintf(date_string,"April 15, 2016");
+ 
   compileString(date_string,255,114,1,1,OVERWRITE);
-  // compileString("Hi Mom!",80,1,1);
-    
-  if(display_mode == analogMode || display_mode == debugMode) updateAnalogClock(hours,minutes,seconds);
-    
-  char dw[12];
+     
+   char dw[12];
   sprintf(dw,"%s",day_names[day_of_week-1]);
   compileString(dw,255,176,2,2,OVERWRITE);
+
+  if(display_mode == analogMode) updateAnalogClock(hours,minutes,seconds);
 
 }
 
@@ -599,11 +600,14 @@ int main()
       display_buffer(ANALOG_BUFFER);
     }
     else{
-     if(display_mode == pongMode) display_buffer(PONG_BUFFER);   
+      if(display_mode == pongMode){
+	display_buffer(PONG_BUFFER);
+         pong_update();
+	 render_pong_buffer(game_state);
+      }
+
     }
-    pong_update();
-    draw_pong(game_state);
-    if(display_mode == debugMode){
+    if(verbose_mode){
       int elapsed = (cycle_count-last_refresh);
       char debug_str[32];
       sprintf(debug_str,"%i/%i/%i",31250/elapsed,elapsed,loops_per_frame);
