@@ -25,6 +25,7 @@
 #include "font.h"
 #include "max509.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
 // SPI constants:
@@ -35,8 +36,8 @@ volatile int time_has_passed = 0;
 int led_state = 0;  // we blink this once/second
 
 // encoder button state
-int button_state=1;
-int button_last_update=0;
+//int button_changed=0;  // not currently used, as we're not using interrupts yet
+int button_state=0;
 
 // global screensaver offsets:
 uint8 ss_x_offset=0, ss_y_offset=0;
@@ -49,6 +50,11 @@ seg_or_flag seg_buffer[6][BUF_ENTRIES];
 
 #define OVERWRITE 0
 #define APPEND 1
+
+// Some useful strings:
+char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
+
 
 // Routine to send data to the DAC over SPI.  Spins as necessary for full FIFO:
 void setImmediate(uint16 spi_data){
@@ -65,7 +71,7 @@ void strobe_LDAC(){
   LDAC_Write(1u);
 }
 
-typedef enum{textMode,analogMode, pongMode} clock_type;
+typedef enum{textMode,analogMode, pongMode,pendulumMode} clock_type;
 clock_type display_mode=textMode;
 
 int verbose_mode = 0;
@@ -160,7 +166,7 @@ void compileString(char *s, uint8 x_coord, uint8 y_coord,uint8 buffer_index,uint
   uint8 x;
   int num_segs=0;     // so we don't overrun our fixed-size buffer
     
-  int kerning = (scale <= 2) ? 3: 2;
+  int kerning = (scale <= 2) ? 4: 3;
   int string_width = stringWidth(s,scale) + (strlen(s)-1)*kerning;;
   if(x_coord==255){
     x_coord = pin(128 - (string_width / 2));    //center on 128 if x coord has magic value
@@ -326,27 +332,42 @@ pong_state game_state = {
     return(0);
        
 }
+int puck_visible(){
+    if(game_state.puck_position[0] > 0 || game_state.puck_position[0]<250)
+      return 1;
+    else 
+      return 0;
+}
 #define PADDLE_MIN 16
 #define PADDLE_MAX 238
 void update_paddles(){
- int player;
-    
-    for(player=0;player<2;player++){
-     if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] > PADDLE_MIN )
-        game_state.paddle_position[player] -= 2;
-     
-        if (game_state.paddle_position[player] < game_state.puck_position[1] && \
-                game_state.paddle_position[player] < PADDLE_MAX) game_state.paddle_position[player] += 2;
+  int player;
+  RTC_1_TIME_DATE *the_time;
+  the_time = RTC_1_ReadTime();
+  int should_miss[2] = {0,0}; //set to 1 if we want that player to miss
+  
+  if(puck_visible()){
+     if(the_time->Min ==59 && the_time->Sec>58) should_miss[1]=1;
+     if(the_time->Sec > 58) should_miss[0]=1;
+
+        for(player=0;player<2;player++){
+         if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] > PADDLE_MIN && !should_miss[player] )
+            game_state.paddle_position[player] -= 2;
+         
+            if (game_state.paddle_position[player] < game_state.puck_position[1] && \
+                    game_state.paddle_position[player] < PADDLE_MAX && !should_miss[player]) game_state.paddle_position[player] += 2;
+        }
     }
+
 }
 
 // returns the new y velocity for the puck if it hit a paddle, and 0 otherwise
 int puck_hit_paddle(){
     int which_paddle;
     int result=0;
-    if(game_state.puck_position[0] < PADDLE_WIDTH)
+    if(game_state.puck_position[0] < PADDLE_WIDTH && game_state.puck_position[0] - game_state.puck_velocity[0]>PADDLE_WIDTH)
       which_paddle = 0;
-    else if(game_state.puck_position[0] > 254-PADDLE_WIDTH)
+    else if(game_state.puck_position[0] > 254-PADDLE_WIDTH  && game_state.puck_position[0] - game_state.puck_velocity[0]<= 254-PADDLE_WIDTH)
       which_paddle=1;
     else which_paddle = 2;
     
@@ -361,9 +382,9 @@ int puck_hit_paddle(){
           break;
         
     }
-    
-    if (result > PADDLE_HEIGHT/2) result=0;
-    if (result < -PADDLE_HEIGHT/2) result=0;
+    if(abs(result) > PADDLE_HEIGHT/2) result=0;  // we missed
+//    if (result > PADDLE_HEIGHT/2) result=0;
+//    if (result < -PADDLE_HEIGHT/2) result=0;
     return result / 8;  
 }
 
@@ -372,6 +393,11 @@ void pong_update(){
     
     for(dim=0;dim<2;dim++){
         game_state.puck_position[dim] += game_state.puck_velocity[dim];  // move the puck
+    }
+    
+    // if puck has been off screen, and is beyond some imaginary boundary, recenter it:
+    if(game_state.puck_position[0] < -128 || game_state.puck_position[0]>384){
+     game_state.puck_position[0] = 128;   
     }
     update_paddles();
     int new_y_velocity = puck_hit_paddle();
@@ -388,19 +414,22 @@ void pong_update(){
           game_state.puck_velocity[0] = -game_state.puck_velocity[0];
         
         }
-        if(which_edge == 2 || which_edge==4){  // hit top or bottom edge
-         game_state.puck_velocity[1] = - game_state.puck_velocity[1]; 
+        if(which_edge == 2 || which_edge==4){  // hit top or bottom edge. reverse y velocity:
+         game_state.puck_velocity[1] = -game_state.puck_velocity[1]; 
         }
     }
     
 }
 
-    
+
 void clear_buffer(int which_buffer){
     seg_buffer[which_buffer][0].seg_data.x_offset = 0xff;
 }
 void render_pong_buffer(pong_state the_state){
     int x,y;
+    RTC_1_TIME_DATE *the_time;
+    
+    the_time = RTC_1_ReadTime();
     
     clear_buffer(PONG_BUFFER);
     // draw the left paddle
@@ -412,8 +441,10 @@ void render_pong_buffer(pong_state the_state){
     
     // draw puck:
     x = the_state.puck_position[0];
-    for(y=the_state.puck_position[1]-2;y<the_state.puck_position[1]+3;y++)
-      line(x-2,y,x+2,y,PONG_BUFFER);
+    if(puck_visible()){
+      for(y=the_state.puck_position[1]-2;y<the_state.puck_position[1]+3;y++)
+        line(x-2,y,x+2,y,PONG_BUFFER);
+    }
     
     // draw the centerline:
     x=128;
@@ -421,6 +452,24 @@ void render_pong_buffer(pong_state the_state){
      line(128,y,128,y-8,PONG_BUFFER);   
     }
     
+    // draw the hours and minutes as two scores:
+    char time_str[32];
+    int the_hour = the_time->Hour;
+    int the_minute = the_time->Min;
+    sprintf(time_str,"%02i",the_hour);
+    compileString(time_str,32,210,PONG_BUFFER,2,APPEND);
+    
+    sprintf(time_str,"%02i",the_minute);
+    compileString(time_str,174,210,PONG_BUFFER,2,APPEND);
+    
+}
+
+/*  Pendulum Clock *** */
+void render_pendulum_buffer(){
+ float x,y;
+    x = 128.0+128*sin(2*M_PI*cycle_count/31250.0);
+    y = 128.0 + 128*cos(2*M_PI*cycle_count/31250.0);
+    line(128,128,x,y,PONG_BUFFER);
 }
 
 void display_buffer(uint8 which_buffer){
@@ -461,11 +510,11 @@ void initTime(){
   RTC_1_DisableInt();
     
   the_time->Month = 4;
-  the_time->DayOfMonth = 27;
-  the_time->DayOfWeek=3;
+  the_time->DayOfMonth = 29;
+  the_time->DayOfWeek=6;
   the_time->Year = 2016;
-  the_time->Hour = 8;
-  the_time->Min = 53;
+  the_time->Hour = 15;
+  the_time->Min = 2;
   the_time->Sec = 0;
     
   RTC_1_WriteTime(the_time);
@@ -478,8 +527,6 @@ void updateTimeDisplay(){
   char time_string[32];
   char day_of_week_string[12];
   char date_string[15];
-  char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
-  char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
   RTC_1_TIME_DATE *the_time;
   the_time = RTC_1_ReadTime();
@@ -518,16 +565,14 @@ void updateTimeDisplay(){
 #define BUTTON_DOWN 0
 #define BUTTON_UP 1
 void poll_button(){
- int new_state = EncoderButton_Read();
- if(new_state != button_state && cycle_count-button_last_update > 300){
-   button_state = new_state;
-   button_last_update = cycle_count;
-  }
-
-  if(button_state==BUTTON_DOWN){
-     verbose_mode = 1-verbose_mode;
-     button_state=BUTTON_UP;
-  }
+    static int last_update = 0;
+    int tmp = EncoderButton_Read();
+    
+    if(tmp != button_state && cycle_count-last_update > 300){
+     button_state = tmp;
+     last_update = cycle_count;
+     if(button_state == 0) verbose_mode = 1-verbose_mode;
+    }
 }
 
 void diagPattern(){
@@ -536,6 +581,11 @@ void diagPattern(){
   for(;;) display_buffer(0);
 }
 
+void set_time(){
+    static int hours, minutes, seconds, day, month, year, day_of_week;
+    
+    
+}
 int main() 
 {
   /* Start up the SPI interface: */
@@ -563,8 +613,10 @@ int main()
   // Start the quad decoder:
   QuadDec_1_Start();
 
+  // Initialize button interrupt:
+     //button_isr_Start();
     
-  /* Initialize Interrupt: */
+  /* Initialize Wave Interrupt: */
   isr_1_StartEx(wave_started);
   CyGlobalIntEnable;
 
@@ -614,10 +666,15 @@ int main()
     }
     else{
       if(display_mode == pongMode){
-	display_buffer(PONG_BUFFER);
-         pong_update();
-	 render_pong_buffer(game_state);
+    	display_buffer(PONG_BUFFER);
+        pong_update();
+    	render_pong_buffer(game_state);
       }
+    else if(display_mode==pendulumMode){
+        display_buffer(PONG_BUFFER);  // reuse the Pong buffer
+        clear_buffer(PONG_BUFFER);
+        render_pendulum_buffer();
+    }
 
     }
     if(verbose_mode){
@@ -638,7 +695,7 @@ int main()
       time_has_passed = 0;     
     } 
     
-    display_mode = QuadDec_1_GetCounter() % 3;
+    display_mode = QuadDec_1_GetCounter() % 4;
     poll_button();
   }
    
