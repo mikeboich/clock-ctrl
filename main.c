@@ -347,15 +347,15 @@ void update_paddles(){
   int should_miss[2] = {0,0}; //set to 1 if we want that player to miss
   
   if(puck_visible()){
-     if(the_time->Min ==59 && the_time->Sec>58) should_miss[1]=1;
-     if(the_time->Sec > 58) should_miss[0]=1;
+     if((the_time->Min ==59 && the_time->Sec>58) || game_state.puck_velocity[0]<0) should_miss[1]=1;
+     if((the_time->Sec > 57) || game_state.puck_velocity[0]>0) should_miss[0]=1;
 
         for(player=0;player<2;player++){
          if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] > PADDLE_MIN && !should_miss[player] )
-            game_state.paddle_position[player] -= 2;
+            game_state.paddle_position[player] -= 4;
          
             if (game_state.paddle_position[player] < game_state.puck_position[1] && \
-                    game_state.paddle_position[player] < PADDLE_MAX && !should_miss[player]) game_state.paddle_position[player] += 2;
+                    game_state.paddle_position[player] < PADDLE_MAX && !should_miss[player]) game_state.paddle_position[player] += 4;
         }
     }
 
