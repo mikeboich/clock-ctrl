@@ -167,6 +167,7 @@ void compileString(char *s, uint8 x_coord, uint8 y_coord,uint8 buffer_index,uint
   int num_segs=0;     // so we don't overrun our fixed-size buffer
     
   int kerning = (scale <= 2) ? 4: 3;
+  if(strlen(s)<6) kerning += 2;
   int string_width = stringWidth(s,scale) + (strlen(s)-1)*kerning;;
   if(x_coord==255){
     x_coord = pin(128 - (string_width / 2));    //center on 128 if x coord has magic value
@@ -228,6 +229,20 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append){
   dst_ptr->seg_data.mask=0;
 }
 
+void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer){
+  seg_or_flag the_circle[] = {{0,0,0,0,cir,0xff},
+			    {.flag=0xff}};
+  // We'd like to assume that x0 is the left-most point, so make it so:
+  the_circle->seg_data.x_offset = x0;
+  the_circle->seg_data.y_offset = y0;
+
+  the_circle->seg_data.x_size =  radius;
+  the_circle->seg_data.y_size = radius;
+
+ 
+  compileSegments(the_circle,which_buffer, APPEND);
+}
+
 void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer){
   seg_or_flag the_line[] = {{0,0,0,0,pos,0x99},
 			    {.flag=0xff}};
@@ -254,6 +269,8 @@ void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer){
  
   compileSegments(the_line,which_buffer, APPEND);
 }
+
+
 void line_test(){
   int i;
   for(i=5;i<250;i+=25){
@@ -441,8 +458,8 @@ void render_pong_buffer(pong_state the_state){
     
   // draw the centerline:
   x=128;
-  for(y=240;y>0;y-=16){
-    line(128,y,128,y-8,PONG_BUFFER);   
+  for(y=240;y>0;y-=32){
+    line(128,y,128,y-16,PONG_BUFFER);   
   }
     
   // draw the hours and minutes as two scores:
@@ -459,11 +476,24 @@ void render_pong_buffer(pong_state the_state){
 
 /*  Pendulum Clock *** */
 void render_pendulum_buffer(){
-  float x,y;
-  x = 128.0+128*sin(2*M_PI*cycle_count/31250.0);
-  y = 128.0 + 128*cos(2*M_PI*cycle_count/31250.0);
-  line(128,128,x,y,PONG_BUFFER);
+   RTC_1_TIME_DATE *the_time;
+    char sec_str[32],hr_min_string[32];
+ float x,y,i;
+  the_time = RTC_1_ReadTime();
+  sprintf(sec_str,"%02i",the_time->Sec);
+  compileString(sec_str,255,32,PONG_BUFFER,2,OVERWRITE);
+
+  sprintf(hr_min_string,"%02i:%02i",the_time->Hour,the_time->Min);
+  compileString(hr_min_string,255,130,PONG_BUFFER,3,APPEND);
+
+  x = 128.0+200*sin(sin(2*M_PI*cycle_count/31250.0)/2.5);
+  y = 250.0 - 200*cos(sin(2*M_PI*cycle_count/31250.0)/2.5);
+  line(128,250,x,y,PONG_BUFFER);
+  for(i=32;i>0;i-=8) circle(x,y,i,PONG_BUFFER);
+  circle(128,250,8,PONG_BUFFER);
+
 }
+
 
 void display_buffer(uint8 which_buffer){
   //long start_count = cycle_count;
@@ -503,12 +533,12 @@ void initTime(){
   RTC_1_DisableInt();
     
   the_time->Month = 4;
-  the_time->DayOfMonth = 29;
-  the_time->DayOfWeek=6;
+  the_time->DayOfMonth = 30;
+  the_time->DayOfWeek=7;
   the_time->Year = 2016;
   the_time->Hour = 15;
-  the_time->Min = 2;
-  the_time->Sec = 0;
+  the_time->Min = 35;
+  the_time->Sec = 55;
     
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
