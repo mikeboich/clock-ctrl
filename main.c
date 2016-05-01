@@ -81,6 +81,8 @@ uint8 shape_to_mux[] = {2,0,1};
 volatile int times_to_loop = 0;
 
 volatile int cycle_count=0;  // poor man's timer
+int error_term=0;            // so that we can pretend cycle_count is synced the 1 pps
+
 int last_refresh=0,loops_per_frame=0;
 
 long total_time=0;
@@ -286,7 +288,7 @@ void drawClockHands(int h, int m, int s){
   if(h > 11) h -= 12;    // hours > 12 folded into 0-12  
   float hour_angle = (h/12.0) * M_PI * 2.0 + (m/60.0)*(M_PI/6.0);  // hour hand angle (we'll ignore the seconds)
   float minute_angle = (m/60.0) * M_PI*2.0 + (s/60.0)*(M_PI/30.0);  // minute hand angle
-  float second_angle = (s/60.0)*M_PI*2.0;
+  float second_angle = ((s/60.0))*M_PI*2.0;
 
 
   // not doing the 2-d hands yet, just lines
@@ -317,6 +319,11 @@ void updateAnalogClock(int hour, int min,int sec){
   //    
 
   drawClockHands(hour,min,sec);
+  //experimental one revoultion/second widget:
+  float x,y;
+  x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
+  y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
+  circle(x,y,16,ANALOG_BUFFER);
 }
 
 /* ************* Pong Game ************* */
@@ -418,10 +425,10 @@ void pong_update(){
     if(which_edge==1 || which_edge==2){
       // puck is exiting the playing area
       // just reverse for now:
-      game_state.puck_velocity[0] = -game_state.puck_velocity[0];
+    game_state.puck_velocity[0] = -game_state.puck_velocity[0];
         
     }
-    if(which_edge == 2 || which_edge==4){  // hit top or bottom edge. reverse y velocity:
+    if(which_edge == 3 || which_edge==4){  // hit top or bottom edge. reverse y velocity:
       game_state.puck_velocity[1] = -game_state.puck_velocity[1]; 
     }
   }
@@ -483,8 +490,8 @@ void render_pendulum_buffer(){
   sprintf(hr_min_string,"%02i:%02i",the_time->Hour,the_time->Min);
   compileString(hr_min_string,255,130,PONG_BUFFER,3,APPEND);
 
-  x = 128.0+200*sin(sin(2*M_PI*cycle_count/31250.0)/2.5);
-  y = 250.0 - 200*cos(sin(2*M_PI*cycle_count/31250.0)/2.5);
+  x = 128.0+200*sin(sin(2*M_PI*(cycle_count-error_term)/31250.0)/2.5);
+  y = 250.0 - 200*cos(sin(2*M_PI*(cycle_count-error_term)/31250.0)/2.5);
   line(128,250,x,y,PONG_BUFFER);
   for(i=32;i>0;i-=8) circle(x,y,i,PONG_BUFFER);
   circle(128,250,8,PONG_BUFFER);
@@ -529,13 +536,13 @@ void initTime(){
   RTC_1_TIME_DATE *the_time = RTC_1_ReadTime();
   RTC_1_DisableInt();
     
-  the_time->Month = 4;
-  the_time->DayOfMonth = 30;
-  the_time->DayOfWeek=7;
+  the_time->Month = 5;
+  the_time->DayOfMonth = 1;
+  the_time->DayOfWeek=1;
   the_time->Year = 2016;
-  the_time->Hour = 15;
-  the_time->Min = 35;
-  the_time->Sec = 55;
+  the_time->Hour = 11;
+  the_time->Min = 17;
+  the_time->Sec = 0;
     
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -570,7 +577,7 @@ void updateTimeDisplay(){
   //    sprintf(time_string,"%i:%02i",hours,minutes);
   //    compileString(time_string,0,0,4);
 
-  sprintf(date_string,"%s %02i, %i",month_names[month-1],day_of_month,year);
+  sprintf(date_string,"%s %i, %i",month_names[month-1],day_of_month,year);
  
   compileString(date_string,255,114,1,1,OVERWRITE);
      
@@ -578,7 +585,6 @@ void updateTimeDisplay(){
   sprintf(dw,"%s",day_names[day_of_week-1]);
   compileString(dw,255,176,2,2,OVERWRITE);
 
-  if(display_mode == analogMode) updateAnalogClock(hours,minutes,seconds);
 
 }
 
@@ -680,6 +686,8 @@ int main()
       display_buffer(0);
     }
     else if(display_mode == analogMode){
+        RTC_1_TIME_DATE *now = RTC_1_ReadTime();
+      if(display_mode == analogMode) updateAnalogClock(now->Hour,now->Min,now->Sec);
       display_buffer(ANALOG_BUFFER);
     }
     else{
@@ -709,6 +717,8 @@ int main()
     if(time_has_passed){
       led_state = 1-led_state;
       LED_Reg_Write(led_state);
+    // tweak error_term used to sync pendulum with seconds:
+      error_term = (cycle_count % 31250);
       updateTimeDisplay();
       time_has_passed = 0;     
     } 
