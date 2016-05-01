@@ -1,24 +1,21 @@
-/*******************************************************************************
- * FILE53: main.c
- *
- *
- * Description: 
- *  This is a source code for basic functionality of Vx1DAC8.
- *  Main function performs following functions:
- *  1. Initializes the LCD and clears the display
- *  2. Start the VDAC8 component
- *  system_font3. Set the value through API
- *  4. Print test name and VDAC Range on the LCD
- *
- ********************************************************************************
- * Copyright 2012, Cypress Semiconductor Corporation. All rights reserved.
- * This software is owned by Cypress Semiconductor Corporation and is protected
- * by and subject to worldwide patent and copyright laws and treaties.
- * Therefore, you may use this software only as provided in the license agreement
- * accompanying the software package from which you obtained this software.
- * CYPRESS AND ITS SUPPLIERS MAKE NO WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
- * WITH REGARD TO THIS SOFTWARE, INCLUDING, BUT NOT LIMITED TO, NONINFRINGEMENT,
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+/*  main.c
+
+ Copyright (C) 2016 Michael Boich
+
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ A re-creation of the David Forbes  vector-graphics clock, implemented on Cypress PSOC
+ and coded in C.
+
  *******************************************************************************/
 
 #include <device.h>
@@ -231,7 +228,7 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append){
 
 void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer){
   seg_or_flag the_circle[] = {{0,0,0,0,cir,0xff},
-			    {.flag=0xff}};
+			      {.flag=0xff}};
   // We'd like to assume that x0 is the left-most point, so make it so:
   the_circle->seg_data.x_offset = x0;
   the_circle->seg_data.y_offset = y0;
@@ -476,9 +473,9 @@ void render_pong_buffer(pong_state the_state){
 
 /*  Pendulum Clock *** */
 void render_pendulum_buffer(){
-   RTC_1_TIME_DATE *the_time;
-    char sec_str[32],hr_min_string[32];
- float x,y,i;
+  RTC_1_TIME_DATE *the_time;
+  char sec_str[32],hr_min_string[32];
+  float x,y,i;
   the_time = RTC_1_ReadTime();
   sprintf(sec_str,"%02i",the_time->Sec);
   compileString(sec_str,255,32,PONG_BUFFER,2,OVERWRITE);
@@ -667,12 +664,10 @@ int main()
   SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x00);
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
 
-  //for(;;);
-  //diagPattern();
   compileSegments(test_segs,0,OVERWRITE);
 
   uint8 cc = 0;
-  // compileString("04/15/2016",0,0,1);
+
   compileString("4567",255,90,1,1,OVERWRITE);
   compileString("890",255,180,2,1,OVERWRITE);
   for(;;){
