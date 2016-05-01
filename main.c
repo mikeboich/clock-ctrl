@@ -2,7 +2,6 @@
 
  Copyright (C) 2016 Michael Boich
 
-
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
@@ -81,11 +80,9 @@ uint8 shape_to_mux[] = {2,0,1};
 volatile int times_to_loop = 0;
 
 volatile int cycle_count=0;  // poor man's timer
-int error_term=0;            // so that we can pretend cycle_count is synced the 1 pps
+int error_term=0;            // difference between hw counters and 1 pps edge
 
 int last_refresh=0,loops_per_frame=0;
-
-long total_time=0;
 
 /* Define the start-of-segment interrupt routine 
    This routine loads the next 8 bit segment mask from the display list,
@@ -126,7 +123,6 @@ uint8 pin(int x){
   return x;
 }
 
-
 void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
   setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
   setImmediate(DAC_Reg_B | DAC_Pre_Load |s->seg_data.y_size);
@@ -134,8 +130,6 @@ void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
   setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y + ss_y_offset)));
 
 }
-
-
 
 // returns the width of a single vector character:
 int char_width(char c){
@@ -228,16 +222,19 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append){
   dst_ptr->seg_data.mask=0;
 }
 
+
+void clear_buffer(int which_buffer){
+  seg_buffer[which_buffer][0].seg_data.x_offset = 0xff;
+}
+
 void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer){
   seg_or_flag the_circle[] = {{0,0,0,0,cir,0xff},
 			      {.flag=0xff}};
-  // We'd like to assume that x0 is the left-most point, so make it so:
   the_circle->seg_data.x_offset = x0;
   the_circle->seg_data.y_offset = y0;
 
   the_circle->seg_data.x_size =  radius;
   the_circle->seg_data.y_size = radius;
-
  
   compileSegments(the_circle,which_buffer, APPEND);
 }
@@ -310,19 +307,10 @@ void updateAnalogClock(int hour, int min,int sec){
   compileString("3",220,120,ANALOG_BUFFER,1,APPEND);
   compileString("9",20,120,ANALOG_BUFFER,1,APPEND);
     
-  //    for(i=0;i<12;i++){
-  //        uint8 x  = (uint8) (128.0+96.0*sin(angle)-8);
-  //        uint8 y = (uint8) (128.0 + 96.0*cos(angle)-8);
-  //        angle += (6.2830/12.0);
-  //        compileString(nums[i],x,y,ANALOG_BUFFER,1,APPEND);
-  //    }
-  //    
-
   drawClockHands(hour,min,sec);
   //experimental one revoultion/second widget:
-  float x,y;
-  x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
-  y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
+  float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
+  float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
   circle(x,y,16,ANALOG_BUFFER);
 }
 
@@ -435,10 +423,6 @@ void pong_update(){
     
 }
 
-
-void clear_buffer(int which_buffer){
-  seg_buffer[which_buffer][0].seg_data.x_offset = 0xff;
-}
 void render_pong_buffer(pong_state the_state){
   int x,y;
   RTC_1_TIME_DATE *the_time;
