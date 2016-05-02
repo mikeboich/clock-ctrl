@@ -1,21 +1,21 @@
 /*  main.c
 
- Copyright (C) 2016 Michael Boich
+    Copyright (C) 2016 Michael Boich
 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
  
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
- A re-creation of the David Forbes  vector-graphics clock, implemented on Cypress PSOC
- and coded in C.
+    A re-creation of the David Forbes  vector-graphics clock, implemented on Cypress PSOC
+    and coded in C.
 
- *******************************************************************************/
+*******************************************************************************/
 
 #include <device.h>
 #include "font.h"
@@ -258,7 +258,7 @@ void pong_update(){
     if(which_edge==1 || which_edge==2){
       // puck is exiting the playing area
       // just reverse for now:
-    game_state.puck_velocity[0] = -game_state.puck_velocity[0];
+      game_state.puck_velocity[0] = -game_state.puck_velocity[0];
         
     }
     if(which_edge == 3 || which_edge==4){  // hit top or bottom edge. reverse y velocity:
@@ -427,8 +427,8 @@ void poll_button(){
     button_state = tmp;
     last_update = cycle_count;
     if(button_state == BUTTON_UP){
-        if(display_mode == menuMode) display_mode=textMode;
-        else display_mode = menuMode;
+      if(display_mode == menuMode) display_mode=textMode;
+      else display_mode = menuMode;
     }
   }
 }
@@ -504,7 +504,7 @@ int main()
     if(time_has_passed && (display_mode != menuMode)){
       led_state = 1-led_state;
       LED_Reg_Write(led_state);
-    // tweak error_term used to sync pendulum with seconds:
+      // tweak error_term used to sync pendulum with seconds:
       error_term = (cycle_count % 31250);
       updateTimeDisplay();
       time_has_passed = 0;     
@@ -512,11 +512,11 @@ int main()
     RTC_1_TIME_DATE *now;
     
     switch (display_mode){
-     case textMode:
+    case textMode:
       display_buffer(2);
       display_buffer(1);
       display_buffer(0);
-    break;
+      break;
     
     case analogMode:
       now = RTC_1_ReadTime();
@@ -525,21 +525,21 @@ int main()
       break;
     
     case pongMode:
-        display_buffer(PONG_BUFFER);
-        pong_update();
-    	render_pong_buffer(game_state);
-        break;
+      display_buffer(PONG_BUFFER);
+      pong_update();
+      render_pong_buffer(game_state);
+      break;
 
-     case pendulumMode:
-        display_buffer(PONG_BUFFER);  // reuse the Pong buffer
-        clear_buffer(PONG_BUFFER);
-        render_pendulum_buffer();
-        break;
+    case pendulumMode:
+      display_buffer(PONG_BUFFER);  // reuse the Pong buffer
+      clear_buffer(PONG_BUFFER);
+      render_pendulum_buffer();
+      break;
 
-        case menuMode:
-         display_menu(main_menu);
-         display_buffer(MENU_BUFFER);
-         break;
+    case menuMode:
+      display_menu(main_menu);
+      display_buffer(MENU_BUFFER);
+      break;
 
     }
 
@@ -562,3 +562,4 @@ int main()
 }
 
 /* [] END OF FILE */
+	
