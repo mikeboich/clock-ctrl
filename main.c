@@ -26,9 +26,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-// SPI constants:
-#define TX_FIFO_NOT_FULL 4 
-
 // Real time clock variables:
 volatile int time_has_passed = 0;
 int led_state = 0;  // we blink this once/second
@@ -37,8 +34,6 @@ int led_state = 0;  // we blink this once/second
 //int button_changed=0;  // not currently used, as we're not using interrupts yet
 int button_state=0;
 
-// global screensaver offsets:
-uint8 ss_x_offset=0, ss_y_offset=0;
 
 #define BUF_ENTRIES 120
 #define DEBUG_BUFFER 4
@@ -52,22 +47,6 @@ seg_or_flag seg_buffer[6][BUF_ENTRIES];
 // Some useful strings:
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
-
-
-// Routine to send data to the DAC over SPI.  Spins as necessary for full FIFO:
-void setImmediate(uint16 spi_data){
-  while((SPIM_1_ReadTxStatus() & TX_FIFO_NOT_FULL) == 0){   // spin if the fifo is full
-  }
-  SPIM_1_WriteTxData(spi_data);
-}
-
-// Drops the LDAC signal to load pre-buffered data in to the DAC:
-// no longer used, since we write to the DAC during blanking periods
-void strobe_LDAC(){
-  LDAC_Write(0u);
-  CyDelayUs(1);
-  LDAC_Write(1u);
-}
 
 typedef enum{textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
 clock_type display_mode=textMode;
@@ -119,15 +98,6 @@ void wave_started(){
   }
 }
 
-
-void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
-  setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
-  setImmediate(DAC_Reg_B | DAC_Pre_Load |s->seg_data.y_size);
-  setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x + ss_x_offset)));
-  setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y + ss_y_offset)));
-
-}
-
 // test case data:
 seg_or_flag test_segs[] = {
   {128,128,255,255,cir,0xff},
@@ -139,44 +109,7 @@ seg_or_flag test_segs[] = {
 
 
 
-void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer){
-  seg_or_flag the_circle[] = {{0,0,0,0,cir,0xff},
-			      {.flag=0xff}};
-  the_circle->seg_data.x_offset = x0;
-  the_circle->seg_data.y_offset = y0;
 
-  the_circle->seg_data.x_size =  radius;
-  the_circle->seg_data.y_size = radius;
- 
-  compileSegments(the_circle,which_buffer, APPEND);
-}
-
-void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer){
-  seg_or_flag the_line[] = {{0,0,0,0,pos,0x99},
-			    {.flag=0xff}};
-  // We'd like to assume that x0 is the left-most point, so make it so:
-  if(x0 > x1){
-    uint8 tmp = x0;
-    x0 = x1;
-    x1 = tmp;
-    
-    tmp = y0;
-    y0 = y1;
-    y1 = tmp;
-  }
-  
-  the_line->seg_data.x_offset = (x0 + x1) / 2;
-  the_line->seg_data.y_offset = (y0 + y1) / 2;
-
-  the_line->seg_data.x_size =  x1-x0;
-  the_line->seg_data.y_size = (y1>y0) ? y1-y0:y0-y1;
-
-  if(y1<y0){
-    the_line->seg_data.arc_type = neg;
-  }
- 
-  compileSegments(the_line,which_buffer, APPEND);
-}
 
 
 void line_test(){
@@ -436,8 +369,8 @@ void initTime(){
   the_time->DayOfMonth = 2;
   the_time->DayOfWeek=2;
   the_time->Year = 2016;
-  the_time->Hour = 10;
-  the_time->Min = 21;
+  the_time->Hour = 13;
+  the_time->Min = 28;
   the_time->Sec = 30;
     
   RTC_1_WriteTime(the_time);
@@ -500,12 +433,6 @@ void poll_button(){
   }
 }
 
-
-void set_time(){
-  static int hours, minutes, seconds, day, month, year, day_of_week;
-    
-    
-}
 int main() 
 {
   /* Start up the SPI interface: */
@@ -582,35 +509,41 @@ int main()
       updateTimeDisplay();
       time_has_passed = 0;     
     } 
+    RTC_1_TIME_DATE *now;
     
-
-    if(display_mode == textMode){
+    switch (display_mode){
+     case textMode:
       display_buffer(2);
       display_buffer(1);
       display_buffer(0);
-    }
-    else if(display_mode == analogMode){
-        RTC_1_TIME_DATE *now = RTC_1_ReadTime();
+    break;
+    
+    case analogMode:
+      now = RTC_1_ReadTime();
       if(display_mode == analogMode) updateAnalogClock(now->Hour,now->Min,now->Sec);
       display_buffer(ANALOG_BUFFER);
-    }
-    else{
-      if(display_mode == pongMode){
-    	display_buffer(PONG_BUFFER);
+      break;
+    
+    case pongMode:
+        display_buffer(PONG_BUFFER);
         pong_update();
     	render_pong_buffer(game_state);
-      }
-      else if(display_mode==pendulumMode){
+        break;
+
+     case pendulumMode:
         display_buffer(PONG_BUFFER);  // reuse the Pong buffer
         clear_buffer(PONG_BUFFER);
         render_pendulum_buffer();
-      }
-    else if(display_mode == menuMode){
-     display_menu(main_menu);
-     display_buffer(MENU_BUFFER);
-    }
+        break;
+
+        case menuMode:
+         display_menu(main_menu);
+         display_buffer(MENU_BUFFER);
+         break;
 
     }
+
+ 
     if(verbose_mode){
       int elapsed = (cycle_count-last_refresh);
       char debug_str[32];
@@ -626,9 +559,6 @@ int main()
     else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     poll_button();
   }
-   
-
-#define SCOPE_DELAY_SHORT 96
 }
 
 /* [] END OF FILE */

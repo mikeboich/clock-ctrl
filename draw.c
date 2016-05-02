@@ -85,4 +85,44 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append){
   dst_ptr->seg_data.mask=0;
 }
 
+void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer){
+  seg_or_flag the_circle[] = {{0,0,0,0,cir,0xff},
+			      {.flag=0xff}};
+  the_circle->seg_data.x_offset = x0;
+  the_circle->seg_data.y_offset = y0;
+
+  the_circle->seg_data.x_size =  radius;
+  the_circle->seg_data.y_size = radius;
+ 
+  compileSegments(the_circle,which_buffer, APPEND);
+}
+
+void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer){
+  seg_or_flag the_line[] = {{0,0,0,0,pos,0x99},
+			    {.flag=0xff}};
+  // We'd like to assume that x0 is the left-most point, so make it so:
+  if(x0 > x1){
+    uint8 tmp = x0;
+    x0 = x1;
+    x1 = tmp;
+    
+    tmp = y0;
+    y0 = y1;
+    y1 = tmp;
+  }
+  
+  the_line->seg_data.x_offset = (x0 + x1) / 2;
+  the_line->seg_data.y_offset = (y0 + y1) / 2;
+
+  the_line->seg_data.x_size =  x1-x0;
+  the_line->seg_data.y_size = (y1>y0) ? y1-y0:y0-y1;
+
+  if(y1<y0){
+    the_line->seg_data.arc_type = neg;
+  }
+ 
+  compileSegments(the_line,which_buffer, APPEND);
+}
+
+
 /* [] END OF FILE */

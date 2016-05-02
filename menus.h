@@ -18,9 +18,10 @@
  *******************************************************************************/
 #include "font.h"
 
-typedef struct {char *items[8]; int n_items; int highlighted_item_index;} menu;
+typedef struct {char *items[8]; int n_items; int highlighted_item_index; uint8 menu_number;} menu;
 
 extern menu main_menu;
+extern menu *active_menu;
 
 
 // display a menu:

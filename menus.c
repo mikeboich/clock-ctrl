@@ -20,12 +20,16 @@
 #include "draw.h"
 menu main_menu = {.items = {"Set Time/Date","Set Locale", "Align Screen","Cancel"},
           .n_items = 4,
-		  .highlighted_item_index = -1};
+		  .highlighted_item_index = -1,
+          .menu_number = 0};
+
+menu *current_menu = &main_menu;
 
 
 
 void display_menu(menu the_menu){
   compile_menu(&the_menu,MENU_BUFFER);
+  //active_menu = &the_menu;
   
 }
 
@@ -41,6 +45,24 @@ void compile_menu(menu *the_menu, int which_buffer){
     if(item_index==the_menu->highlighted_item_index) strcat(item_str,">");
     strcat(item_str,the_menu->items[item_index]);
     compileString(item_str,255,y,which_buffer,1,APPEND);
-    y -= 32;
+    y -= 40;
+  }
 }
+
+void set_time(){
+  enum {h,m,s,mo,d,y} selected;
+  RTC_1_TIME_DATE *the_time,our_time;
+  the_time = RTC_1_ReadTime();
+  our_time = *the_time;
+
+
 }
+
+  void dispatch_menu(int menu_number, int item_number){
+    switch (menu_number){
+        case 0: /* main menu */
+          set_time();
+    }
+}
+
+    
