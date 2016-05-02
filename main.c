@@ -585,11 +585,6 @@ void poll_button(){
   }
 }
 
-void diagPattern(){
-  system_font[0] = (seg_or_flag*)&TestCircle;
-  compileString(" ",255,0,0,1,OVERWRITE);
-  for(;;) display_buffer(0);
-}
 
 void set_time(){
   static int hours, minutes, seconds, day, month, year, day_of_week;

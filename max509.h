@@ -1,3 +1,5 @@
+#ifndef max509_h
+#define max509_h
 /* ========================================
  *
  * Copyright YOUR COMPANY, THE YEAR
@@ -19,5 +21,5 @@
 #define DAC_Load_Now 0x0300
 
 #define DAC_LDAC 0x0000
-
+#endif
 /* [] END OF FILE */
