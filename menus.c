@@ -16,12 +16,31 @@
  and coded in C.
 
  *******************************************************************************/
+#include "menus.h"
+#include "draw.h"
+menu main_menu = {.items = {"Set Time/Date","Set Locale", "Align Screen","Cancel"},
+          .n_items = 4,
+		  .highlighted_item_index = -1};
 
-int menu_choice(menu the_menu){
 
-}
 
 void display_menu(menu the_menu){
-  compile_menu(the_menu,MENU_BUFFER);
+  compile_menu(&the_menu,MENU_BUFFER);
   
+}
+
+void compile_menu(menu *the_menu, int which_buffer){
+ int item_index;
+ int y;
+ char item_str[80] = "";
+ 
+ y = 128+(the_menu->n_items/2)*40;
+ clear_buffer(MENU_BUFFER);
+ for(item_index=0;item_index<the_menu->n_items;item_index++){
+    item_str[0] = 0;
+    if(item_index==the_menu->highlighted_item_index) strcat(item_str,">");
+    strcat(item_str,the_menu->items[item_index]);
+    compileString(item_str,255,y,which_buffer,1,APPEND);
+    y -= 32;
+}
 }

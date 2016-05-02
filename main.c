@@ -20,6 +20,7 @@
 #include <device.h>
 #include "font.h"
 #include "draw.h"
+#include "menus.h"
 #include "max509.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,7 +69,7 @@ void strobe_LDAC(){
   LDAC_Write(1u);
 }
 
-typedef enum{textMode,analogMode, pongMode,pendulumMode} clock_type;
+typedef enum{textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
 clock_type display_mode=textMode;
 
 int verbose_mode = 0;
@@ -137,9 +138,6 @@ seg_or_flag test_segs[] = {
 };
 
 
-void clear_buffer(int which_buffer){
-  seg_buffer[which_buffer][0].seg_data.x_offset = 0xff;
-}
 
 void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer){
   seg_or_flag the_circle[] = {{0,0,0,0,cir,0xff},
@@ -495,7 +493,10 @@ void poll_button(){
   if(tmp != button_state && cycle_count-last_update > 300){
     button_state = tmp;
     last_update = cycle_count;
-    if(button_state == 0) verbose_mode = 1-verbose_mode;
+    if(button_state == BUTTON_UP){
+        if(display_mode == menuMode) display_mode=textMode;
+        else display_mode = menuMode;
+    }
   }
 }
 
@@ -573,6 +574,16 @@ int main()
     //    int phase = SixtyHz_Read();
     //    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
+    if(time_has_passed && (display_mode != menuMode)){
+      led_state = 1-led_state;
+      LED_Reg_Write(led_state);
+    // tweak error_term used to sync pendulum with seconds:
+      error_term = (cycle_count % 31250);
+      updateTimeDisplay();
+      time_has_passed = 0;     
+    } 
+    
+
     if(display_mode == textMode){
       display_buffer(2);
       display_buffer(1);
@@ -594,6 +605,10 @@ int main()
         clear_buffer(PONG_BUFFER);
         render_pendulum_buffer();
       }
+    else if(display_mode == menuMode){
+     display_menu(main_menu);
+     display_buffer(MENU_BUFFER);
+    }
 
     }
     if(verbose_mode){
@@ -607,16 +622,8 @@ int main()
       last_refresh = cycle_count;
 
     }
-    if(time_has_passed){
-      led_state = 1-led_state;
-      LED_Reg_Write(led_state);
-    // tweak error_term used to sync pendulum with seconds:
-      error_term = (cycle_count % 31250);
-      updateTimeDisplay();
-      time_has_passed = 0;     
-    } 
-    
-    display_mode = QuadDec_1_GetCounter() % 4;
+    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 4;
+    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     poll_button();
   }
    

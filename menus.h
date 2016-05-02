@@ -1,4 +1,4 @@
-/*  menu.h
+/*  menus.h
 
  Copyright (C) 2016 Michael Boich
 
@@ -16,20 +16,15 @@
  and coded in C.
 
  *******************************************************************************/
-#include <stdio.h>
-#include <stdlib.h>
 #include "font.h"
 
-typedef struct {char items[], int highlighed_item_index} menu;
+typedef struct {char *items[8]; int n_items; int highlighted_item_index;} menu;
 
-menu main_menu = {.items = {"Set Time/Date","Set Locale", "Align Screen"},
-		  .highlighted_item_index = -1};
+extern menu main_menu;
 
-// present a menu and return the index of the selected item (or -1 for cancel, -2 for no selection yet):
-int track_menu(menu the_menu);
 
 // display a menu:
 void display_menu(menu the_menu);
 
-void compile_menu(menu the_menu, int which_buffer);
+void compile_menu(menu *the_menu, int which_buffer);
 

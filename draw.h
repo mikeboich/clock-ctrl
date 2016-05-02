@@ -1,14 +1,20 @@
-/* ========================================
- *
- * Copyright YOUR COMPANY, THE YEAR
- * All Rights Reserved
- * UNPUBLISHED, LICENSED SOFTWARE.
- *
- * CONFIDENTIAL AND PROPRIETARY INFORMATION
- * WHICH IS THE PROPERTY OF your company.
- *
- * ========================================
-*/
+/*  draw.h
+
+ Copyright (C) 2016 Michael Boich
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ Routines to compile strings, menus, and other primitives into display lists
+
+ *******************************************************************************/
 #ifndef draw_h
 #define draw_h
 
@@ -19,6 +25,7 @@
 #define DEBUG_BUFFER 4
 #define ANALOG_BUFFER 3
 #define PONG_BUFFER 5
+#define MENU_BUFFER 0
     
 #define OVERWRITE 0
 #define APPEND 1
@@ -27,9 +34,11 @@ extern seg_or_flag seg_buffer[6][BUF_ENTRIES];
 
 struct menu;  // "forward" definition of menu is fine for this purpose
 
+void clear_buffer(int which_buffer);
 void compileString(char *s, uint8 x_coord, uint8 y_coord,uint8 buffer_index,uint8 scale,int append);
 void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append);
 void compileMenu(struct menu* the_menu, uint8 buffer_index,int append);
+
 
 #endif
 /* [] END OF FILE */
