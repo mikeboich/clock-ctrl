@@ -865,3 +865,28 @@ void init_font(){
     system_font[104] = (seg_or_flag*)&JYear;
     system_font[105] = (seg_or_flag*)&JTEST;
 }
+
+// pins integer values to uint8 range, rather than letting them wrap around:
+uint8 pin(int x){
+  if(x<0)x=0;
+  if(x>255)x=255;
+  return x;
+}
+
+// returns the width of a single vector character:
+int char_width(char c){
+  seg_or_flag *seg_ptr = system_font[((uint8) c)-32];    // map from char code to segment list
+  while(seg_ptr->seg_data.x_offset<0x80) seg_ptr++;       // skip over segments
+  return seg_ptr->flag & 0x7f;                 // end flag - 0x80 + char width
+}
+
+// returns the width (sum of character widths) of a string:
+uint8 stringWidth(char s[],uint8 scale){
+  int width=0,index=0;
+    
+  while(*s){
+    width += char_width(*s);
+    s++;
+  }
+  return pin(width*scale); 
+}

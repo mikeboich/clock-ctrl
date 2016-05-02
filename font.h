@@ -50,6 +50,9 @@ typedef seg_or_flag vector_font[];
 extern seg_or_flag *system_font[128];
 
 void init_font();
+uint8 pin(int x);
+int char_width(char c);
+uint8 stringWidth(char s[],uint8 scale);
 
 #endif
 
