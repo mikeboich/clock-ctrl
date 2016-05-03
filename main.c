@@ -34,16 +34,6 @@ int led_state = 0;  // we blink this once/second
 //int button_changed=0;  // not currently used, as we're not using interrupts yet
 int button_state=0;
 
-
-#define BUF_ENTRIES 120
-#define DEBUG_BUFFER 4
-#define ANALOG_BUFFER 3
-#define PONG_BUFFER 5
-seg_or_flag seg_buffer[6][BUF_ENTRIES];
-
-#define OVERWRITE 0
-#define APPEND 1
-
 // Some useful strings:
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
