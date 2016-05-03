@@ -369,9 +369,9 @@ void initTime(){
   the_time->DayOfMonth = 2;
   the_time->DayOfWeek=2;
   the_time->Year = 2016;
-  the_time->Hour = 13;
+  the_time->Hour = 14;
   the_time->Min = 28;
-  the_time->Sec = 30;
+  the_time->Sec = 55;
     
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -520,7 +520,7 @@ int main()
     
     case analogMode:
       now = RTC_1_ReadTime();
-      if(display_mode == analogMode) updateAnalogClock(now->Hour,now->Min,now->Sec);
+      updateAnalogClock(now->Hour,now->Min,now->Sec);
       display_buffer(ANALOG_BUFFER);
       break;
     
