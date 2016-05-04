@@ -166,11 +166,15 @@ CY_ISR(button_isr_Interrupt)
     /*  Place your Interrupt code here. */
     /* `#START button_isr_Interrupt` */
     #include "EncoderButton.h"
+    
+    #define BUTTON_DOWN 0
+    #define BUTTON_UP 1
+
     extern int button_clicked;
     static uint8 initialized=0;
     static uint8 states[2];  //  [0] = current, [1] = previous
     uint8 tmp;
-    // Clock-based interrupt, so no need to clear anything
+    // Clock-based interrupt, so no need to clear anything:
     tmp = EncoderButton_Read();
     
     if(!initialized){
@@ -180,8 +184,9 @@ CY_ISR(button_isr_Interrupt)
     else{
      states[1]=states[0];
      states[0]=tmp;
-     // my "value add"
-     if(states[0] != states[1] && tmp==0) button_clicked = 1;
+     // my "value add vs the example code:"
+    // button_clicked is "sticky" by convention.  The main thread consumes it by resetting it.
+     if(states[0] != states[1] && tmp==BUTTON_DOWN) button_clicked = 1;
     }
     
     /* `#END` */

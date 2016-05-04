@@ -18,8 +18,6 @@
  *******************************************************************************/
 #include "font.h"
 
-#define BUTTON_DOWN 0
-#define BUTTON_UP 1
 extern int button_clicked;
 
 // Some useful strings:

@@ -22,6 +22,7 @@
 #include <stdio.h>
 
 extern int cycle_count;
+extern int verbose_mode;
 int button_clicked;
 
 // Some useful strings:
@@ -166,7 +167,7 @@ void char_test(){
     char str1[] = "abcdefghijklm";
     char str2[] = "nopqrstuvwxyz";
     char str3[] =   "~`!@#$%^&*()_-+={}";
-    char str4[] = {128,129,130,131,132,133,134,135,136,137};
+    char str4[] = {128,129,130,131,132,0};
     compileString(str1,255,230,0,1,OVERWRITE);
     compileString(str2,255,180,1,1,OVERWRITE);
     compileString(str3,255,130,2,1,OVERWRITE);
@@ -178,6 +179,37 @@ void char_test(){
      display_buffer(2);   
      display_buffer(3);   
     }
+    button_clicked = 0;
+    char str5[] = "ABCDEFGHIJKLM";
+    char str6[] = "NOPQRSTUVWXYZ";
+    char str7[] = "1234567890";
+    char str8[] = {133,134,135,136,0};
+    compileString(str5,255,230,0,1,OVERWRITE);
+    compileString(str6,255,180,1,1,OVERWRITE);
+    compileString(str7,255,130,2,1,OVERWRITE);
+    compileString(str8,255,60,3,2,OVERWRITE);
+    
+    while(!button_clicked){
+     display_buffer(0);   
+     display_buffer(1);   
+     display_buffer(2);   
+     display_buffer(3);
+    }
+ 
+}
+
+void align_screen(){
+ seg_or_flag test_pattern[] = {
+  {128,128,255,255,cir,0xff},
+  {128,128,255,255,pos,0x99},
+  {128,128,240,0,pos,0x99},
+  {128,128,0,240,pos,0x99},
+  {255,255,0,0,cir,0x00},
+};        
+   compileSegments(test_pattern,ANALOG_BUFFER,OVERWRITE);
+   while(!button_clicked){
+     display_buffer(ANALOG_BUFFER);   
+}
 }
   void dispatch_menu(int menu_number, int item_number){
     // save the decoder position, so that it makes sense upon returning:
@@ -191,6 +223,10 @@ void char_test(){
             
             case 2: 
               char_test();
+              break;
+            
+            case 3:
+              align_screen();
               break;
         }
              
