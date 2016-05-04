@@ -413,7 +413,7 @@ void poll_button(){
     last_update = cycle_count;
     if(button_state == BUTTON_UP){
       if(display_mode == menuMode) dispatch_menu(main_menu.menu_number,QuadDec_1_GetCounter()%6);
-      else display_mode = menuMode;
+      //else display_mode = menuMode;
     }
   }
 }
@@ -545,7 +545,7 @@ int main()
     if(button_clicked){
         button_clicked=0;  // consume the click
         if(display_mode==menuMode) dispatch_menu(0,0);
-        else display_mode = menuMode;
+        //else display_mode = menuMode;
     }
     poll_button();
   }
