@@ -28,7 +28,7 @@ int button_clicked;
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
-menu main_menu = {.items = {"Set Time/Date","Set Locale", "Align Screen","Cancel"},
+menu main_menu = {.items = {"Set Time/Date","Set Locale","Character Test","Align Screen","Cancel"},
           .n_items = 4,
 		  .highlighted_item_index = -1,
           .menu_number = 0};
@@ -162,7 +162,23 @@ void set_the_time(){
       }
     }  
 }
-
+void char_test(){
+    char str1[] = "abcdefghijklm";
+    char str2[] = "nopqrstuvwxyz";
+    char str3[] =   "~`!@#$%^&*()_-+={}";
+    char str4[] = {128,129,130,131,132,133,134,135,136,137};
+    compileString(str1,255,230,0,1,OVERWRITE);
+    compileString(str2,255,180,1,1,OVERWRITE);
+    compileString(str3,255,130,2,1,OVERWRITE);
+    compileString(str4,255,60,3,2,OVERWRITE);
+    
+    while(!button_clicked){
+     display_buffer(0);   
+     display_buffer(1);   
+     display_buffer(2);   
+     display_buffer(3);   
+    }
+}
   void dispatch_menu(int menu_number, int item_number){
     // save the decoder position, so that it makes sense upon returning:
     int prev_counter = QuadDec_1_GetCounter();
@@ -171,6 +187,10 @@ void set_the_time(){
           switch (item_number){
             case 0:
              if(item_number == 0) set_the_time();
+              break;
+            
+            case 2: 
+              char_test();
               break;
         }
              
