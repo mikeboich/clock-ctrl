@@ -167,17 +167,22 @@ CY_ISR(button_isr_Interrupt)
     /* `#START button_isr_Interrupt` */
     #include "EncoderButton.h"
     extern int button_clicked;
-    extern int cycle_count;
-    static int last_click=0;
-    button_isr_ClearPending();
-    EncoderButton_ClearInterrupt();
-    if(cycle_count-last_click > 3000){
-        if(EncoderButton_Read()==1){
-          last_click = cycle_count;
-          button_clicked=1;           
-        }
-    }
+    static uint8 initialized=0;
+    static uint8 states[2];  //  [0] = current, [1] = previous
+    uint8 tmp;
+    // Clock-based interrupt, so no need to clear anything
+    tmp = EncoderButton_Read();
     
+    if(!initialized){
+     initialized=1;
+     states[0]=states[1]=tmp;      
+    }
+    else{
+     states[1]=states[0];
+     states[0]=tmp;
+     // my "value add"
+     if(states[0] != states[1] && tmp==0) button_clicked = 1;
+    }
     
     /* `#END` */
 }

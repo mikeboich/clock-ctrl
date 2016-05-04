@@ -404,19 +404,7 @@ void updateTimeDisplay(){
 
 }
 
-void poll_button(){
-  static int last_update = 0;
-  int tmp = EncoderButton_Read();
-    
-  if(tmp != button_state && cycle_count-last_update > 300){
-    button_state = tmp;
-    last_update = cycle_count;
-    if(button_state == BUTTON_UP){
-      if(display_mode == menuMode) dispatch_menu(main_menu.menu_number,QuadDec_1_GetCounter()%6);
-      //else display_mode = menuMode;
-    }
-  }
-}
+
 
 int main() 
 {
@@ -544,10 +532,12 @@ int main()
     else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(button_clicked){
         button_clicked=0;  // consume the click
-        if(display_mode==menuMode) dispatch_menu(0,0);
-        //else display_mode = menuMode;
+        if(display_mode==menuMode){
+            dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
+            display_mode = textMode;
+        }
+        else display_mode = menuMode;
     }
-    poll_button();
   }
 }
 
