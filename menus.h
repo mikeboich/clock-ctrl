@@ -18,6 +18,14 @@
  *******************************************************************************/
 #include "font.h"
 
+#define BUTTON_DOWN 0
+#define BUTTON_UP 1
+extern int button_clicked;
+
+// Some useful strings:
+extern char *day_names[7];
+char *month_names[12];
+
 typedef struct {char *items[8]; int n_items; int highlighted_item_index; uint8 menu_number;} menu;
 
 extern menu main_menu;
@@ -29,3 +37,4 @@ void display_menu(menu the_menu);
 
 void compile_menu(menu *the_menu, int which_buffer);
 
+void dispatch_menu(int menu_number, int item_number);

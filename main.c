@@ -34,9 +34,6 @@ int led_state = 0;  // we blink this once/second
 //int button_changed=0;  // not currently used, as we're not using interrupts yet
 int button_state=0;
 
-// Some useful strings:
-char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
-char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
 typedef enum{textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
 clock_type display_mode=textMode;
@@ -356,12 +353,12 @@ void initTime(){
   RTC_1_DisableInt();
     
   the_time->Month = 5;
-  the_time->DayOfMonth = 2;
-  the_time->DayOfWeek=2;
+  the_time->DayOfMonth = 3;
+  the_time->DayOfWeek=3;
   the_time->Year = 2016;
-  the_time->Hour = 14;
-  the_time->Min = 28;
-  the_time->Sec = 55;
+  the_time->Hour = 8;
+  the_time->Min = 12;
+  the_time->Sec = 42;
     
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -407,8 +404,6 @@ void updateTimeDisplay(){
 
 }
 
-#define BUTTON_DOWN 0
-#define BUTTON_UP 1
 void poll_button(){
   static int last_update = 0;
   int tmp = EncoderButton_Read();
@@ -417,7 +412,7 @@ void poll_button(){
     button_state = tmp;
     last_update = cycle_count;
     if(button_state == BUTTON_UP){
-      if(display_mode == menuMode) display_mode=textMode;
+      if(display_mode == menuMode) dispatch_menu(main_menu.menu_number,QuadDec_1_GetCounter()%6);
       else display_mode = menuMode;
     }
   }
@@ -451,7 +446,7 @@ int main()
   QuadDec_1_Start();
 
   // Initialize button interrupt:
-  //button_isr_Start();
+  button_isr_Start();
     
   /* Initialize Wave Interrupt: */
   isr_1_StartEx(wave_started);
@@ -547,6 +542,11 @@ int main()
     }
     if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 4;
     else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    if(button_clicked){
+        button_clicked=0;  // consume the click
+        if(display_mode==menuMode) dispatch_menu(0,0);
+        else display_mode = menuMode;
+    }
     poll_button();
   }
 }
