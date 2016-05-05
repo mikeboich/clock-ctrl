@@ -16,7 +16,7 @@
 
  *******************************************************************************/
 #include "draw.h"
-seg_or_flag seg_buffer[6][BUF_ENTRIES];
+seg_or_flag seg_buffer[2][BUF_ENTRIES];
 
 void clear_buffer(int which_buffer){
   seg_buffer[which_buffer][0].seg_data.x_offset = 0xff;

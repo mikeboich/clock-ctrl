@@ -30,7 +30,7 @@
 #define OVERWRITE 0
 #define APPEND 1
 
-extern seg_or_flag seg_buffer[6][BUF_ENTRIES];
+extern seg_or_flag seg_buffer[2][BUF_ENTRIES];
 
 struct menu;  // "forward" definition of menu is fine for this purpose
 
