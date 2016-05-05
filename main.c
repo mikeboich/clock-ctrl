@@ -455,18 +455,21 @@ int main()
     //    int phase = SixtyHz_Read();
     //    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
+    if(second_has_elapsed){
+        
+    }
     if(second_has_elapsed && (display_mode != menuMode)){
       led_state = 1-led_state;
       LED_Reg_Write(led_state);
       // tweak error_term used to sync pendulum with seconds:
       error_term = (cycle_count % 31250);
-      updateTimeDisplay();
       second_has_elapsed = 0;     
     } 
     RTC_1_TIME_DATE *now;
     
     switch (display_mode){
     case textMode:
+      updateTimeDisplay();
       display_buffer(0);
       break;
     

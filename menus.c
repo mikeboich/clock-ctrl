@@ -70,7 +70,7 @@ void unpack_time(RTC_1_TIME_DATE *t, int a[]){
   a[4] = t->Min;
   a[5] = t->Sec;
     
-  a[6] = t->DayOfWeek;
+  a[6] = t->DayOfWeek-1;
 }
 
 // copy array of values back into time structure:
@@ -83,7 +83,7 @@ void pack_time(RTC_1_TIME_DATE *t, int a[]){
   t->Min = a[4];
   t->Sec = a[5];
 
-  t->DayOfWeek = a[6];
+  t->DayOfWeek = a[6]+1;
 }
 
 struct {RTC_1_TIME_DATE the_time;
