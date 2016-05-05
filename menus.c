@@ -164,13 +164,10 @@ void set_the_time(){
     }  
 }
 void char_test(){
-    char str1[] = "abcdefghijklm";
-    char str2[] = "nopqrstuvwxyz";
-    char str3[] =   "~`!@#$%^&*()_-+={}";
-    char str4[] = {128,129,130,131,132,0};
-    compileString(str1,255,230,0,1,OVERWRITE);
-    compileString(str2,255,180,1,1,OVERWRITE);
-    compileString(str3,255,130,2,1,OVERWRITE);
+    compileString("abcdefghijklm",255,230,0,1,OVERWRITE);
+    compileString("nopqrstuvwxyz",255,180,1,1,OVERWRITE);
+    compileString("~`!@#$%^&*()_-+={}",255,130,2,1,OVERWRITE);
+    char str4[] = {128,129,130,131,132,0};  //Japanese extended characters
     compileString(str4,255,60,3,2,OVERWRITE);
     
     while(!button_clicked){
@@ -180,13 +177,10 @@ void char_test(){
      display_buffer(3);   
     }
     button_clicked = 0;
-    char str5[] = "ABCDEFGHIJKLM";
-    char str6[] = "NOPQRSTUVWXYZ";
-    char str7[] = "1234567890";
-    char str8[] = {133,134,135,136,0};
-    compileString(str5,255,230,0,1,OVERWRITE);
-    compileString(str6,255,180,1,1,OVERWRITE);
-    compileString(str7,255,130,2,1,OVERWRITE);
+    compileString("ABCDEFGHIJKLM",255,230,0,1,OVERWRITE);
+    compileString("NOPQRSTUVWXYZ",255,180,1,1,OVERWRITE);
+    compileString("1234567890",255,130,2,1,OVERWRITE);
+    char str8[] = {133,134,135,136,0};   // More Japanese characters
     compileString(str8,255,60,3,2,OVERWRITE);
     
     while(!button_clicked){
@@ -195,6 +189,7 @@ void char_test(){
      display_buffer(2);   
      display_buffer(3);
     }
+    button_clicked=0;
  
 }
 
@@ -228,8 +223,10 @@ void align_screen(){
             case 3:
               align_screen();
               break;
-        }
-             
+            
+            case 4: 
+              break;
+        }                 
     }
     QuadDec_1_SetCounter(prev_counter);   // restore the knob position
 }
