@@ -51,15 +51,15 @@ static void RTC_1_EveryYearHandler(void);
 *******************************************************************************/
 static void RTC_1_EverySecondHandler(void)
 {
-    /*  Place your every second handler code here. */
-    /* `#START EVERY_SECOND_HANDLER_CODE` */
-    extern int time_has_passed;
-    time_has_passed = 1;
-    /* `#END` */
+  /*  Place your every second handler code here. */
+  /* `#START EVERY_SECOND_HANDLER_CODE` */
+  extern int second_has_elapsed;
+  second_has_elapsed = 1;
+  /* `#END` */
     
-    #ifdef RTC_1_EVERY_SECOND_HANDLER_CALLBACK
-        RTC_1_EverySecondHandler_Callback();
-    #endif /* RTC_1_EVERY_SECOND_HANDLER_CALLBACK */
+#ifdef RTC_1_EVERY_SECOND_HANDLER_CALLBACK
+  RTC_1_EverySecondHandler_Callback();
+#endif /* RTC_1_EVERY_SECOND_HANDLER_CALLBACK */
 }
 
 

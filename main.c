@@ -27,7 +27,7 @@
 #include <math.h>
 
 // Real time clock variables:
-volatile int time_has_passed = 0;
+volatile int second_has_elapsed = 0;
 int led_state = 0;  // we blink this once/second
 
 // encoder button state
@@ -93,19 +93,6 @@ seg_or_flag test_segs[] = {
   {128,128,0,96,pos,0x99},
   {255,255,0,0,cir,0xff},
 };
-
-
-
-
-
-
-void line_test(){
-  int i;
-  for(i=5;i<250;i+=25){
-    line(0,255-i,i,0,ANALOG_BUFFER);
-    line(250,i,250-i,250,ANALOG_BUFFER);
-  }
-}
 
 #define HR_HAND_WIDTH 8
 #define HR_HAND_LENGTH 60
@@ -388,23 +375,21 @@ void updateTimeDisplay(){
     
     
   sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
-  compileString(time_string,255,0,0,3,0);
+  compileString(time_string,255,0,ANALOG_BUFFER,3,OVERWRITE);
 
   //    sprintf(time_string,"%i:%02i",hours,minutes);
   //    compileString(time_string,0,0,4);
 
   sprintf(date_string,"%s %i, %i",month_names[month-1],day_of_month,year);
  
-  compileString(date_string,255,114,1,1,OVERWRITE);
+  compileString(date_string,255,114,ANALOG_BUFFER,1,APPEND);
      
   char dw[12];
   sprintf(dw,"%s",day_names[day_of_week-1]);
-  compileString(dw,255,176,2,2,OVERWRITE);
+  compileString(dw,255,176,ANALOG_BUFFER,2,APPEND);
 
 
 }
-
-
 
 int main() 
 {
@@ -427,22 +412,20 @@ int main()
  
   /* Initialize the shift register: */
   ShiftReg_1_Start();
-    
-  //ShiftReg_1_WriteData(0xaa);  // not really needed..
 
-  // Start the quad decoder:
+  // Start the quadrature decoder(aka "the knob"):
   QuadDec_1_Start();
 
-  // Initialize button interrupt:
+  // Initialize button interrupt (which is a routine that polls the button at 60Hz):
   button_isr_Start();
     
-  /* Initialize Wave Interrupt: */
+  /* Initialize Wave Interrupt, which manages the circles: */
   isr_1_StartEx(wave_started);
   CyGlobalIntEnable;
 
-  //start the real-time clock component (which is what this is all about..)
+  //start the real-time clock component (since the system is a clock, after all)
   RTC_1_Start();
-  LED_Reg_Write(1);
+  LED_Reg_Write(1);  // we pulse the LED once/second
   initTime();
    
 
@@ -454,8 +437,8 @@ int main()
   SPIM_1_WriteTxData(0x000);
   CyDelay(100);
   LDAC_Write(0u);
-  CyDelayUs(5);
   LDAC_Write(1u);  // drop LDAC low to update DACS
+  
   SPIM_1_WriteTxData(0x7ff );
   CyDelay(1);
   SPIM_1_WriteTxData(0x3ff);
@@ -466,28 +449,24 @@ int main()
 
   compileSegments(test_segs,0,OVERWRITE);
 
-  uint8 cc = 0;
-
-  compileString("4567",255,90,1,1,OVERWRITE);
-  compileString("890",255,180,2,1,OVERWRITE);
+  compileString("123",255,90,0,1,APPEND);
+  compileString("abc",255,180,0,1,APPEND);
   for(;;){
     //    int phase = SixtyHz_Read();
     //    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
-    if(time_has_passed && (display_mode != menuMode)){
+    if(second_has_elapsed && (display_mode != menuMode)){
       led_state = 1-led_state;
       LED_Reg_Write(led_state);
       // tweak error_term used to sync pendulum with seconds:
       error_term = (cycle_count % 31250);
       updateTimeDisplay();
-      time_has_passed = 0;     
+      second_has_elapsed = 0;     
     } 
     RTC_1_TIME_DATE *now;
     
     switch (display_mode){
     case textMode:
-      display_buffer(2);
-      display_buffer(1);
       display_buffer(0);
       break;
     
