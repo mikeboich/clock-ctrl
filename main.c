@@ -425,7 +425,7 @@ int main()
 
   //start the real-time clock component (since the system is a clock, after all)
   RTC_1_Start();
-  LED_Reg_Write(1);  // we pulse the LED once/second
+  //LED_Reg_Write(1);  // we pulse the LED once/second
   initTime();
    
 
@@ -443,10 +443,11 @@ int main()
   CyDelay(1);
   SPIM_1_WriteTxData(0x3ff);
   AMux_1_Select(1);
+
         
   SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x00);
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
-
+  //dispatch_menu(0,3);
   compileSegments(test_segs,0,OVERWRITE);
 
   compileString("123",255,90,0,1,APPEND);
@@ -455,17 +456,16 @@ int main()
     //    int phase = SixtyHz_Read();
     //    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
-    if(second_has_elapsed){
-        
-    }
-    if(second_has_elapsed && (display_mode != menuMode)){
+     if(second_has_elapsed && (display_mode != menuMode)){
       led_state = 1-led_state;
       LED_Reg_Write(led_state);
-      // tweak error_term used to sync pendulum with seconds:
+      //tweak error_term used to sync pendulum with seconds:
       error_term = (cycle_count % 31250);
       second_has_elapsed = 0;     
     } 
     RTC_1_TIME_DATE *now;
+    int gps_status = GPS_Status_Read();
+    LED_Reg_Write(gps_status);
     
     switch (display_mode){
     case textMode:
