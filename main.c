@@ -314,7 +314,7 @@ void display_buffer(uint8 which_buffer){
       AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
               
       times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
-	seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
+	  seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
       if(times_to_loop==0) times_to_loop = 1;
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
 
@@ -323,7 +323,6 @@ void display_buffer(uint8 which_buffer){
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
             
       current_mask = seg_ptr->seg_data.mask;
-      //if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);  // I must have wired something wrong for this to be needed!
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
