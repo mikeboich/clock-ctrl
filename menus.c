@@ -183,7 +183,31 @@ void char_test(){
 
 void align_screen(){
   seg_or_flag test_pattern[] = {
-    {128,128,64,64,cir,0x0f},
+    {128,128,64,64,cir,0x0ff},
+    {128,0,64,128,pos,0x99},
+    {128,128,128,0,pos,0x99},
+//    {128,128,0,240,pos,0x99},
+    {255,255,0,0,cir,0x00},
+  }; 
+   uint8 masks[8] ={1,2,4,8,16,32,64,128};
+   uint8 x,y,i;
+   clear_buffer(ANALOG_BUFFER);
+  x=y=0;
+  for(i=0;i<8;i++){
+    test_pattern[0].seg_data.mask=masks[i]^0xff;
+    clear_buffer(ANALOG_BUFFER);
+    compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
+    while(!button_clicked){
+      display_buffer(ANALOG_BUFFER);
+    }
+    button_clicked = 0;  // consume the button_click
+      
+  }
+   
+}
+void align_screen2(){
+  seg_or_flag test_pat[] = {
+    {128,128,255,255,cir,0xff},
 //    {128,128,255,255,pos,0x99},
 //    {128,128,240,0,pos,0x99},
 //    {128,128,0,240,pos,0x99},
@@ -194,20 +218,15 @@ void align_screen(){
    clear_buffer(ANALOG_BUFFER);
   x=y=0;
   for(i=0;i<8;i++){
-    x = (i<=3) ? 64*(i+1) : 64*(i-3);
-    y= (i>3) ? 128 : 32;
-    test_pattern[0].seg_data.mask=masks[i]^0xff;
-    test_pattern[0].seg_data.x_offset=x;
-    test_pattern[0].seg_data.y_offset=y;
-    compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
+    test_pat[0].seg_data.mask=masks[i]^0xff;
+    compileSegments(test_pat,ANALOG_BUFFER,OVERWRITE);
     
-//     compileSegments(test_pattern,ANALOG_BUFFER,OVERWRITE);
-   
-      }
       while(!button_clicked){
       display_buffer(ANALOG_BUFFER);
 }
        button_clicked = 0;  // consume the button_click
+   
+      }
    
 }
 
