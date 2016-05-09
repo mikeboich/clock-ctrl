@@ -35,7 +35,7 @@ int led_state = 0;  // we blink this once/second
 int button_state=0;
 
 
-typedef enum{pendulumMode,textMode,analogMode, pongMode,menuMode} clock_type;
+typedef enum{textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
 clock_type display_mode=textMode;
 
 int verbose_mode = 0;
@@ -514,15 +514,16 @@ int main()
       last_refresh = cycle_count;
 
     }
-    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 4;
-    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    //if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 4;
+   // else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(button_clicked){
         button_clicked=0;  // consume the click
-        if(display_mode==menuMode){
-            dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
-            display_mode = textMode;
-        }
-        else display_mode = menuMode;
+//        if(display_mode==menuMode){
+//            dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
+//            display_mode = textMode;
+//        }
+//        else display_mode = menuMode;
+        display_mode = (display_mode+1) % 4;
     }
   }
 }
