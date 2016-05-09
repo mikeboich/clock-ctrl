@@ -183,17 +183,23 @@ void char_test(){
 
 void align_screen(){
   seg_or_flag test_pattern[] = {
-    {128,128,255,255,cir,0xff},
-    {128,128,255,255,pos,0x99},
-    {128,128,240,0,pos,0x99},
-    {128,128,0,240,pos,0x99},
+    {128,128,255,255,cir,0x0f},
+//    {128,128,255,255,pos,0x99},
+//    {128,128,240,0,pos,0x99},
+//    {128,128,0,240,pos,0x99},
     {255,255,0,0,cir,0x00},
-  };        
-  compileSegments(test_pattern,ANALOG_BUFFER,OVERWRITE);
-  while(!button_clicked){
-    display_buffer(ANALOG_BUFFER);   
-  }
-  button_clicked = 0;  // consume the button_click
+  }; 
+   uint8 mask = 0x1;
+  while(mask){
+    test_pattern->seg_data.mask=mask;
+     mask = mask << 1;
+     compileSegments(test_pattern,ANALOG_BUFFER,OVERWRITE);
+      while(!button_clicked){
+        display_buffer(ANALOG_BUFFER);   
+      }
+      button_clicked = 0;  // consume the button_click
+ 
+}
 }
 
 void dispatch_menu(int menu_number, int item_number){

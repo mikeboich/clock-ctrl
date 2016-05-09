@@ -35,7 +35,7 @@ int led_state = 0;  // we blink this once/second
 int button_state=0;
 
 
-typedef enum{textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
+typedef enum{pendulumMode,textMode,analogMode, pongMode,menuMode} clock_type;
 clock_type display_mode=textMode;
 
 int verbose_mode = 0;
@@ -323,7 +323,7 @@ void display_buffer(uint8 which_buffer){
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
             
       current_mask = seg_ptr->seg_data.mask;
-      if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);  // I must have wired something wrong for this to be needed!
+      //if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);  // I must have wired something wrong for this to be needed!
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
@@ -447,6 +447,10 @@ int main()
   SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x00);
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
 
+
+  // test section:
+  dispatch_menu(0,2);
+  dispatch_menu(0,3);
   compileSegments(test_segs,0,OVERWRITE);
 
   compileString("123",255,90,0,1,APPEND);
