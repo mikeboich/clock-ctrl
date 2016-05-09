@@ -317,6 +317,9 @@ void display_buffer(uint8 which_buffer){
 	  seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
       if(times_to_loop==0) times_to_loop = 1;
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
+    
+    // test:
+     // times_to_loop=1;
 
      
       // performance measurement:
@@ -339,12 +342,12 @@ void initTime(){
   RTC_1_DisableInt();
     
   the_time->Month = 5;
-  the_time->DayOfMonth = 3;
-  the_time->DayOfWeek=3;
+  the_time->DayOfMonth = 9;
+  the_time->DayOfWeek=2;
   the_time->Year = 2016;
-  the_time->Hour = 8;
-  the_time->Min = 12;
-  the_time->Sec = 42;
+  the_time->Hour = 14;
+  the_time->Min = 50;
+  the_time->Sec = 59;
     
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
