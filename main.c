@@ -22,6 +22,7 @@
 #include "draw.h"
 #include "menus.h"
 #include "max509.h"
+#include "fourletter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -35,8 +36,8 @@ int led_state = 0;  // we blink this once/second
 int button_state=0;
 
 
-typedef enum{textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
-clock_type display_mode=textMode;
+typedef enum{flwMode,textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
+clock_type display_mode=flwMode;
 
 int verbose_mode = 0;
 
@@ -83,6 +84,19 @@ void wave_started(){
     }
     break;
   }
+}
+
+// Show a four letter word:
+void compile_flw(){
+    char *rw;
+    static int lastUpdate=0;
+    
+    if(cycle_count-lastUpdate > 15000){  // half second update interval..
+        rw = random_word();
+        compileString(rw,255,88,ANALOG_BUFFER,5,OVERWRITE);
+        lastUpdate = cycle_count;
+        
+    }
 }
 
 // test case data:
@@ -342,12 +356,12 @@ void initTime(){
   RTC_1_DisableInt();
     
   the_time->Month = 5;
-  the_time->DayOfMonth = 9;
-  the_time->DayOfWeek=2;
+  the_time->DayOfMonth = 10;
+  the_time->DayOfWeek=3;
   the_time->Year = 2016;
-  the_time->Hour = 14;
-  the_time->Min = 50;
-  the_time->Sec = 59;
+  the_time->Hour = 17;
+  the_time->Min = 11;
+  the_time->Sec = 0;
     
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -403,7 +417,7 @@ int main()
   VDAC8_2_Start();
   VDAC8_3_Start();
     
-  // Start opamp (drives analog reference):
+  // Start opamp (drives analog reference):  (Not currently used)
   //Opamp_1_Start();
     
     
@@ -437,17 +451,20 @@ int main()
   CyDelay(100);
     
   SPIM_1_WriteTxData(0x000);
-  CyDelay(100);
-  LDAC_Write(0u);
-  LDAC_Write(1u);  // drop LDAC low to update DACS
+  CyDelay(1);
+  strobe_LDAC();
   
   SPIM_1_WriteTxData(0x7ff );
   CyDelay(1);
   SPIM_1_WriteTxData(0x3ff);
   AMux_1_Select(1);
         
-  SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x00);
-  SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
+  SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x80);
+  SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x80);
+  CyDelay(1);
+  strobe_LDAC();
+//  while(!button_clicked); 
+//  button_clicked=0;
 
 
   // test section:
@@ -474,6 +491,11 @@ int main()
     RTC_1_TIME_DATE *now;
     
     switch (display_mode){
+    case flwMode:
+      compile_flw();
+      display_buffer(ANALOG_BUFFER);
+      break;
+    
     case textMode:
       updateTimeDisplay();
       display_buffer(0);
@@ -525,7 +547,10 @@ int main()
 //            display_mode = textMode;
 //        }
 //        else display_mode = menuMode;
-        display_mode = (display_mode+1) % 4;
+        display_mode = (display_mode+1) % 5;
+    }
+    else{
+     //display_mode = (cycle_count / 250000) % 4;   
     }
   }
 }
