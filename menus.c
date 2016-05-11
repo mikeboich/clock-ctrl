@@ -245,7 +245,7 @@ void dispatch_menu(int menu_number, int item_number){
       break;
             
     case 3:
-      align_screen();
+      align_screen2();
       break;
             
     case 4: 

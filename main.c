@@ -23,6 +23,7 @@
 #include "menus.h"
 #include "max509.h"
 #include "fourletter.h"
+#include "gps.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -36,7 +37,7 @@ volatile int second_has_elapsed = 0;
 int button_state=0;
 
 
-typedef enum{flwMode,textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
+typedef enum{flwMode,gpsDebugMode, textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
 clock_type display_mode=flwMode;
 
 int verbose_mode = 0;
@@ -356,11 +357,11 @@ void initTime(){
   RTC_1_DisableInt();
     
   the_time->Month = 5;
-  the_time->DayOfMonth = 10;
-  the_time->DayOfWeek=3;
+  the_time->DayOfMonth = 11;
+  the_time->DayOfWeek=4;
   the_time->Year = 2016;
-  the_time->Hour = 17;
-  the_time->Min = 11;
+  the_time->Hour = 3;
+  the_time->Min = 15;
   the_time->Sec = 0;
     
   RTC_1_WriteTime(the_time);
@@ -442,6 +443,9 @@ int main()
   isr_1_StartEx(wave_started);
   CyGlobalIntEnable;
 
+// start the UART for gps communications:
+  UART_1_Start();
+
   //start the real-time clock component (since the system is a clock, after all)
   //RTC_1_Start();  We're testing the GPS 1 pps for now ***
   initTime();
@@ -491,7 +495,14 @@ int main()
     RTC_1_TIME_DATE *now;
     
     switch (display_mode){
-    case flwMode:
+
+    case gpsDebugMode:
+      
+      compileString(sentence,255,32,ANALOG_BUFFER,1,OVERWRITE);
+      display_buffer(ANALOG_BUFFER);
+      break;
+    
+     case flwMode:
       compile_flw();
       display_buffer(ANALOG_BUFFER);
       break;
@@ -538,6 +549,13 @@ int main()
       last_refresh = cycle_count;
 
     }
+    
+    // check serial port for gps characters:
+    while(UART_1_GetRxBufferSize()>0){
+        char c = UART_1_GetByte() & 0x00ff;
+        consume_char(c);
+    }
+    
     //if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 4;
    // else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(button_clicked){
