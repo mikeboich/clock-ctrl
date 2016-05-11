@@ -22,6 +22,7 @@
 #include "draw.h"
 #include "menus.h"
 #include "max509.h"
+#include "fourletter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -35,8 +36,8 @@ int led_state = 0;  // we blink this once/second
 int button_state=0;
 
 
-typedef enum{textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
-clock_type display_mode=textMode;
+typedef enum{flwMode,textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
+clock_type display_mode=flwMode;
 
 int verbose_mode = 0;
 
@@ -83,6 +84,19 @@ void wave_started(){
     }
     break;
   }
+}
+
+// Show a four letter word:
+void compile_flw(){
+    char *rw;
+    static int lastUpdate=0;
+    
+    if(cycle_count-lastUpdate > 15000){  // half second update interval..
+        rw = random_word();
+        compileString(rw,255,88,ANALOG_BUFFER,4,OVERWRITE);
+        lastUpdate = cycle_count;
+        
+    }
 }
 
 // test case data:
@@ -314,16 +328,19 @@ void display_buffer(uint8 which_buffer){
       AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
               
       times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
-	seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
+	  seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
       if(times_to_loop==0) times_to_loop = 1;
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
+    
+    // test:
+     // times_to_loop=1;
 
      
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
             
       current_mask = seg_ptr->seg_data.mask;
-      if(seg_ptr->seg_data.arc_type!=cir) current_mask=(current_mask ^ 0xff);  // I must have wired something wrong for this to be needed!
+      if(seg_ptr->seg_data.arc_type!=cir) current_mask = current_mask ^ 0xff;
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
@@ -340,12 +357,12 @@ void initTime(){
   RTC_1_DisableInt();
     
   the_time->Month = 5;
-  the_time->DayOfMonth = 3;
+  the_time->DayOfMonth = 10;
   the_time->DayOfWeek=3;
   the_time->Year = 2016;
-  the_time->Hour = 8;
-  the_time->Min = 12;
-  the_time->Sec = 42;
+  the_time->Hour = 17;
+  the_time->Min = 11;
+  the_time->Sec = 0;
     
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -401,7 +418,7 @@ int main()
   VDAC8_2_Start();
   VDAC8_3_Start();
     
-  // Start opamp (drives analog reference):
+  // Start opamp (drives analog reference):  (Not currently used)
   //Opamp_1_Start();
     
     
@@ -435,18 +452,25 @@ int main()
   CyDelay(100);
     
   SPIM_1_WriteTxData(0x000);
-  CyDelay(100);
-  LDAC_Write(0u);
-  LDAC_Write(1u);  // drop LDAC low to update DACS
+  CyDelay(1);
+  strobe_LDAC();
   
   SPIM_1_WriteTxData(0x7ff );
   CyDelay(1);
   SPIM_1_WriteTxData(0x3ff);
   AMux_1_Select(1);
         
-  SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x00);
-  SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x00);
+  SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x80);
+  SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x80);
+  CyDelay(1);
+  strobe_LDAC();
+//  while(!button_clicked); 
+//  button_clicked=0;
 
+
+  // test section:
+  dispatch_menu(0,2);
+  dispatch_menu(0,3);
   compileSegments(test_segs,0,OVERWRITE);
 
   compileString("123",255,90,0,1,APPEND);
@@ -468,6 +492,11 @@ int main()
     RTC_1_TIME_DATE *now;
     
     switch (display_mode){
+    case flwMode:
+      compile_flw();
+      display_buffer(ANALOG_BUFFER);
+      break;
+    
     case textMode:
       updateTimeDisplay();
       display_buffer(0);
@@ -510,15 +539,19 @@ int main()
       last_refresh = cycle_count;
 
     }
-    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 4;
-    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    //if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 4;
+   // else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(button_clicked){
         button_clicked=0;  // consume the click
-        if(display_mode==menuMode){
-            dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
-            display_mode = textMode;
-        }
-        else display_mode = menuMode;
+//        if(display_mode==menuMode){
+//            dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
+//            display_mode = textMode;
+//        }
+//        else display_mode = menuMode;
+        display_mode = (display_mode+1) % 5;
+    }
+    else{
+     //display_mode = (cycle_count / 250000) % 4;   
     }
   }
 }
