@@ -29,7 +29,7 @@
 
 // Real time clock variables:
 volatile int second_has_elapsed = 0;
-int led_state = 0;  // we blink this once/second
+//int led_state = 0;  // we blink this once/second
 
 // encoder button state
 //int button_changed=0;  // not currently used, as we're not using interrupts yet
@@ -434,14 +434,16 @@ int main()
 
   // Initialize button interrupt (which is a routine that polls the button at 60Hz):
   button_isr_Start();
+
+  // initialize the pseudo 1pps interrupt from the gps:
+  one_pps_int_Start();
     
   /* Initialize Wave Interrupt, which manages the circles: */
   isr_1_StartEx(wave_started);
   CyGlobalIntEnable;
 
   //start the real-time clock component (since the system is a clock, after all)
-  RTC_1_Start();
-  LED_Reg_Write(1);  // we pulse the LED once/second
+  //RTC_1_Start();  We're testing the GPS 1 pps for now ***
   initTime();
    
 
@@ -482,8 +484,6 @@ int main()
         
     }
     if(second_has_elapsed && (display_mode != menuMode)){
-      led_state = 1-led_state;
-      LED_Reg_Write(led_state);
       // tweak error_term used to sync pendulum with seconds:
       error_term = (cycle_count % 31250);
       second_has_elapsed = 0;     
