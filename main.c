@@ -437,7 +437,7 @@ int main()
   button_isr_Start();
 
   // initialize the pseudo 1pps interrupt from the gps:
-  one_pps_int_Start();
+  //one_pps_int_Start();
     
   /* Initialize Wave Interrupt, which manages the circles: */
   isr_1_StartEx(wave_started);
@@ -565,7 +565,7 @@ int main()
 //            display_mode = textMode;
 //        }
 //        else display_mode = menuMode;
-        display_mode = (display_mode+1) % 5;
+        display_mode = (display_mode+1) % 6;
     }
     else{
      //display_mode = (cycle_count / 250000) % 4;   
