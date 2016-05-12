@@ -52,14 +52,6 @@ void send_command(char *s){
     UART_1_PutChar(NEWLINE);
 }
 
-void hard_command(){
-    char cmd[] = "$PSRF103,00,00,03,01*27";
-    UART_1_PutString(cmd);
-    UART_1_PutChar(CR);
-    UART_1_PutChar(NEWLINE);
-
-}
-
 void init_gps(){
     UART_1_Start();
     CyDelay(100);  // for luck
@@ -74,9 +66,12 @@ char sentence[256] = "Hello World";
 void set_rtc_to_gps(){
     RTC_1_TIME_DATE *t = RTC_1_ReadTime();
     char *time_data = &sentence[7];
-    char hour[5];
+    char hour[3];
     char minute[3];
     char seconds[3];
+    char month[3];
+    char day[3];
+    char year[3];
     int i;
     
     for(i=0;i<2;i++) hour[i] = *time_data++;
@@ -85,15 +80,30 @@ void set_rtc_to_gps(){
     minute[2] = 0;
     for(i=0;i<2;i++) seconds[i] = *time_data++;
     seconds[2] = 0;
+    
+    // now scrape the date:
+    char *date_data = &sentence[57];
+    for(i=0;i<2;i++) day[i] = *date_data++;
+    day[2] = 0;
+    for(i=0;i<2;i++) month[i] = *date_data++;
+    month[2] = 0;
+    for(i=0;i<2;i++) year[i] = *date_data++;
+    year[2] = 0;
+
         
     t->Hour = atoi(hour);
     t->Min = atoi(minute);
-    t->Sec = atoi(seconds);       
+    t->Sec = atoi(seconds);   
+    
+    t->Month = atoi(month);
+    t->DayOfMonth = atoi(day);
+    t->Year = 2000+atoi(year);
+    
 }
 
 void consume_char(char c){
     static gps_parse_state state = awaiting_char;
-    char expected_char[] = "$GPGGA";
+    char expected_char[] = "$GPRMC";
     
     static uint8 index=0;
     static uint8 buf_index=0;
