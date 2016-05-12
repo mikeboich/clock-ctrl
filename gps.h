@@ -14,6 +14,8 @@ extern char sentence[256];
 
 char *get_utc_time();
 void init_gps();
+void send_command(char *s); // send a command with checksum and crlf
+
 // state machine that consumes characters and constructs sentence(s):
 void consume_char(char c);
 

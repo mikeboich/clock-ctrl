@@ -444,7 +444,7 @@ int main()
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
-  UART_1_Start();
+  init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
   //RTC_1_Start();  We're testing the GPS 1 pps for now ***
@@ -474,15 +474,15 @@ int main()
 
 
   // test section:
-  dispatch_menu(0,2);
-  dispatch_menu(0,3);
+  //dispatch_menu(0,2);
+  //dispatch_menu(0,3);
   compileSegments(test_segs,0,OVERWRITE);
 
   compileString("123",255,90,0,1,APPEND);
   compileString("abc",255,180,0,1,APPEND);
   for(;;){
-    //    int phase = SixtyHz_Read();
-    //    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
+    int phase = SixtyHz_Read();
+    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
     if(second_has_elapsed){
         

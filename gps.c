@@ -9,15 +9,16 @@
  *
  * ========================================
 */
+#include <device.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "UART_1.h"
 #include "RTC_1.h"
 
+#define NEWLINE 0x0A
+#define CR 0x0D
 
-void init_gps(){
-    UART_1_Start();
-}
+
 
 char *get_utc_time(){
     static char result[256] = "";
@@ -35,10 +36,38 @@ char *get_utc_time(){
     return result;
 }
 
+void send_command(char *s){
+    uint8 checksum = 0;
+    char checksum_as_hex[8];
+    UART_1_PutChar(*s++);  // send the $ character
+    while(*s){
+        UART_1_PutChar(*s);
+        checksum = checksum & *s++;
+    }
+    UART_1_PutChar('*');
+    sprintf(checksum_as_hex,"%02x",checksum);
+    UART_1_PutChar(checksum_as_hex[2]);
+    UART_1_PutChar(checksum_as_hex[3]);
+    UART_1_PutChar(CR);
+    UART_1_PutChar(NEWLINE);
+}
 
+void hard_command(){
+    char cmd[] = "$PSRF103,00,00,03,01*27";
+    UART_1_PutString(cmd);
+    UART_1_PutChar(CR);
+    UART_1_PutChar(NEWLINE);
+
+}
+
+void init_gps(){
+    UART_1_Start();
+    CyDelay(100);  // for luck
+    send_command("$PSRF103,00,00,255,01");
+    //hard_command();
+}
 typedef enum {awaiting_dollar,awaiting_char, in_sentence} gps_parse_state;
 extern int second_has_elapsed;
-#define NEWLINE 0x0A
 int sentence_avail;
 char sentence[256] = "Hello World";
 
@@ -48,7 +77,7 @@ void set_rtc_to_gps(){
     char hour[5];
     char minute[3];
     char seconds[3];
-    int i,h,m,s;
+    int i;
     
     for(i=0;i<2;i++) hour[i] = *time_data++;
     hour[2] = 0;
@@ -56,15 +85,10 @@ void set_rtc_to_gps(){
     minute[2] = 0;
     for(i=0;i<2;i++) seconds[i] = *time_data++;
     seconds[2] = 0;
-    
-    h = atoi(hour);
-    m = atoi(minute);
-    s = atoi(seconds);
-    
-    t->Hour = h;
-    t->Min = m;
-    t->Sec = s;
-    
+        
+    t->Hour = atoi(hour);
+    t->Min = atoi(minute);
+    t->Sec = atoi(seconds);       
 }
 
 void consume_char(char c){
@@ -108,6 +132,7 @@ void consume_char(char c){
                 
                 second_has_elapsed = 1;
                 set_rtc_to_gps();
+                //send_command("$PSRF103,00,00,03,01");
             }
             break;
     }
