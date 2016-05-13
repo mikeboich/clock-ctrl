@@ -18,8 +18,18 @@
 #define NEWLINE 0x0A
 #define CR 0x0D
 
+uint8 time_offset = -7;
 
-
+char *field_n(uint8 n, char *sentence){
+    char *c = sentence;
+    while(n && *c){
+        if(*c++ == ','){
+            n--;
+        }
+    }
+    if(n) return (0);  // we didn't get to field # n
+    else return(c);  // c just advanced past the nth comma
+}
 char *get_utc_time(){
     static char result[256] = "";
     static uint8 index=0;
@@ -42,12 +52,12 @@ void send_command(char *s){
     UART_1_PutChar(*s++);  // send the $ character
     while(*s){
         UART_1_PutChar(*s);
-        checksum = checksum & *s++;
+        checksum = checksum ^ *s++;
     }
     UART_1_PutChar('*');
     sprintf(checksum_as_hex,"%02x",checksum);
-    UART_1_PutChar(checksum_as_hex[2]);
-    UART_1_PutChar(checksum_as_hex[3]);
+    UART_1_PutChar(checksum_as_hex[0]);
+    UART_1_PutChar(checksum_as_hex[1]);
     UART_1_PutChar(CR);
     UART_1_PutChar(NEWLINE);
 }
@@ -55,7 +65,16 @@ void send_command(char *s){
 void init_gps(){
     UART_1_Start();
     CyDelay(100);  // for luck
-    send_command("$PSRF103,00,00,255,01");
+     //send_command("$PSRF100,1,38400,8,1,0");
+     send_command("$PSRF103,00,00,00,01");
+
+     send_command("$PSRF103,01,00,00,01");
+     send_command("$PSRF103,02,00,00,01");
+     send_command("$PSRF103,03,00,00,01");
+     send_command("$PSRF103,04,00,01,01");
+     send_command("$PSRF103,05,00,00,01");
+     send_command("$PSRF103,06,00,00,01");
+//send_command("$PSRF103,00,01,00,01");
     //hard_command();
 }
 typedef enum {awaiting_dollar,awaiting_char, in_sentence} gps_parse_state;
@@ -63,46 +82,26 @@ extern int second_has_elapsed;
 int sentence_avail;
 char sentence[256] = "Hello World";
 
+// convert two successive decimal digits to an int:
+uint8 a_to_uint8(char *s){
+    return 10*(s[0] - 0x30) + (s[1] - 0x30);
+}
 void set_rtc_to_gps(){
     RTC_1_TIME_DATE *t = RTC_1_ReadTime();
-    char *time_data = &sentence[7];
-    char hour[3];
-    char minute[3];
-    char seconds[3];
-    char month[3];
-    char day[3];
-    char year[3];
-    int i;
+    //char *c = field_n(&sentence[9]);
+    t->Hour = a_to_uint8(field_n(1,sentence));
+    t->Min = a_to_uint8(field_n(1,sentence)+2);
+    t->Sec = a_to_uint8(field_n(1,sentence)+4);   
     
-    for(i=0;i<2;i++) hour[i] = *time_data++;
-    hour[2] = 0;
-    for(i=0;i<2;i++) minute[i] = *time_data++;
-    minute[2] = 0;
-    for(i=0;i<2;i++) seconds[i] = *time_data++;
-    seconds[2] = 0;
-    
-    // now scrape the date:
-    char *date_data = &sentence[57];
-    for(i=0;i<2;i++) day[i] = *date_data++;
-    day[2] = 0;
-    for(i=0;i<2;i++) month[i] = *date_data++;
-    month[2] = 0;
-    for(i=0;i<2;i++) year[i] = *date_data++;
-    year[2] = 0;
-
-        
-    t->Hour = atoi(hour);
-    t->Min = atoi(minute);
-    t->Sec = atoi(seconds);   
-    
-    t->Month = atoi(month);
-    t->DayOfMonth = atoi(day);
-    t->Year = 2000+atoi(year);
+    t->DayOfMonth = a_to_uint8(field_n(9,sentence));
+    t->Month = a_to_uint8(field_n(9,sentence)+2);
+    t->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
     
 }
 
 void consume_char(char c){
     static gps_parse_state state = awaiting_char;
+    //char expected_char[] = "$GPRMC";
     char expected_char[] = "$GPRMC";
     
     static uint8 index=0;
@@ -142,7 +141,6 @@ void consume_char(char c){
                 
                 second_has_elapsed = 1;
                 set_rtc_to_gps();
-                //send_command("$PSRF103,00,00,03,01");
             }
             break;
     }

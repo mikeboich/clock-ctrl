@@ -447,6 +447,7 @@ int main()
   init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
+  // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
   //RTC_1_Start();  We're testing the GPS 1 pps for now ***
   initTime();
    
@@ -481,8 +482,8 @@ int main()
   compileString("123",255,90,0,1,APPEND);
   compileString("abc",255,180,0,1,APPEND);
   for(;;){
-    int phase = SixtyHz_Read();
-    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
+//    int phase = SixtyHz_Read();
+//    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
     if(second_has_elapsed){
         
@@ -498,7 +499,8 @@ int main()
 
     case gpsDebugMode:
       
-      compileString(sentence,255,32,ANALOG_BUFFER,1,OVERWRITE);
+      compile_substring(sentence,32,255,64,ANALOG_BUFFER,1,OVERWRITE);
+      compile_substring(&sentence[57],32,255,32,ANALOG_BUFFER,1,APPEND);
       display_buffer(ANALOG_BUFFER);
       break;
     

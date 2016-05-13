@@ -64,6 +64,14 @@ void compileString(char *s, uint8 x_coord, uint8 y_coord,uint8 buffer_index,uint
   dst_ptr->seg_data.mask=0;
 }
 
+void compile_substring(char *s, uint8 count,uint8 x_coord, uint8 y_coord,uint8 which_buffer,uint8 scale,uint8 append){
+    char temp_string[255];
+    int i;
+    for(i=0;i<count;i++) temp_string[i] = s[i];
+    temp_string[count] = 0;
+    compileString(temp_string,x_coord,y_coord,which_buffer,scale,append);
+}
+
 // compiles a list of segments into a display list.  Unlike CompileString, it doesn't modify them:
 // if append !=0, it appends to the buffer.  Otherwise ir overwrites the buffer:
 
