@@ -38,7 +38,7 @@ int button_state=0;
 
 
 typedef enum{flwMode,gpsDebugMode, textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
-clock_type display_mode=flwMode;
+clock_type display_mode=textMode;
 
 int verbose_mode = 0;
 
@@ -356,17 +356,19 @@ void initTime(){
   RTC_1_TIME_DATE *the_time = RTC_1_ReadTime();
   RTC_1_DisableInt();
     
-  the_time->Month = 5;
-  the_time->DayOfMonth = 11;
-  the_time->DayOfWeek=4;
+  the_time->Month = 2;
+  the_time->DayOfMonth = 28;
+  the_time->DayOfWeek=0;
   the_time->Year = 2016;
-  the_time->Hour = 3;
-  the_time->Min = 15;
-  the_time->Sec = 0;
+  the_time->Hour = 23;
+  the_time->Min = 59;
+  the_time->Sec = 50;
     
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
   RTC_1_EnableInt();
+  //RTC_1_Start(); done in gps_init at the moment...
+
     
 }
 
@@ -448,7 +450,6 @@ int main()
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
-  //RTC_1_Start();  We're testing the GPS 1 pps for now ***
   initTime();
    
 

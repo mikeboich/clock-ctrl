@@ -30,21 +30,7 @@ char *field_n(uint8 n, char *sentence){
     if(n) return (0);  // we didn't get to field # n
     else return(c);  // c just advanced past the nth comma
 }
-char *get_utc_time(){
-    static char result[256] = "";
-    static uint8 index=0;
-    char ch=0;
-    
-    int avail = UART_1_GetTxBufferSize();
-    while(avail-- && index < 255 && ch != (char) 13){
-        ch = UART_1_GetChar();
-        result[index++] = ch;
-    }
-    
-    index=0;
-    ch = ' ';
-    return result;
-}
+
 
 void send_command(char *s){
     uint8 checksum = 0;
@@ -71,8 +57,11 @@ void init_gps(){
      send_command("$PSRF103,01,00,00,01");
      send_command("$PSRF103,02,00,00,01");
      send_command("$PSRF103,03,00,00,01");
+    
      send_command("$PSRF103,04,00,01,01");
-     send_command("$PSRF103,05,00,00,01");
+     //send_command("$PSRF103,04,01,01,01");      // query this once to start the RTC
+
+    send_command("$PSRF103,05,00,00,01");
      send_command("$PSRF103,06,00,00,01");
 //send_command("$PSRF103,00,01,00,01");
     //hard_command();
@@ -96,7 +85,8 @@ void set_rtc_to_gps(){
     t->DayOfMonth = a_to_uint8(field_n(9,sentence));
     t->Month = a_to_uint8(field_n(9,sentence)+2);
     t->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
-    
+    RTC_1_Start();  
+   
 }
 
 void consume_char(char c){

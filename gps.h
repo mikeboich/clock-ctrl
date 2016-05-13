@@ -12,7 +12,6 @@
 extern int sentence_avail;
 extern char sentence[256];
 
-char *get_utc_time();
 void init_gps();
 void send_command(char *s); // send a command with checksum and crlf
 
