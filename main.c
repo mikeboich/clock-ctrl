@@ -37,7 +37,7 @@ volatile int second_has_elapsed = 0;
 int button_state=0;
 
 
-typedef enum{flwMode,gpsDebugMode, textMode,analogMode, pongMode,pendulumMode,menuMode} clock_type;
+typedef enum{flwMode, textMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
 clock_type display_mode=textMode;
 
 int verbose_mode = 0;
@@ -571,10 +571,10 @@ int main()
 //            display_mode = textMode;
 //        }
 //        else display_mode = menuMode;
-        display_mode = (display_mode+1) % 6;
+        display_mode = (display_mode+1) % 5;
     }
     else{
-     //display_mode = (cycle_count / 250000) % 4;   
+     display_mode = (cycle_count / 250000) % 5;   
     }
   }
 }
