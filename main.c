@@ -574,7 +574,7 @@ int main()
         display_mode = (display_mode+1) % 5;
     }
     else{
-     display_mode = (cycle_count / 250000) % 5;   
+     display_mode = (cycle_count / (5*31250)) % 5;   // switch every 5 seconds
     }
   }
 }
