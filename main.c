@@ -539,16 +539,15 @@ int main()
       last_refresh = cycle_count;
 
     }
-    //if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 4;
-   // else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+   if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 5;
+   else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(button_clicked){
         button_clicked=0;  // consume the click
-//        if(display_mode==menuMode){
-//            dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
-//            display_mode = textMode;
-//        }
-//        else display_mode = menuMode;
-        display_mode = (display_mode+1) % 5;
+        if(display_mode==menuMode){
+            dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
+            display_mode = textMode;
+        }
+        else display_mode = menuMode;
     }
     else{
      //display_mode = (cycle_count / 250000) % 4;   
