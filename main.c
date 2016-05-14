@@ -349,6 +349,14 @@ void display_buffer(uint8 which_buffer){
           
       CyExitCriticalSection(int_status);
     }
+    else{
+         // check serial port for gps characters:
+        while(UART_1_GetRxBufferSize()>0){
+            char c = UART_1_GetByte() & 0x00ff;
+            consume_char(c);
+        }
+   
+    }
   }
 }
 
@@ -475,9 +483,9 @@ int main()
 //  button_clicked=0;
 
 
-  // test section:
-  //dispatch_menu(0,2);
-  //dispatch_menu(0,3);
+  //  test section:
+  dispatch_menu(0,2);
+  dispatch_menu(0,3);
   compileSegments(test_segs,0,OVERWRITE);
 
   compileString("123",255,90,0,1,APPEND);
@@ -553,11 +561,6 @@ int main()
 
     }
     
-    // check serial port for gps characters:
-    while(UART_1_GetRxBufferSize()>0){
-        char c = UART_1_GetByte() & 0x00ff;
-        consume_char(c);
-    }
     
     //if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 4;
    // else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);

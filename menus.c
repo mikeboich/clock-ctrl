@@ -184,6 +184,10 @@ void char_test(){
 void align_screen(){
   seg_or_flag test_pattern[] = {
     {128,128,64,64,cir,0x0ff},
+    {64,64,8,8,cir,0xff},
+    {64,192,8,8,cir,0xff},
+    {192,64,8,8,cir,0xff},
+    {192,192,8,8,cir,0xff},
     {128,128,64,0,pos,0x99},
     {128,128,0,64,pos,0x99},
 //    {128,128,0,240,pos,0x99},
@@ -245,7 +249,7 @@ void dispatch_menu(int menu_number, int item_number){
       break;
             
     case 3:
-      align_screen2();
+      align_screen();
       break;
             
     case 4: 

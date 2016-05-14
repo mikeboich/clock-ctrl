@@ -85,7 +85,8 @@ void set_rtc_to_gps(){
     t->DayOfMonth = a_to_uint8(field_n(9,sentence));
     t->Month = a_to_uint8(field_n(9,sentence)+2);
     t->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
-    RTC_1_Start();  
+    RTC_1_Start();
+    RTC_1_Stop();
    
 }
 
