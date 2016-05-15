@@ -183,11 +183,11 @@ void char_test(){
 
 void align_screen(){
   seg_or_flag test_pattern[] = {
-    {128,128,64,64,cir,0x0ff},
-    {64,64,8,8,cir,0xff},
-    {64,192,8,8,cir,0xff},
-    {192,64,8,8,cir,0xff},
-    {192,192,8,8,cir,0xff},
+    {128,128,128,128,cir,0x0ff},
+    {128-45,128-45,8,8,cir,0xff},
+    {128-45,128+45,8,8,cir,0xff},
+    {128+45,128-45,8,8,cir,0xff},
+    {128+45,128+45,8,8,cir,0xff},
     {128,128,64,0,pos,0x99},
     {128,128,0,64,pos,0x99},
 //    {128,128,0,240,pos,0x99},
@@ -211,7 +211,7 @@ void align_screen(){
 }
 void align_screen2(){
   seg_or_flag test_pat[] = {
-    {128,128,255,255,cir,0xff},
+    {128,128,255,255,cir,0x0f},
 //    {128,128,255,255,pos,0x99},
 //    {128,128,240,0,pos,0x99},
 //    {128,128,0,240,pos,0x99},
@@ -221,16 +221,15 @@ void align_screen2(){
    uint8 x,y,i;
    clear_buffer(ANALOG_BUFFER);
   x=y=0;
-  for(i=0;i<8;i++){
-    test_pat[0].seg_data.mask=masks[i]^0xff;
+    //test_pat[0].seg_data.mask=masks[i]^0xff;
     compileSegments(test_pat,ANALOG_BUFFER,OVERWRITE);
+    //compileString("2",255,0,ANALOG_BUFFER,4,OVERWRITE);
     
       while(!button_clicked){
       display_buffer(ANALOG_BUFFER);
 }
        button_clicked = 0;  // consume the button_click
    
-      }
    
 }
 
@@ -249,7 +248,7 @@ void dispatch_menu(int menu_number, int item_number){
       break;
             
     case 3:
-      align_screen();
+      align_screen2();
       break;
             
     case 4: 

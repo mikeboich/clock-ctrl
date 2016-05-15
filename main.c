@@ -72,6 +72,7 @@ void wave_started(){
 
   case blank_primed:
     current_state = drawing;
+    strobe_LDAC();
     break;
     
   case drawing:
@@ -92,7 +93,7 @@ void compile_flw(){
     char *rw;
     static int lastUpdate=0;
     
-    if(cycle_count-lastUpdate > 15000){  // half second update interval..
+    if(cycle_count-lastUpdate > 31250){  // one second update interval..
         rw = random_word();
         compileString(rw,255,88,ANALOG_BUFFER,5,OVERWRITE);
         lastUpdate = cycle_count;
@@ -344,7 +345,7 @@ void display_buffer(uint8 which_buffer){
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
-      strobe_LDAC();
+     // strobe_LDAC();  experiment:  do this in the interrupt routine
       seg_ptr++;
           
       CyExitCriticalSection(int_status);
