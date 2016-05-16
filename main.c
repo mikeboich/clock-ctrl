@@ -71,6 +71,7 @@ void wave_started(){
 
   case blank_primed:
     current_state = drawing;
+    strobe_LDAC();
     break;
     
   case drawing:
@@ -333,7 +334,7 @@ void display_buffer(uint8 which_buffer){
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
     
     // test:
-     // times_to_loop=1;
+     //times_to_loop=1;
 
      
       // performance measurement:
@@ -344,7 +345,8 @@ void display_buffer(uint8 which_buffer){
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
-      strobe_LDAC();
+    // experiment: move this to the interrupt routine:  
+    //strobe_LDAC();
       seg_ptr++;
           
       CyExitCriticalSection(int_status);
