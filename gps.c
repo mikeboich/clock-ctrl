@@ -21,7 +21,7 @@
 
 // handy constants:
 uint8 days_in_month[2][12] = {{31,28,31,30,31,30,31,31,30,31,30,31},\
-                            {31,28,31,30,31,30,31,31,30,31,30,31}};
+                            {31,29,31,30,31,30,31,31,30,31,30,31}};
 
 int8 time_offset = -7;
 
@@ -146,13 +146,13 @@ void increment_time(RTC_1_TIME_DATE *t, int hours){
     int h = t->Hour + hours;
     if(h>23){
      h -= 24;
-     increment_date(t);
+     increment_date(t,1);
     }
     else{
      if(h < 0){
        h += 24;
-       decrement_date(t);
-    }
+       increment_date(t,-1);
+      }
     }
     t->Hour = h;
 }
@@ -166,61 +166,36 @@ int is_leap_year(int y){
  if(y == 400*(y/400)) return 1;
  else return(0);
 }
-void increment_date(RTC_1_TIME_DATE *t){
+void increment_date(RTC_1_TIME_DATE *t,int incr){
     int d,m,y;
-    int leap_year = is_leap_year(y);
+    int year_type = is_leap_year(y);  // 0 for regular, 1 for leap
     d = t->DayOfMonth;
     m = t->Month;
     y = t->Year;
     
-    d -= 1;  // increment the date
-    if(d > days_in_month[leap_year][m]){
+    d += incr;  // increment or decrement the date incr should be +1 or -1 only
+    if(d > days_in_month[year_type][m-1]){
         m +=1;
         d=1;
-        if(m>11){  // we went into the new year
-            m=0;
+        if(m>12){  // we went into the new year
+            m=1;
             y+=1;
         }
     }
     
     if(d==0){
         m-=1;  // go to prev month
-        if(m<0){
+        if(m<1){  // if month goes to zero, wrap to December 31 of prior year:
          m+=12;
-         d=31;
+         y-=1;
+         d=31;  // i.e. 12/31/prev-year
         }
+       else d = days_in_month[year_type][m-1];  //wrap to last day of previous month
     }
     t->DayOfMonth=d;
     t->Month=m;
     t->Year = y;
 }
-void decrement_date(RTC_1_TIME_DATE *t){
-        int d,m,y;
-    int leap_year = is_leap_year(y);
-    d = t->DayOfMonth+1;
-    m = t->Month;
-    y = t->Year;
-    
-    d += 1;  // increment the date
-    if(d > days_in_month[leap_year][m]){
-        m +=1;
-        d=1;
-        if(m>11){  // we went into the new year
-            m=0;
-            y+=1;
-        }
-    }
-    
-    if(d==0){
-        m-=1;  // go to prev month
-        if(m<0){
-         m+=12;
-         d=31;
-        }
-    }
-    t->DayOfMonth=d;
-    t->Month=m;
-    t->Year = y;
-}
+
 
 /* [] END OF FILE */

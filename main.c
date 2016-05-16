@@ -365,13 +365,15 @@ void initTime(){
   RTC_1_TIME_DATE *the_time = RTC_1_ReadTime();
   RTC_1_DisableInt();
     
-  the_time->Month = 2;
-  the_time->DayOfMonth = 28;
+  the_time->Month = 3;
+  the_time->DayOfMonth = 1;
   the_time->DayOfWeek=0;
   the_time->Year = 2016;
-  the_time->Hour = 23;
+  the_time->Hour = 05;
   the_time->Min = 59;
   the_time->Sec = 50;
+
+increment_time(the_time,-7);
 
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);

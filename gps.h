@@ -21,7 +21,7 @@ void send_command(char *s); // send a command with checksum and crlf
 void consume_char(char c);
 
 void increment_time(RTC_1_TIME_DATE *t, int hours);
-void increment_date(RTC_1_TIME_DATE *t);
+void increment_date(RTC_1_TIME_DATE *t, int incr);
 void decrement_time(RTC_1_TIME_DATE *t, int hours);
 void decrement_date(RTC_1_TIME_DATE *t);
 
