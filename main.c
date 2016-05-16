@@ -372,7 +372,7 @@ void initTime(){
   the_time->Hour = 23;
   the_time->Min = 59;
   the_time->Sec = 50;
-    
+
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
   RTC_1_EnableInt();

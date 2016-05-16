@@ -9,6 +9,7 @@
  *
  * ========================================
 */
+#include "gps.h"
 #include <device.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,7 +19,11 @@
 #define NEWLINE 0x0A
 #define CR 0x0D
 
-uint8 time_offset = -7;
+// handy constants:
+uint8 days_in_month[2][12] = {{31,28,31,30,31,30,31,31,30,31,30,31},\
+                            {31,28,31,30,31,30,31,31,30,31,30,31}};
+
+int8 time_offset = -7;
 
 char *field_n(uint8 n, char *sentence){
     char *c = sentence;
@@ -85,6 +90,7 @@ void set_rtc_to_gps(){
     t->DayOfMonth = a_to_uint8(field_n(9,sentence));
     t->Month = a_to_uint8(field_n(9,sentence)+2);
     t->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
+    increment_time(t,time_offset);
     RTC_1_Start();
     RTC_1_Stop();
    
@@ -136,4 +142,85 @@ void consume_char(char c){
             break;
     }
 }
+void increment_time(RTC_1_TIME_DATE *t, int hours){
+    int h = t->Hour + hours;
+    if(h>23){
+     h -= 24;
+     increment_date(t);
+    }
+    else{
+     if(h < 0){
+       h += 24;
+       decrement_date(t);
+    }
+    }
+    t->Hour = h;
+}
+
+int is_leap_year(int y){
+ if(4*(y/4) != y) return 0;
+ // divisible by 4.  if not visible by 100, it's a leap year:
+ if(!(100*(y/100)==y)) return(1);
+
+// divisible by 4 and by 100.  Leap year if divisible by 400:
+ if(y == 400*(y/400)) return 1;
+ else return(0);
+}
+void increment_date(RTC_1_TIME_DATE *t){
+    int d,m,y;
+    int leap_year = is_leap_year(y);
+    d = t->DayOfMonth;
+    m = t->Month;
+    y = t->Year;
+    
+    d -= 1;  // increment the date
+    if(d > days_in_month[leap_year][m]){
+        m +=1;
+        d=1;
+        if(m>11){  // we went into the new year
+            m=0;
+            y+=1;
+        }
+    }
+    
+    if(d==0){
+        m-=1;  // go to prev month
+        if(m<0){
+         m+=12;
+         d=31;
+        }
+    }
+    t->DayOfMonth=d;
+    t->Month=m;
+    t->Year = y;
+}
+void decrement_date(RTC_1_TIME_DATE *t){
+        int d,m,y;
+    int leap_year = is_leap_year(y);
+    d = t->DayOfMonth+1;
+    m = t->Month;
+    y = t->Year;
+    
+    d += 1;  // increment the date
+    if(d > days_in_month[leap_year][m]){
+        m +=1;
+        d=1;
+        if(m>11){  // we went into the new year
+            m=0;
+            y+=1;
+        }
+    }
+    
+    if(d==0){
+        m-=1;  // go to prev month
+        if(m<0){
+         m+=12;
+         d=31;
+        }
+    }
+    t->DayOfMonth=d;
+    t->Month=m;
+    t->Year = y;
+}
+
 /* [] END OF FILE */
