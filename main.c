@@ -150,6 +150,13 @@ void updateAnalogClock(int hour, int min,int sec){
 /* ************* Pong Game ************* */
 #define PADDLE_HEIGHT 24
 #define PADDLE_WIDTH   8
+#define PONG_TOP 240
+#define PONG_BOTTOM 0
+#define PONG_LEFT PADDLE_WIDTH
+#define PONG_RIGHT 255-PADDLE_WIDTH
+#define PADDLE_MIN PONG_BOTTOM+(PADDLE_HEIGHT/2)+1
+#define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)-1
+
 typedef struct{
   int paddle_position[2]; 
   int puck_velocity[2];
@@ -166,22 +173,24 @@ pong_state game_state = {
 //returns which edge puck has struck, or zero otherwise:
 // left = 1, right = 2, top = 3, bottom = 4
 int puck_at_edge(){
-  if(game_state.puck_position[0] < PADDLE_WIDTH) return(1);
-  if(game_state.puck_position[0]>255-PADDLE_WIDTH) return(2);
-  if(game_state.puck_position[1] < 8) return(3);
-  if(game_state.puck_position[1 ]>247) return(4);
+  if(game_state.puck_position[0] < PONG_LEFT) return(1);
+  if(game_state.puck_position[0]> PONG_RIGHT) return(2);
+  if(game_state.puck_position[1] < PONG_BOTTOM) return(3);
+  if(game_state.puck_position[1 ]> PONG_TOP) return(4);
 
   return(0);
        
 }
 int puck_visible(){
-  if(game_state.puck_position[0] > 0 || game_state.puck_position[0]<250)
+  if(game_state.puck_position[0] > 0 || game_state.puck_position[0]<255)
     return 1;
   else 
     return 0;
 }
-#define PADDLE_MIN 16
-#define PADDLE_MAX 238
+void constrain(int *x, int xmin, int xmax){
+    if(*x>xmax) *x = xmax;
+    if(*x < xmin) *x = xmin;
+}
 void update_paddles(){
   int player;
   RTC_1_TIME_DATE *the_time;
@@ -190,7 +199,7 @@ void update_paddles(){
   
   if(puck_visible()){
     if((the_time->Min ==59 && the_time->Sec>57) || game_state.puck_velocity[0]<0) should_miss[1]=1;
-    if((the_time->Sec > 57) || game_state.puck_velocity[0]>0) should_miss[0]=1;
+    else if((the_time->Sec > 57) || game_state.puck_velocity[0]>0) should_miss[0]=1;
 
     for(player=0;player<2;player++){
       if(!should_miss[player]){
@@ -210,9 +219,9 @@ void update_paddles(){
 int puck_hit_paddle(){
   int which_paddle;
   int result=0;
-  if(game_state.puck_position[0] < PADDLE_WIDTH && game_state.puck_position[0] - game_state.puck_velocity[0]>PADDLE_WIDTH)
+  if(game_state.puck_velocity[0]<0 && abs(game_state.puck_position[0]-PADDLE_WIDTH) <= abs(game_state.puck_velocity[0]))
     which_paddle = 0;
-  else if(game_state.puck_position[0] > 254-PADDLE_WIDTH  && game_state.puck_position[0] - game_state.puck_velocity[0]<= 254-PADDLE_WIDTH)
+  else if(game_state.puck_velocity[0]>0 && abs(game_state.puck_position[0]-(PONG_RIGHT-PADDLE_WIDTH)) <= abs(game_state.puck_velocity[0]))
     which_paddle=1;
   else return 0;
   
@@ -220,7 +229,7 @@ int puck_hit_paddle(){
         
   if(abs(result) > PADDLE_HEIGHT/2) result=0;  // we missed
 
-  return result / 8;  
+  return (result / 8) + (rand() % 3)-1;  
 }
 
 void pong_update(){
@@ -397,9 +406,6 @@ void updateTimeDisplay(){
   int day_of_month = the_time->DayOfMonth;
   int year = the_time->Year;
     
-  //update the interim screen-saver:
-  ss_x_offset = (minutes) % 5;
-  ss_y_offset =(minutes+2) % 5;
     
     
   sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
@@ -549,6 +555,10 @@ int main()
 
     }
 
+  //update the interim screen-saver:
+  RTC_1_TIME_DATE *t;
+  ss_x_offset = (t->Min) % 5;
+  ss_y_offset =(t->Min+2) % 5;
  
     if(verbose_mode){
       int elapsed = (cycle_count-last_refresh);
@@ -575,7 +585,8 @@ int main()
         display_mode = (display_mode+1) % 5;
     }
     else{
-     display_mode = (cycle_count / (5*31250)) % 5;   // switch every 5 seconds
+     display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
+        //display_mode = pongMode;
     }
   }
 }

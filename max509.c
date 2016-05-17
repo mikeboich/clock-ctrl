@@ -24,8 +24,6 @@ void setImmediate(uint16 spi_data){
   SPIM_1_WriteTxData(spi_data);
 }
 
-// Drops the LDAC signal to load pre-buffered data in to the DAC:
-// no longer used, since we write to the DAC during blanking periods
 void strobe_LDAC(){
   LDAC_Write(0u);
   CyDelayUs(1);
