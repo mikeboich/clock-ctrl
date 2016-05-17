@@ -32,8 +32,6 @@
 volatile int second_has_elapsed = 0;
 //int led_state = 0;  // we blink this once/second
 
-// encoder button state
-//int button_changed=0;  // not currently used, as we're not using interrupts yet
 int button_state=0;
 
 
@@ -373,7 +371,7 @@ void initTime(){
   the_time->Min = 59;
   the_time->Sec = 50;
 
-increment_time(the_time,-7);
+offset_time(the_time,-7);
 
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);

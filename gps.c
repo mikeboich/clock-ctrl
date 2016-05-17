@@ -23,7 +23,7 @@
 uint8 days_in_month[2][12] = {{31,28,31,30,31,30,31,31,30,31,30,31},\
                             {31,29,31,30,31,30,31,31,30,31,30,31}};
 
-int8 time_offset = -7;
+int8 utc_offset = -7;
 
 char *field_n(uint8 n, char *sentence){
     char *c = sentence;
@@ -81,6 +81,7 @@ uint8 a_to_uint8(char *s){
     return 10*(s[0] - 0x30) + (s[1] - 0x30);
 }
 void set_rtc_to_gps(){
+    static int seed = 0;
     RTC_1_TIME_DATE *t = RTC_1_ReadTime();
     //char *c = field_n(&sentence[9]);
     t->Hour = a_to_uint8(field_n(1,sentence));
@@ -90,7 +91,13 @@ void set_rtc_to_gps(){
     t->DayOfMonth = a_to_uint8(field_n(9,sentence));
     t->Month = a_to_uint8(field_n(9,sentence)+2);
     t->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
-    increment_time(t,time_offset);
+    offset_time(t,utc_offset);
+    
+    // create a seed for the random number generator based on time and date:
+    if(seed==0){
+        seed = t->Sec+60*t->Min+3600*t->Hour+86400*t->DayOfYear;
+        srand(seed);
+    }
     RTC_1_Start();
     RTC_1_Stop();
    
@@ -142,7 +149,7 @@ void consume_char(char c){
             break;
     }
 }
-void increment_time(RTC_1_TIME_DATE *t, int hours){
+void offset_time(RTC_1_TIME_DATE *t, int hours){
     int h = t->Hour + hours;
     if(h>23){
      h -= 24;
