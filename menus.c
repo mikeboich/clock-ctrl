@@ -183,7 +183,7 @@ void char_test(){
 
 void align_screen(){
   seg_or_flag test_pattern[] = {
-    {128,128,255,255,cir,0x0c},
+    {128,128,255,255,cir,0x7f},
     //{128,128,255,255,pos,0x99},
     //{128,128,240,0,pos,0x99},
     //{128,128,0,240,pos,0x99},
