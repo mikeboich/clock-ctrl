@@ -211,7 +211,7 @@ void align_screen(){
 }
 void align_screen2(){
   seg_or_flag test_pat[] = {
-    {128,128,255,255,cir,0xaf},
+    {128,128,255,255,cir,0x0f},
 //    {128,128,255,255,pos,0x99},
 //    {128,128,240,0,pos,0x99},
 //    {128,128,0,240,pos,0x99},
