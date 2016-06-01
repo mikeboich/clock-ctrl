@@ -64,7 +64,7 @@ void init_gps(){
      send_command("$PSRF103,03,00,00,01");
     
      send_command("$PSRF103,04,00,01,01");
-     //send_command("$PSRF103,04,01,01,01");      // query this once to start the RTC
+     send_command("$PSRF103,04,01,01,01");      // query this once to start the RTC
 
     send_command("$PSRF103,05,00,00,01");
      send_command("$PSRF103,06,00,00,01");
@@ -105,8 +105,8 @@ void set_rtc_to_gps(){
 
 void consume_char(char c){
     static gps_parse_state state = awaiting_char;
-    //char expected_char[] = "$GPRMC";
     char expected_char[] = "$GPRMC";
+    //char expected_char[] = "$GPGGA";
     
     static uint8 index=0;
     static uint8 buf_index=0;

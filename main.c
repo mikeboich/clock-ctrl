@@ -36,7 +36,7 @@ int button_state=0;
 
 
 typedef enum{flwMode, textMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
-clock_type display_mode=textMode;
+clock_type display_mode=gpsDebugMode;
 
 int verbose_mode = 0;
 
@@ -385,7 +385,7 @@ offset_time(the_time,-7);
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
   RTC_1_EnableInt();
-  //RTC_1_Start(); done in gps_init at the moment...
+  RTC_1_Start(); //done in gps_init at the moment...
 
     
 }
@@ -427,6 +427,7 @@ void updateTimeDisplay(){
 
 int main() 
 {
+    int last_switch = 0;
   /* Start up the SPI interface: */
   SPIM_1_Start();
     
@@ -491,7 +492,7 @@ int main()
 
 
   //  test section:
-  dispatch_menu(0,2);
+  //dispatch_menu(0,2);
   dispatch_menu(0,3);
   compileSegments(test_segs,0,OVERWRITE);
 
@@ -516,7 +517,7 @@ int main()
     case gpsDebugMode:
       
       compile_substring(sentence,32,255,64,ANALOG_BUFFER,1,OVERWRITE);
-      compile_substring(&sentence[57],32,255,32,ANALOG_BUFFER,1,APPEND);
+      compile_substring(&sentence[32],32,255,32,ANALOG_BUFFER,1,APPEND);
       display_buffer(ANALOG_BUFFER);
       break;
     
@@ -573,20 +574,22 @@ int main()
     }
     
     
-    //if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 4;
-   // else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
+    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    
     if(button_clicked){
         button_clicked=0;  // consume the click
-//        if(display_mode==menuMode){
-//            dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
-//            display_mode = textMode;
-//        }
-//        else display_mode = menuMode;
-        display_mode = (display_mode+1) % 5;
+        if(display_mode==menuMode){
+            dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
+            display_mode = textMode;
+        }
+        else display_mode = menuMode;
     }
     else{
-     display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
-        //display_mode = pongMode;
+//     if(cycle_count-last_switch > 312500){
+//       display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
+//        last_switch=cycle_count;  
+//    }
     }
   }
 }
