@@ -349,6 +349,7 @@ void display_buffer(uint8 which_buffer){
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
             
       current_mask = seg_ptr->seg_data.mask;
+      if(seg_ptr->seg_data.arc_type != cir) current_mask ^= 0xff;
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
