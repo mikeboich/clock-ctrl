@@ -211,16 +211,16 @@ void align_screen(){
 }
 void align_screen2(){
   seg_or_flag test_pat[] = {
-    {128,128,255,255,cir,0xaa},
-    {128,128,255,255,pos,0x99},
-    {128,128,240,0,pos,0x99},
-    {128,128,0,240,pos,0x99},
+    {128,128,64,64,cir,0x0f},
+//    {128,128,255,255,pos,0x99},
+//    {128,128,240,0,pos,0x99},
+//    {128,128,0,240,pos,0x99},
     {255,255,0,0,cir,0x00},
   }; 
    uint8 masks[8] ={1,2,4,8,16,32,64,128};
    uint8 x,y,i;
-   clear_buffer(ANALOG_BUFFER);
-  x=y=0;
+  // clear_buffer(ANALOG_BUFFER);
+  //x=y=0;
     //test_pat[0].seg_data.mask=masks[i]^0xff;
     compileSegments(test_pat,ANALOG_BUFFER,OVERWRITE);
     //compileString("2",255,0,ANALOG_BUFFER,4,OVERWRITE);

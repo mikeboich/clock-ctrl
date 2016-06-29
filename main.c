@@ -36,7 +36,7 @@ int button_state=0;
 
 
 typedef enum{flwMode, textMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
-clock_type display_mode=gpsDebugMode;
+clock_type display_mode=pendulumMode;
 
 int verbose_mode = 0;
 
@@ -463,7 +463,7 @@ int main()
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
-  init_gps();
+ // init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
@@ -494,11 +494,8 @@ int main()
 
   //  test section:
   //dispatch_menu(0,2);
-  dispatch_menu(0,3);
-  compileSegments(test_segs,0,OVERWRITE);
-
-  compileString("123",255,90,0,1,APPEND);
-  compileString("abc",255,180,0,1,APPEND);
+  //dispatch_menu(0,3);
+  //dispatch_menu(0,3);
   for(;;){
 //    int phase = SixtyHz_Read();
 //    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
@@ -575,8 +572,8 @@ int main()
     }
     
     
-    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
-    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+//    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
+//    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
     if(button_clicked){
         button_clicked=0;  // consume the click
