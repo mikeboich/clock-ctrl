@@ -18,7 +18,7 @@
  *******************************************************************************/
 #include "font.h"
 
-extern int button_clicked;
+volatile int button_clicked;
 
 // Some useful strings:
 extern char *day_names[7];

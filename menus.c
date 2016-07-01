@@ -23,7 +23,7 @@
 
 extern int cycle_count;
 extern int verbose_mode;
-int button_clicked;
+//int button_clicked;
 
 // Some useful strings:
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
@@ -111,7 +111,6 @@ void compile_time_screen(int a[],int selected_field){
   if(selected_field!=field || blink_time())
     compileString(day_names[a[6]],255,y_pos[6],ANALOG_BUFFER,1,APPEND);
 }
-int menu_button_state = 1;
 
 void display_buffer(uint8 which_buffer);
 

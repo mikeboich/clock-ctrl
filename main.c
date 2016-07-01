@@ -1,4 +1,4 @@
-/*  main.c
+ /*  main.c
 
     Copyright (C) 2016 Michael Boich
 
@@ -32,11 +32,9 @@
 volatile int second_has_elapsed = 0;
 //int led_state = 0;  // we blink this once/second
 
-int button_state=0;
-
 
 typedef enum{flwMode, textMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
-clock_type display_mode=pendulumMode;
+clock_type display_mode=flwMode;
 
 int verbose_mode = 0;
 
@@ -386,9 +384,7 @@ offset_time(the_time,-7);
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
   RTC_1_EnableInt();
-  RTC_1_Start(); //done in gps_init at the moment...
-
-    
+  RTC_1_Start(); //done in gps_init at the moment...  
 }
 
 void updateTimeDisplay(){
@@ -437,10 +433,6 @@ int main()
   VDAC8_2_Start();
   VDAC8_3_Start();
     
-  // Start opamp (drives analog reference):  (Not currently used)
-  //Opamp_1_Start();
-    
-    
   /* Initialize the analog mux */
   AMux_1_Start();
   AMux_1_Select(0);
@@ -474,40 +466,52 @@ int main()
   init_font();
     
   CyDelay(100);
-    
-  SPIM_1_WriteTxData(0x000);
+      
+  SPIM_1_WriteTxData(DAC_Reg_A | DAC_Pre_Load |0x4);
   CyDelay(1);
-  strobe_LDAC();
-  
-  SPIM_1_WriteTxData(0x7ff );
-  CyDelay(1);
-  SPIM_1_WriteTxData(0x3ff);
-  AMux_1_Select(1);
+  SPIM_1_WriteTxData(DAC_Reg_B | DAC_Pre_Load |0x4);
+
+  AMux_1_Select(shape_to_mux[neg]);
         
   SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x80);
   SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x80);
   CyDelay(1);
   strobe_LDAC();
-//  while(!button_clicked); 
-//  button_clicked=0;
+  int x=0,y=0;
+ for(x=0;x<128;x+=16){
+      SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | x);
+    CyDelay(1);
+      SPIM_1_WriteTxData(DAC_Reg_A | DAC_Load_Now | x);
+    CyDelay(1);
+      SPIM_1_WriteTxData(DAC_Reg_B | DAC_Load_Now | x);
+    CyDelay(1);
+      SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | x);
+    CyDelay(1);
+    strobe_LDAC();
+      CyDelay(1000);    
+  }
+while (!button_clicked);
+  button_clicked=0;
 
-
-  //  test section:
-  //dispatch_menu(0,2);
-  //dispatch_menu(0,3);
-  //dispatch_menu(0,3);
+uint8 foo=0;
+  clear_buffer(0);
+  compileString("A",64,64,0,2,0);
+  
+  while(!button_clicked)display_buffer(0);
+  button_clicked=0;
+  
   for(;;){
 //    int phase = SixtyHz_Read();
 //    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
-    
     if(second_has_elapsed){
-        
+        LED_Reg_Write(foo);
+        foo=1-foo;
     }
     if(second_has_elapsed && (display_mode != menuMode)){
       // tweak error_term used to sync pendulum with seconds:
       error_term = (cycle_count % 31250);
-      second_has_elapsed = 0;     
     } 
+    second_has_elapsed = 0;     
     RTC_1_TIME_DATE *now;
     
     switch (display_mode){
