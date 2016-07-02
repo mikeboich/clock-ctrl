@@ -192,11 +192,11 @@ void align_screen(){
 //    {128,128,0,240,pos,0x99},
     {255,255,0,0,cir,0x00},
   }; 
-   uint8 masks[8] ={1,2,4,8,16,32,64,128};
+   uint8 masks[9] ={0,1,2,4,8,16,32,64,128};
    uint8 x,y,i;
    clear_buffer(ANALOG_BUFFER);
   x=y=0;
-  for(i=0;i<8;i++){
+  for(i=0;i<9;i++){
     test_pattern[0].seg_data.mask=masks[i]^0xff;
     clear_buffer(ANALOG_BUFFER);
     compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
@@ -247,7 +247,7 @@ void dispatch_menu(int menu_number, int item_number){
       break;
             
     case 3:
-      align_screen2();
+      align_screen();
       break;
             
     case 4: 

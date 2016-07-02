@@ -25,7 +25,7 @@
 
 #define DAC_LDAC 0x0000
     
-extern uint8 ss_x_offset, ss_y_offset;
+uint8 ss_x_offset, ss_y_offset;
     
 void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y);
 

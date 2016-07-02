@@ -406,20 +406,74 @@ void updateTimeDisplay(){
     
     
   sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
-  compileString(time_string,255,0,ANALOG_BUFFER,3,OVERWRITE);
+  compileString(time_string,255,56,ANALOG_BUFFER,3,OVERWRITE);
 
   //    sprintf(time_string,"%i:%02i",hours,minutes);
   //    compileString(time_string,0,0,4);
 
   sprintf(date_string,"%s %i, %i",month_names[month-1],day_of_month,year);
  
-  compileString(date_string,255,114,ANALOG_BUFFER,1,APPEND);
+  compileString(date_string,255,162,ANALOG_BUFFER,1,APPEND);
      
   char dw[12];
   sprintf(dw,"%s",day_names[day_of_week-1]);
-  compileString(dw,255,176,ANALOG_BUFFER,2,APPEND);
+  compileString(dw,255,222,ANALOG_BUFFER,2,APPEND);
 
 
+}
+void waitForClick(){
+    while(!button_clicked);
+    button_clicked=0;
+}
+void hw_test(){
+  SPIM_1_WriteTxData(DAC_Reg_A | DAC_Pre_Load |0x80);
+  CyDelay(1);
+  SPIM_1_WriteTxData(DAC_Reg_B | DAC_Pre_Load |0x80);
+
+  AMux_1_Select(shape_to_mux[cir]);
+        
+  SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x80);
+  CyDelay(1);
+  SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x80);
+
+  CyDelay(1);
+  strobe_LDAC();
+  waitForClick();
+
+  int i=0,j=0;
+  int levels[] = {0,128,254};
+  for(i=0;i<3;i++){
+      SPIM_1_WriteTxData(DAC_Reg_A | DAC_Load_Now | levels[i]);
+    CyDelay(1);
+      SPIM_1_WriteTxData(DAC_Reg_B | DAC_Load_Now | levels[i]);
+    CyDelay(1);
+    strobe_LDAC();
+    waitForClick();
+  }
+    SPIM_1_WriteTxData(DAC_Reg_A | DAC_Load_Now | 0x10);
+    CyDelay(1);
+      SPIM_1_WriteTxData(DAC_Reg_B | DAC_Load_Now | 0x10);
+    CyDelay(1);
+    strobe_LDAC();
+  for(i=0;i<3;i++){
+    for(j=0;j<3;j++){
+      SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | levels[i]);
+      CyDelay(1);
+      SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | levels[j]);
+      CyDelay(1);
+      strobe_LDAC();
+      waitForClick();
+        
+    }
+  }
+  waitForClick();
+  clear_buffer(0);
+  vector_font c={{192,192,128,128,pos,0xff}, {255,0,0,0,0,0,}};
+  //compileSegments(c,0,0);
+  circle(64,64,64,0);
+  
+  while(!button_clicked)display_buffer(0);
+  button_clicked=0;
 }
 
 int main() 
@@ -466,46 +520,18 @@ int main()
   init_font();
     
   CyDelay(100);
-      
-  SPIM_1_WriteTxData(DAC_Reg_A | DAC_Pre_Load |0x4);
-  CyDelay(1);
-  SPIM_1_WriteTxData(DAC_Reg_B | DAC_Pre_Load |0x4);
+  //hw_test();
+  dispatch_menu(0,2);
+  dispatch_menu(0,3);
 
-  AMux_1_Select(shape_to_mux[neg]);
-        
-  SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x80);
-  SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x80);
-  CyDelay(1);
-  strobe_LDAC();
-  int x=0,y=0;
- for(x=0;x<128;x+=16){
-      SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | x);
-    CyDelay(1);
-      SPIM_1_WriteTxData(DAC_Reg_A | DAC_Load_Now | x);
-    CyDelay(1);
-      SPIM_1_WriteTxData(DAC_Reg_B | DAC_Load_Now | x);
-    CyDelay(1);
-      SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | x);
-    CyDelay(1);
-    strobe_LDAC();
-      CyDelay(1000);    
-  }
-while (!button_clicked);
-  button_clicked=0;
-
-uint8 foo=0;
-  clear_buffer(0);
-  compileString("A",64,64,0,2,0);
-  
-  while(!button_clicked)display_buffer(0);
-  button_clicked=0;
+  uint8 toggle_var=0;
   
   for(;;){
-//    int phase = SixtyHz_Read();
-//    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
+    int phase = SixtyHz_Read();
+    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     if(second_has_elapsed){
-        LED_Reg_Write(foo);
-        foo=1-foo;
+        LED_Reg_Write(toggle_var);
+        toggle_var=1-toggle_var;
     }
     if(second_has_elapsed && (display_mode != menuMode)){
       // tweak error_term used to sync pendulum with seconds:
@@ -559,7 +585,7 @@ uint8 foo=0;
     }
 
   //update the interim screen-saver:
-  RTC_1_TIME_DATE *t;
+  RTC_1_TIME_DATE *t=RTC_1_ReadTime();
   ss_x_offset = (t->Min) % 5;
   ss_y_offset =(t->Min+2) % 5;
  
@@ -576,8 +602,8 @@ uint8 foo=0;
     }
     
     
-//    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
-//    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
+    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
     if(button_clicked){
         button_clicked=0;  // consume the click

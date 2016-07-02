@@ -15,7 +15,7 @@
 #define TX_FIFO_NOT_FULL 4 
 
 // global screensaver offsets:
-uint8 ss_x_offset=0, ss_y_offset=0;
+//uint8 ss_x_offset=0, ss_y_offset=0;
 
 // Routine to send data to the DAC over SPI.  Spins as necessary for full FIFO:
 void setImmediate(uint16 spi_data){
@@ -36,8 +36,11 @@ void strobe_LDAC(){
 // a few instructions later, rather than doing Load immediate,
 void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
   setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
+  CyDelayUs(2);
   setImmediate(DAC_Reg_B | DAC_Pre_Load |s->seg_data.y_size);
+  CyDelayUs(2);
   setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x + ss_x_offset)));
+  CyDelayUs(2);
   setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y + ss_y_offset)));
 
 }

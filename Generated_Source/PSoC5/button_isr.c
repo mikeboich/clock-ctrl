@@ -190,10 +190,10 @@ CY_ISR(button_isr_Interrupt)
      states[0]=tmp;
     
     // temporary hack until I install a 32KHz crystal:
-    temp_time+=1;
-    if(temp_time >=60) {
-        second_has_elapsed=1;
-        temp_time=0;
+//    temp_time+=1;
+//    if(temp_time >=60) {
+//        second_has_elapsed=1;
+//        temp_time=0;
 //        LED_Reg_Write(1);
     }
     
@@ -203,7 +203,7 @@ CY_ISR(button_isr_Interrupt)
         button_clicked=1;
 //        LED_Reg_Write(foo);
 //        foo=1-foo;
-      }
+//      }
     }
     
     /* `#END` */
