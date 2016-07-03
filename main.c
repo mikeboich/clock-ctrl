@@ -442,7 +442,7 @@ void hw_test(){
   CyDelay(1);
   SPIM_1_WriteTxData(DAC_Reg_B | DAC_Pre_Load |0x80);
 
-  AMux_1_Select(shape_to_mux[cir]);
+//  AMux_1_Select(shape_to_mux[cir]);
         
   SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x80);
   CyDelay(1);
@@ -539,8 +539,6 @@ int main()
   uint8 toggle_var=0;
   
   for(;;){
-    int phase = SixtyHz_Read();
-    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     if(second_has_elapsed){
         LED_Reg_Write(toggle_var);
         toggle_var=1-toggle_var;
@@ -568,6 +566,8 @@ int main()
     
     case textMode:
       updateTimeDisplay();
+      int phase = SixtyHz_Read();
+      while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
       display_buffer(0);
       break;
     
