@@ -325,7 +325,7 @@ void render_pendulum_buffer(){
   //render the pendulum bob:
   for(i=32;i>0;i-=8) circle(x,y,i,PONG_BUFFER);
 
-  //render the center of rotation of the pendulum:
+  //render the point from which the pendulum swings:
   circle(128,250,8,PONG_BUFFER);
 
 }
