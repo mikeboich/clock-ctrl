@@ -332,7 +332,20 @@ void display_buffer(uint8 which_buffer){
       uint8 int_status = CyEnterCriticalSection();
             
       set_DACfor_seg(seg_ptr,0,0);
-      AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
+//      AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
+      switch(seg_ptr->seg_data.arc_type){
+        case cir:
+          Phase_Register_Write(0x1);
+          break;
+        
+        case pos:
+          Phase_Register_Write(0x0);
+          break;
+        
+        case neg:
+          Phase_Register_Write(0x2);
+          break;
+    }
               
       times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
 	  seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
@@ -345,9 +358,8 @@ void display_buffer(uint8 which_buffer){
      
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
-            
       current_mask = seg_ptr->seg_data.mask;
-      if(seg_ptr->seg_data.arc_type != cir) current_mask ^= 0xff;
+//      if(seg_ptr->seg_data.arc_type != cir) current_mask ^= 0xff;
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
@@ -485,11 +497,11 @@ int main()
   /* Start VDACs */
   VDAC8_1_Start();
   VDAC8_2_Start();
-  VDAC8_3_Start();
+//  VDAC8_3_Start();
     
   /* Initialize the analog mux */
-  AMux_1_Start();
-  AMux_1_Select(0);
+//  AMux_1_Start();
+//  AMux_1_Select(0);
     
  
   /* Initialize the shift register: */

@@ -11,37 +11,72 @@
 // Component: sin8
 module sin8 (
     output [7:0] outp,
-	input  [7:0] inp
+	input  [7:0] inp,
+    input  [1:0] phase // ouput phase (0deg, 90deg, 180deg, 360deg)
 );
 
 //`#start body` -- edit after this line, do not edit this line
 
     // parameters // 
-    //parameter TableSize = 3'd2; //
-    parameter TableSize = 8'd8; //
+    
+    parameter  [7:0] InpWidth = 8'd4;                    // input bus width Table size = (1 << InputWidth)
+    localparam [8:0] TableSize = 8'b1 << InpWidth;            //table size 8..256
+    
+    localparam [7:0] hi = InpWidth-1;                         //max bit index
+    localparam [7:0] phase_scale = InpWidth-2;      //
+    
+    //localparam cosOffset = 7'b1 << (InpWidth-2);        //convert sin->cos (1/4 full period = 2..64)
+    //localparam cosOffset = 7'd64;                     //convert sin->cos
+    //parameter TableSize = 8'd8; //
     
 //==============================================================================
 
+/*
+    reg [7:0] tmp; // temporary
+    localparam ph_90deg = TableSize >> 2;
+    localparam ph_180deg = TableSize >> 1;
     
+    always @ ( inp or sel )
+        case( sel )
+		    2'b00: tmp = inp;               // sine
+            2'b01: tmp = inp + ph_90deg;  // sine->cos
+            //2'b10: tmp = -tmp;              // -sine
+            2'b10: tmp = inp + ph_180deg;  // -Cos
+	    default: tmp = tmp;
+	    endcase
+*/
+
+    
+    wire [hi:0] tmp; // temporary wire
+    
+    
+    //wire [hi:0] phase_shift = (phase << phase_scale); // get phase shift from phase binary code
+    //assign tmp = inp + phase_shift;
+    
+    assign tmp = inp + (phase << phase_scale); 
+
+
+
+
     // convert input code into sin wave
     generate
     
     if(TableSize==8'd8) // 8bit  
-        assign outp = sine3( inp );		   
+        assign outp = sine3( tmp );		   
     else
     if(TableSize==8'd16) // 16bit  
-        assign outp = sine4( inp );		   
+        assign outp = sine4( tmp );		   
     else
     if(TableSize==8'd32) // 32bit
-        assign outp = sine5( inp );		
+        assign outp = sine5( tmp );		
     else
     if(TableSize==8'd64) // 64bit 
-        assign outp = sine6( inp );		
+        assign outp = sine6( tmp );		
     else
     if(TableSize==8'd128) // 128bit
-        assign outp = sine7( inp );		
+        assign outp = sine7( tmp );		
     else                // 256bit
-        assign outp = sine8( inp );		
+        assign outp = sine8( tmp );		
 
     endgenerate
    
