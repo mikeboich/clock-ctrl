@@ -295,10 +295,10 @@ void render_pong_buffer(pong_state the_state){
   int the_hour = the_time->Hour;
   int the_minute = the_time->Min;
   sprintf(time_str,"%02i",the_hour);
-  compileString(time_str,32,210,PONG_BUFFER,2,APPEND);
+  compileString(time_str,32,200,PONG_BUFFER,2,APPEND);
     
   sprintf(time_str,"%02i",the_minute);
-  compileString(time_str,174,210,PONG_BUFFER,2,APPEND);
+  compileString(time_str,174,200,PONG_BUFFER,2,APPEND);
     
 }
 
@@ -308,16 +308,24 @@ void render_pendulum_buffer(){
   char sec_str[32],hr_min_string[32];
   float x,y,i;
   the_time = RTC_1_ReadTime();
+
+  // render the time in seconds
   sprintf(sec_str,"%02i",the_time->Sec);
   compileString(sec_str,255,32,PONG_BUFFER,2,OVERWRITE);
 
+  // render the hour and minute:  
   sprintf(hr_min_string,"%02i:%02i",the_time->Hour,the_time->Min);
   compileString(hr_min_string,255,130,PONG_BUFFER,3,APPEND);
 
+  // render the pendulum shaft:  
   x = 128.0+200*sin(sin(2*M_PI*(cycle_count-error_term)/31250.0)/2.5);
   y = 250.0 - 200*cos(sin(2*M_PI*(cycle_count-error_term)/31250.0)/2.5);
   line(128,250,x,y,PONG_BUFFER);
+
+  //render the pendulum bob:
   for(i=32;i>0;i-=8) circle(x,y,i,PONG_BUFFER);
+
+  //render the center of rotation of the pendulum:
   circle(128,250,8,PONG_BUFFER);
 
 }
@@ -418,18 +426,18 @@ void updateTimeDisplay(){
     
     
   sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
-  compileString(time_string,255,56,ANALOG_BUFFER,3,OVERWRITE);
+  compileString(time_string,255,46,ANALOG_BUFFER,3,OVERWRITE);
 
   //    sprintf(time_string,"%i:%02i",hours,minutes);
   //    compileString(time_string,0,0,4);
 
   sprintf(date_string,"%s %i, %i",month_names[month-1],day_of_month,year);
  
-  compileString(date_string,255,162,ANALOG_BUFFER,1,APPEND);
+  compileString(date_string,255,152,ANALOG_BUFFER,1,APPEND);
      
   char dw[12];
   sprintf(dw,"%s",day_names[day_of_week-1]);
-  compileString(dw,255,222,ANALOG_BUFFER,2,APPEND);
+  compileString(dw,255,212,ANALOG_BUFFER,2,APPEND);
 
 
 }
@@ -614,8 +622,9 @@ int main()
     }
     
     
-    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
-    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+//    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
+//    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
     if(button_clicked){
         button_clicked=0;  // consume the click
@@ -626,10 +635,10 @@ int main()
         else display_mode = menuMode;
     }
     else{
-//     if(cycle_count-last_switch > 312500){
-//       display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
-//        last_switch=cycle_count;  
-//    }
+     if(cycle_count-last_switch > 312500){
+       display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
+        last_switch=cycle_count;  
+    }
     }
   }
 }
