@@ -574,8 +574,8 @@ int main()
     
     case textMode:
       updateTimeDisplay();
-      int phase = SixtyHz_Read();
-      while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
+//      int phase = SixtyHz_Read();
+//      while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
       display_buffer(0);
       break;
     

@@ -210,7 +210,7 @@ void align_screen(){
 }
 void align_screen2(){
   seg_or_flag test_pat[] = {
-    {128,128,64,64,cir,0x0f},
+    {128,128,128,128,cir,0xff},
 //    {128,128,255,255,pos,0x99},
 //    {128,128,240,0,pos,0x99},
 //    {128,128,0,240,pos,0x99},
@@ -240,6 +240,10 @@ void dispatch_menu(int menu_number, int item_number){
     switch (item_number){
     case 0:
       if(item_number == 0) set_the_time();
+      break;
+            
+    case 1: 
+      align_screen2();
       break;
             
     case 2: 
