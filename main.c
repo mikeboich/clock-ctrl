@@ -635,8 +635,8 @@ int main()
         else display_mode = menuMode;
     }
     else{
-     if(cycle_count-last_switch > 312500){
-       display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
+     if(cycle_count-last_switch > 5*31250){
+       display_mode = (cycle_count / (5*31250)) % 5;   // switch every 10 seconds
         last_switch=cycle_count;  
     }
     }
