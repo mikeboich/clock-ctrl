@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "RTC_1.h"
 
 char *flws[] ={
         "abet","able","ably","abut","aced","aces","ache","achy","acid","acme",
@@ -315,4 +316,10 @@ char *random_word(){
         number_of_flws = count_flws(flws);
     }
     return flws[rand() % number_of_flws];
+}
+
+void init_flws(){
+    RTC_1_TIME_DATE *t = RTC_1_ReadTime();
+    uint seed = 86400*t->DayOfYear + 3600*t->Hour + 60*t->Min + t->Sec;
+    srand(seed);
 }

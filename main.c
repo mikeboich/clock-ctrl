@@ -433,11 +433,11 @@ void updateTimeDisplay(){
 
   sprintf(date_string,"%s %i, %i",month_names[month-1],day_of_month,year);
  
-  compileString(date_string,255,152,ANALOG_BUFFER,1,APPEND);
+  compileString(date_string,255,142,ANALOG_BUFFER,1,APPEND);
      
   char dw[12];
   sprintf(dw,"%s",day_names[day_of_week-1]);
-  compileString(dw,255,212,ANALOG_BUFFER,2,APPEND);
+  compileString(dw,255,202,ANALOG_BUFFER,2,APPEND);
 
 
 }
@@ -538,6 +538,9 @@ int main()
 
   /* initialize sysfont: */
   init_font();
+
+ /* initialize the four letter word randomizer: */
+  init_flws();
     
   CyDelay(100);
   //hw_test();
@@ -635,8 +638,8 @@ int main()
         else display_mode = menuMode;
     }
     else{
-     if(cycle_count-last_switch > 5*31250){
-       display_mode = (cycle_count / (5*31250)) % 5;   // switch every 10 seconds
+     if(cycle_count-last_switch > 10*31250){
+       display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
         last_switch=cycle_count;  
     }
     }

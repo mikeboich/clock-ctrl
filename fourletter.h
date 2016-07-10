@@ -13,5 +13,5 @@ extern char *flws[];
 
 int count_flws(char *the_words[]);
 char *random_word();
-
+void init_flws();
 /* [] END OF FILE */
