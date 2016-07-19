@@ -178,11 +178,12 @@ int is_leap_year(int y){
  else return(0);
 }
 void increment_date(RTC_1_TIME_DATE *t,int incr){
-    int d,m,y;
+    int d,m,y,dayOfWeek;
     int year_type = is_leap_year(y);  // 0 for regular, 1 for leap
     d = t->DayOfMonth;
     m = t->Month;
     y = t->Year;
+    dayOfWeek = t->DayOfWeek;
     
     d += incr;  // increment or decrement the date incr should be +1 or -1 only
     if(d > days_in_month[year_type][m-1]){
@@ -206,6 +207,13 @@ void increment_date(RTC_1_TIME_DATE *t,int incr){
     t->DayOfMonth=d;
     t->Month=m;
     t->Year = y;
+    
+    // adjust day of week:
+    dayOfWeek += incr;
+    if(dayOfWeek > 6) dayOfWeek=0;
+    if(dayOfWeek < 0) dayOfWeek=6;
+    t->DayOfWeek = dayOfWeek;
+    
 }
 
 
