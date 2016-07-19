@@ -23,6 +23,7 @@ volatile int button_clicked;
 // Some useful strings:
 extern char *day_names[7];
 char *month_names[12];
+extern int8 gmt_offset;
 
 typedef struct {char *items[8]; int n_items; int highlighted_item_index; uint8 menu_number;} menu;
 

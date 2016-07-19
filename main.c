@@ -21,6 +21,7 @@
 #include "font.h"
 #include "draw.h"
 #include "menus.h"
+#include "prefs.h"
 #include "max509.h"
 #include "fourletter.h"
 #include "gps.h"
@@ -34,7 +35,7 @@ volatile int second_has_elapsed = 0;
 
 
 typedef enum{flwMode, textMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
-clock_type display_mode=flwMode;
+clock_type display_mode=pendulumMode;
 
 int verbose_mode = 0;
 
@@ -140,9 +141,9 @@ void updateAnalogClock(int hour, int min,int sec){
     
   drawClockHands(hour,min,sec);
   //experimental one revoultion/second widget:
-  float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
-  float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
-  circle(x,y,16,ANALOG_BUFFER);
+//  float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
+//  float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
+//  circle(x,y,16,ANALOG_BUFFER);
 }
 
 /* ************* Pong Game ************* */
@@ -367,6 +368,11 @@ void display_buffer(uint8 which_buffer){
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
       current_mask = seg_ptr->seg_data.mask;
+      // EXPERIMENT:
+//      if(current_mask==0x99){
+//        current_mask = 0x81;
+//        times_to_loop *= 2;
+//    }
 //      if(seg_ptr->seg_data.arc_type != cir) current_mask ^= 0xff;
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
@@ -529,11 +535,11 @@ int main()
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
- // init_gps();
+ init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
-  initTime();
+  //initTime();
    
 
   /* initialize sysfont: */
@@ -541,11 +547,14 @@ int main()
 
  /* initialize the four letter word randomizer: */
   init_flws();
+
+// initialize the EEPROM for saving prefs:
+ init_prefs();
     
   CyDelay(100);
   //hw_test();
-  dispatch_menu(0,2);
-  dispatch_menu(0,3);
+ // dispatch_menu(0,2);
+ // dispatch_menu(0,3);
 
   uint8 toggle_var=0;
   
@@ -625,7 +634,7 @@ int main()
     }
     
     
-//    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
+    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
 //    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
@@ -637,12 +646,12 @@ int main()
         }
         else display_mode = menuMode;
     }
-    else{
-     if(cycle_count-last_switch > 10*31250){
-       display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
-        last_switch=cycle_count;  
-    }
-    }
+//    else{
+//     if(cycle_count-last_switch > 10*31250){
+//       display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
+//        last_switch=cycle_count;  
+//    }
+//    }
   }
 }
 

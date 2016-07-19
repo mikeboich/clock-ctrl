@@ -18,6 +18,7 @@
 *******************************************************************************/
 #include "menus.h"
 #include "draw.h"
+#include "prefs.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -36,6 +37,7 @@ menu main_menu = {.items = {"Set Time/Date","Set Locale","Character Test","Align
 
 menu *current_menu = &main_menu;
 
+int8 gmt_offset;
 
 
 void display_menu(menu the_menu){
@@ -236,6 +238,26 @@ void align_screen2(){
    
 }
 
+void set_locale(){
+    int utc_offset = get_gmt_offset();
+    int saved_decoder = QuadDec_1_GetCounter();
+    char offset_buf[32];
+    int new_offset;
+    
+    while(! button_clicked){
+        new_offset = (QuadDec_1_GetCounter() - saved_decoder)+utc_offset;
+        if(new_offset>23) new_offset -= 24;
+        if(new_offset<-23) new_offset += 24;
+        
+        sprintf(offset_buf,"UTC Offset: %i", new_offset);
+        compileString(offset_buf,16,128,ANALOG_BUFFER,1,0);
+        display_buffer(ANALOG_BUFFER);   
+    }
+    button_clicked = 0;
+    set_gmt_offset(new_offset);
+        
+    
+}
 void dispatch_menu(int menu_number, int item_number){
   // save the decoder position, so that it makes sense upon returning:
   int prev_counter = QuadDec_1_GetCounter();
@@ -247,7 +269,7 @@ void dispatch_menu(int menu_number, int item_number){
       break;
             
     case 1: 
-      align_screen2();
+      set_locale();
       break;
             
     case 2: 

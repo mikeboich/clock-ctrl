@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include "UART_1.h"
 #include "RTC_1.h"
+#include "prefs.h"
 
 #define NEWLINE 0x0A
 #define CR 0x0D
@@ -91,7 +92,10 @@ void set_rtc_to_gps(){
     t->DayOfMonth = a_to_uint8(field_n(9,sentence));
     t->Month = a_to_uint8(field_n(9,sentence)+2);
     t->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
-    offset_time(t,utc_offset);
+    //offset_time(t,utc_offset);
+    // EXPERIMENT:
+    int x = get_gmt_offset();
+    offset_time(t,x);
     
     // create a seed for the random number generator based on time and date:
     if(seed==0){
