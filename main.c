@@ -341,7 +341,6 @@ void display_buffer(uint8 which_buffer){
       uint8 int_status = CyEnterCriticalSection();
             
       set_DACfor_seg(seg_ptr,0,0);
-//      AMux_1_Select(shape_to_mux[seg_ptr->seg_data.arc_type]);
       switch(seg_ptr->seg_data.arc_type){
         case cir:
           Phase_Register_Write(0x1);
@@ -634,7 +633,7 @@ int main()
     }
     
     
-    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
+//    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
 //    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
@@ -646,12 +645,12 @@ int main()
         }
         else display_mode = menuMode;
     }
-//    else{
-//     if(cycle_count-last_switch > 10*31250){
-//       display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
-//        last_switch=cycle_count;  
-//    }
-//    }
+    else{
+     if(cycle_count-last_switch > 10*31250){
+       display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
+        last_switch=cycle_count;  
+    }
+    }
   }
 }
 

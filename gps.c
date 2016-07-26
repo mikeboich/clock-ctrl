@@ -92,8 +92,6 @@ void set_rtc_to_gps(){
     t->DayOfMonth = a_to_uint8(field_n(9,sentence));
     t->Month = a_to_uint8(field_n(9,sentence)+2);
     t->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
-    //offset_time(t,utc_offset);
-    // EXPERIMENT:
     int x = get_gmt_offset();
     offset_time(t,x);
     
@@ -208,11 +206,6 @@ void increment_date(RTC_1_TIME_DATE *t,int incr){
     t->Month=m;
     t->Year = y;
     
-    // adjust day of week:
-    dayOfWeek += incr;
-    if(dayOfWeek > 6) dayOfWeek=0;
-    if(dayOfWeek < 0) dayOfWeek=6;
-    t->DayOfWeek = dayOfWeek;
     
 }
 
