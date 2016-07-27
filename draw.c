@@ -32,7 +32,8 @@ void compileString(char *s, uint8 x_coord, uint8 y_coord,uint8 buffer_index,uint
   uint8 x;
   int num_segs=0;     // so we don't overrun our fixed-size buffer
     
-  int kerning = (scale <= 2) ? 4: 3;
+  int kerning = (scale <= 2 || scale > 3) ? 4: 3;
+  if(scale==5) kerning+=1;
   if(strlen(s)<6) kerning += 2;
   int string_width = stringWidth(s,scale) + (strlen(s)-1)*kerning;;
   if(x_coord==255){

@@ -30,14 +30,14 @@ extern int verbose_mode;
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
-menu main_menu = {.items = {"Set Time/Date","Set Locale","Character Test","Align Screen","Cancel"},
-		  .n_items = 4,
+menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Test","Align Screen","Cancel"},
+		  .n_items = 5,
 		  .highlighted_item_index = -1,
 		  .menu_number = 0};
 
 menu *current_menu = &main_menu;
 
-int8 gmt_offset;
+
 
 
 void display_menu(menu the_menu){
@@ -239,7 +239,7 @@ void align_screen2(){
 }
 
 void set_locale(){
-    int utc_offset = get_gmt_offset();
+    int utc_offset = global_prefs.prefs_data.utc_offset;
     int saved_decoder = QuadDec_1_GetCounter();
     char offset_buf[32];
     int new_offset;
@@ -254,7 +254,28 @@ void set_locale(){
         display_buffer(ANALOG_BUFFER);   
     }
     button_clicked = 0;
-    set_gmt_offset(new_offset);
+    global_prefs.prefs_data.utc_offset = new_offset;
+    flush_prefs();
+        
+    
+}void set_switch_interval(){
+    int switch_interval = global_prefs.prefs_data.switch_interval;
+    int saved_decoder = QuadDec_1_GetCounter();
+    char interval_buf[32];
+    int new_interval;
+    
+    while(! button_clicked){
+        new_interval = (QuadDec_1_GetCounter() - saved_decoder)+switch_interval;
+        if(new_interval>60) new_interval -= 60;
+        if(new_interval<0) new_interval = 60;
+        
+        sprintf(interval_buf,"Switch every %i sec", new_interval);
+        compileString(interval_buf,16,128,ANALOG_BUFFER,1,0);
+        display_buffer(ANALOG_BUFFER);   
+    }
+    button_clicked = 0;
+    global_prefs.prefs_data.switch_interval = new_interval;
+    flush_prefs();
         
     
 }
@@ -273,14 +294,18 @@ void dispatch_menu(int menu_number, int item_number){
       break;
             
     case 2: 
+      set_switch_interval();
+      break;
+            
+    case 3: 
       char_test();
       break;
             
-    case 3:
+    case 4:
       align_screen();
       break;
             
-    case 4: 
+    case 5: 
       break;
     }                 
   }

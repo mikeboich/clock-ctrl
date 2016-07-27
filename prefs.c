@@ -20,39 +20,44 @@
 #include <device.h>
 #include "prefs.h"
 
+/* prefs variables are stored in eeprom when power is off: */
+pref_object global_prefs;
+
+void load_prefs(){
+    int offset = 0;
+    while(offset <N_PREFS){
+        global_prefs.prefs_bytes[offset] = EEPROM_1_ReadByte(offset);
+        CyDelay(1);
+        offset +=1;
+    }
+}
+
 int init_prefs(){
     int flag;
     EEPROM_1_Start();
     CyDelay(1);
     flag = EEPROM_1_ReadByte(PREFS_FLAGS_OFFSET);
     if(flag == PREFS_INITIALIZED){
+        load_prefs();       // copy prefs into the prefs struct
         return(1);
     }
     else{
-        return(format_pref_memory());
+        global_prefs.prefs_bytes[0] = 0xaa;
+        global_prefs.prefs_data.utc_offset = -4;
+        global_prefs.prefs_data.switch_interval = 10;
+        flush_prefs();
+        return(2);
         CyDelay(1);
     }
 }
-int format_pref_memory(){
- EEPROM_1_WriteByte(PREFS_FLAGS_OFFSET,PREFS_INITIALIZED);  // write magic byte
- CyDelay(1);
- EEPROM_1_WriteByte(0xf9,GMT_OFFSET_OFFSET);
-CyDelay(1);
- return(1);
-};
 
-// load the gmt offset from prefs memory:
-int get_gmt_offset(){
-    int x = EEPROM_1_ReadByte(GMT_OFFSET_OFFSET);
-    // doing my own twos complement math for now, as I couldn't the compiler to!:
-    if(x>128) {
-        x = (x ^ 0xff) + 1;
-        x = -x;
+
+void flush_prefs(){
+    int offset=0;
+    EEPROM_1_UpdateTemperature();
+    while(offset < N_PREFS){
+      EEPROM_1_WriteByte(global_prefs.prefs_bytes[offset],offset);
+      offset += 1;
     }
-    return (x);  
-};
-
-void set_gmt_offset(int x){
-    EEPROM_1_WriteByte(x,GMT_OFFSET_OFFSET);
 }
 /* [] END OF FILE */

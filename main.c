@@ -510,11 +510,7 @@ int main()
   /* Start VDACs */
   VDAC8_1_Start();
   VDAC8_2_Start();
-//  VDAC8_3_Start();
     
-  /* Initialize the analog mux */
-//  AMux_1_Start();
-//  AMux_1_Select(0);
     
  
   /* Initialize the shift register: */
@@ -568,6 +564,8 @@ int main()
     } 
     second_has_elapsed = 0;     
     RTC_1_TIME_DATE *now;
+//    int phase = SixtyHz_Read();
+//    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
     switch (display_mode){
 
@@ -585,8 +583,6 @@ int main()
     
     case textMode:
       updateTimeDisplay();
-//      int phase = SixtyHz_Read();
-//      while(SixtyHz_Read() == 0);   // wait for a 60Hz edge..
       display_buffer(0);
       break;
     
@@ -632,9 +628,10 @@ int main()
 
     }
     
+    int interval = global_prefs.prefs_data.switch_interval;
     
-//    if(display_mode != menuMode) display_mode = QuadDec_1_GetCounter() % 6;
-//    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    if(display_mode != menuMode && interval==0) display_mode = QuadDec_1_GetCounter() % 6;
+    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
     if(button_clicked){
@@ -646,8 +643,8 @@ int main()
         else display_mode = menuMode;
     }
     else{
-     if(cycle_count-last_switch > 10*31250){
-       display_mode = (cycle_count / (10*31250)) % 5;   // switch every 10 seconds
+     if(display_mode != menuMode && interval!=0 && cycle_count-last_switch > interval*31250){
+       display_mode = (cycle_count / (interval*31250)) % 5;   // switch every 10 seconds
         last_switch=cycle_count;  
     }
     }

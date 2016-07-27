@@ -16,14 +16,30 @@
     and coded in C.
 
 *******************************************************************************/
+#include <device.h>
 
 #define PREFS_FLAGS_OFFSET 0
 #define GMT_OFFSET_OFFSET 1
+#define SWITCH_INTERVAL_OFFSET 2
 #define PREFS_INITIALIZED 0xaa
 
+#define N_PREFS 3  
+
+typedef struct prefsStruct {
+    uint8 prefs_initialized;
+    int8 utc_offset;
+    uint8 switch_interval;
+} prefs;
+
+typedef union {prefs prefs_data;
+       uint8 prefs_bytes[N_PREFS];
+} pref_object;
+
+extern pref_object global_prefs;
+
+extern int8 gmt_offset;
 int init_prefs();
 int format_pref_memory();
-int get_gmt_offset();
-void set_gmt_offset(int x);
+void flush_prefs();
 
 /* [] END OF FILE */
