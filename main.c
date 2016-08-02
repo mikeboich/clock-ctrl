@@ -165,7 +165,7 @@ typedef struct{
 
 pong_state game_state = {
   .paddle_position = {96,140},
-  .puck_velocity = {4,2},
+  .puck_velocity = {6,3},
   .puck_position = {128,200},
   .score = {0,0}};
 
@@ -337,7 +337,8 @@ void display_buffer(uint8 which_buffer){
   seg_or_flag *seg_ptr = seg_buffer[which_buffer];
   while(seg_ptr->seg_data.x_offset != 0xff){
 
-    if(current_state==blank_unprimed){  
+    if(current_state==blank_unprimed){
+      CyDelayUs(64);
       uint8 int_status = CyEnterCriticalSection();
             
       set_DACfor_seg(seg_ptr,0,0);
@@ -361,16 +362,12 @@ void display_buffer(uint8 which_buffer){
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
     
     // test:
-     // times_to_loop=1;
+      //times_to_loop=1;
 
      
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
       current_mask = seg_ptr->seg_data.mask;
-      // EXPERIMENT:
-//      if(current_mask==0x99){
-//        current_mask = 0x81;
-//        times_to_loop *= 2;
 //    }
 //      if(seg_ptr->seg_data.arc_type != cir) current_mask ^= 0xff;
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register

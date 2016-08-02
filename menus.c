@@ -182,7 +182,7 @@ void char_test(){
  
 }
 
-void align_screen(){
+void align_screen2(){
   seg_or_flag test_pattern[] = {
     {128,128,128,128,cir,0x0ff},
     {128,192,8,8,cir,0xff},
@@ -195,7 +195,6 @@ void align_screen(){
     {128+45,128+45,8,8,cir,0xff},
     {128,128,64,0,pos,0x99},
     {128,128,0,64,pos,0x99},
-//    {128,128,0,240,pos,0x99},
     {255,255,0,0,cir,0x00},
   }; 
    uint8 masks[9] ={0,1,2,4,8,16,32,64,128};
@@ -214,27 +213,35 @@ void align_screen(){
   }
    
 }
-void align_screen2(){
-  seg_or_flag test_pat[] = {
-    {128,128,128,128,cir,0xff},
-//    {128,128,255,255,pos,0x99},
-//    {128,128,240,0,pos,0x99},
-//    {128,128,0,240,pos,0x99},
+void align_screen(){
+  seg_or_flag test_pattern[] = {
+    {128,128,254,254,cir,0x0ff},
+    {128,254,8,8,cir,0xff},
+    {128,1,8,8,cir,0xff},
+    {1,128,8,8,cir,0xff},
+    {254,128,8,8,cir,0xff},
+    {128-45,128-45,8,8,cir,0xff},
+    {128-45,128+45,8,8,cir,0xff},
+    {128+45,128-45,8,8,cir,0xff},
+    {128+45,128+45,8,8,cir,0xff},
+    {128,128,64,0,pos,0x99},
+    {128,128,0,64,pos,0x99},
     {255,255,0,0,cir,0x00},
   }; 
-   uint8 masks[8] ={1,2,4,8,16,32,64,128};
+   uint8 masks[9] ={0,1,2,4,8,16,32,64,128};
    uint8 x,y,i;
-  // clear_buffer(ANALOG_BUFFER);
-  //x=y=0;
-    //test_pat[0].seg_data.mask=masks[i]^0xff;
-    compileSegments(test_pat,ANALOG_BUFFER,OVERWRITE);
-    //compileString("2",255,0,ANALOG_BUFFER,4,OVERWRITE);
-    
-      while(!button_clicked){
+   clear_buffer(ANALOG_BUFFER);
+  x=y=0;
+  for(i=0;i<9;i++){
+    test_pattern[0].seg_data.mask=masks[i]^0xff;
+    clear_buffer(ANALOG_BUFFER);
+    compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
+    while(!button_clicked){
       display_buffer(ANALOG_BUFFER);
-}
-       button_clicked = 0;  // consume the button_click
-   
+    }
+    button_clicked = 0;  // consume the button_click
+      
+  }
    
 }
 
@@ -256,9 +263,9 @@ void set_locale(){
     button_clicked = 0;
     global_prefs.prefs_data.utc_offset = new_offset;
     flush_prefs();
-        
-    
-}void set_switch_interval(){
+    QuadDec_1_SetCounter(saved_decoder);
+}
+void set_switch_interval(){
     int switch_interval = global_prefs.prefs_data.switch_interval;
     int saved_decoder = QuadDec_1_GetCounter();
     char interval_buf[32];
@@ -267,15 +274,21 @@ void set_locale(){
     while(! button_clicked){
         new_interval = (QuadDec_1_GetCounter() - saved_decoder)+switch_interval;
         if(new_interval>60) new_interval -= 60;
-        if(new_interval<0) new_interval = 60;
+        if(new_interval<0) new_interval +=60;
         
-        sprintf(interval_buf,"Switch every %i sec", new_interval);
+        if(new_interval != 0){
+            sprintf(interval_buf,"Switch every %i sec", new_interval);
+        }
+        else{
+            sprintf(interval_buf,"Don't auto-switch");
+        }
         compileString(interval_buf,16,128,ANALOG_BUFFER,1,0);
         display_buffer(ANALOG_BUFFER);   
     }
     button_clicked = 0;
     global_prefs.prefs_data.switch_interval = new_interval;
     flush_prefs();
+    QuadDec_1_SetCounter(saved_decoder);
         
     
 }

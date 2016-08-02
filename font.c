@@ -272,7 +272,6 @@ vector_font Seven={
 {06,10,18,30,pos,0x99},
 {06,20,18,00,pos,0x99},
 {.flag=0x8c},
-
 };
 vector_font Eight={
 {06,06,12,12,cir,0xff},
