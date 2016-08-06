@@ -367,13 +367,14 @@ void display_buffer(uint8 which_buffer){
      
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
+    
       current_mask = seg_ptr->seg_data.mask;
 //    }
 //      if(seg_ptr->seg_data.arc_type != cir) current_mask ^= 0xff;
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
-     // strobe_LDAC();  experiment:  do this in the interrupt routine
+     // strobe_LDAC();  this is done in the interrupt routine
       seg_ptr++;
           
       CyExitCriticalSection(int_status);
@@ -493,11 +494,11 @@ int main()
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
- init_gps();
+// init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
-  //initTime();
+  initTime();
    
 
   /* initialize sysfont: */
@@ -528,8 +529,8 @@ int main()
     } 
     second_has_elapsed = 0;     
     RTC_1_TIME_DATE *now;
-//    int phase = SixtyHz_Read();
-//    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
+    int phase = SixtyHz_Read();
+    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
     switch (display_mode){
 
