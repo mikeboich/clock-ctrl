@@ -448,54 +448,20 @@ void waitForClick(){
     button_clicked=0;
 }
 void hw_test(){
-  SPIM_1_WriteTxData(DAC_Reg_A | DAC_Pre_Load |0x80);
-  CyDelay(1);
-  SPIM_1_WriteTxData(DAC_Reg_B | DAC_Pre_Load |0x80);
+  seg_or_flag test_pattern[] = {
+    {128,128,254,254,cir,0x0ff},
+    {128,128,128,0,pos,0xff},
+    {128,128,0,128,pos,0xff},
+    {255,255,0,0,cir,0x00},
+  }; 
 
-//  AMux_1_Select(shape_to_mux[cir]);
-        
-  SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | 0x80);
-  CyDelay(1);
-  SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | 0x80);
-
-  CyDelay(1);
-  strobe_LDAC();
-  waitForClick();
-
-  int i=0,j=0;
-  int levels[] = {0,128,254};
-  for(i=0;i<3;i++){
-      SPIM_1_WriteTxData(DAC_Reg_A | DAC_Load_Now | levels[i]);
-    CyDelay(1);
-      SPIM_1_WriteTxData(DAC_Reg_B | DAC_Load_Now | levels[i]);
-    CyDelay(1);
-    strobe_LDAC();
-    waitForClick();
-  }
-    SPIM_1_WriteTxData(DAC_Reg_A | DAC_Load_Now | 0x10);
-    CyDelay(1);
-      SPIM_1_WriteTxData(DAC_Reg_B | DAC_Load_Now | 0x10);
-    CyDelay(1);
-    strobe_LDAC();
-  for(i=0;i<3;i++){
-    for(j=0;j<3;j++){
-      SPIM_1_WriteTxData(DAC_Reg_C | DAC_Load_Now | levels[i]);
-      CyDelay(1);
-      SPIM_1_WriteTxData(DAC_Reg_D | DAC_Load_Now | levels[j]);
-      CyDelay(1);
-      strobe_LDAC();
-      waitForClick();
-        
+   clear_buffer(ANALOG_BUFFER);
+    compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
+    //compileString("&",255,128,ANALOG_BUFFER,4,APPEND);
+    while(!button_clicked){
+      display_buffer(ANALOG_BUFFER);
     }
-  }
-  waitForClick();
-  clear_buffer(0);
-  vector_font c={{192,192,128,128,pos,0xff}, {255,0,0,0,0,0,}};
-  //compileSegments(c,0,0);
-  circle(64,64,64,0);
-  
-  while(!button_clicked)display_buffer(0);
-  button_clicked=0;
+    button_clicked = 0;  // consume the button_click
 }
 
 int main() 
@@ -549,7 +515,8 @@ int main()
  // dispatch_menu(0,3);
 
   uint8 toggle_var=0;
-  
+  hw_test();
+
   for(;;){
     if(second_has_elapsed){
         LED_Reg_Write(toggle_var);
