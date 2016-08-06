@@ -215,11 +215,11 @@ void align_screen2(){
 }
 void align_screen(){
   seg_or_flag test_pattern[] = {
-    {128,128,254,254,cir,0x0ff},
-    {128,254,8,8,cir,0xff},
-    {128,1,8,8,cir,0xff},
-    {1,128,8,8,cir,0xff},
-    {254,128,8,8,cir,0xff},
+    {128,128,128,128,cir,0x0ff},
+    {128,192,8,8,cir,0xff},
+    {128,64,8,8,cir,0xff},
+    {64,128,8,8,cir,0xff},
+    {192,128,8,8,cir,0xff},
     {128-45,128-45,8,8,cir,0xff},
     {128-45,128+45,8,8,cir,0xff},
     {128+45,128-45,8,8,cir,0xff},

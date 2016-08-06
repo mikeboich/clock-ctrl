@@ -362,7 +362,7 @@ void display_buffer(uint8 which_buffer){
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
     
     // test:
-      //times_to_loop=1;
+     //times_to_loop=1;
 
      
       // performance measurement:
