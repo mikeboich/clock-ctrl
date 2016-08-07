@@ -338,7 +338,12 @@ void display_buffer(uint8 which_buffer){
   while(seg_ptr->seg_data.x_offset != 0xff){
 
     if(current_state==blank_unprimed){
-      CyDelayUs(64);
+     CyDelayUs(64);
+//        Z_Reset_Reg_Write(0x1);
+//        CyDelayUs(1);
+//        Z_Reset_Reg_Write(0x0);
+
+        
       uint8 int_status = CyEnterCriticalSection();
             
       set_DACfor_seg(seg_ptr,0,0);
@@ -450,15 +455,29 @@ void waitForClick(){
 }
 void hw_test(){
   seg_or_flag test_pattern[] = {
-    {128,128,254,254,cir,0x0ff},
-    {128,128,128,0,pos,0xff},
+    {128,128,254,254,cir,0x0aa},
+    {128,128,128,0,pos,0x99},
     {128,128,0,128,pos,0xff},
     {255,255,0,0,cir,0x00},
   }; 
 
    clear_buffer(ANALOG_BUFFER);
     compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
-    //compileString("&",255,128,ANALOG_BUFFER,4,APPEND);
+    //compileString("1",255,128,ANALOG_BUFFER,4,APPEND);
+    while(!button_clicked){
+      display_buffer(ANALOG_BUFFER);
+    }
+    button_clicked = 0;  // consume the button_click
+}
+void hw_test2(){
+  seg_or_flag test_pattern[] = {
+    {128,128,254,254,pos,0x99},
+    {255,255,0,0,cir,0x00},
+  }; 
+
+   clear_buffer(ANALOG_BUFFER);
+    compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
+    //compileString("1",255,128,ANALOG_BUFFER,4,APPEND);
     while(!button_clicked){
       display_buffer(ANALOG_BUFFER);
     }
@@ -516,7 +535,7 @@ int main()
  // dispatch_menu(0,3);
 
   uint8 toggle_var=0;
-  hw_test();
+  hw_test2();
 
   for(;;){
     if(second_has_elapsed){
