@@ -140,7 +140,7 @@ void updateAnalogClock(int hour, int min,int sec){
   compileString("9",20,120,ANALOG_BUFFER,1,APPEND);
     
   drawClockHands(hour,min,sec);
-  //experimental one revoultion/second widget:
+ // experimental one revoultion/second widget:
 //  float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
 //  float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
 //  circle(x,y,16,ANALOG_BUFFER);
@@ -517,6 +517,7 @@ int main()
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
+
   initTime();
    
 
@@ -539,8 +540,8 @@ int main()
 
   for(;;){
     if(second_has_elapsed){
-        LED_Reg_Write(toggle_var);
-        toggle_var=1-toggle_var;
+//        LED_Reg_Write(toggle_var);
+//        toggle_var=1-toggle_var;
     }
     if(second_has_elapsed && (display_mode != menuMode)){
       // tweak error_term used to sync pendulum with seconds:
@@ -571,9 +572,9 @@ int main()
       break;
     
     case analogMode:
+      display_buffer(ANALOG_BUFFER);
       now = RTC_1_ReadTime();
       updateAnalogClock(now->Hour,now->Min,now->Sec);
-      display_buffer(ANALOG_BUFFER);
       break;
     
     case pongMode:
