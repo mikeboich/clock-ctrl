@@ -4321,7 +4321,7 @@
 <project_id v="347dcfb2-ce6d-48de-8cc3-625beb31ec09" /><custom_data><CyGuid_7a7929f8-5e3b-4f86-a093-2d4ee6513111 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtProjectCustomData" version="1"><CyGuid_fdba8dfd-b15b-4469-9bbb-9e40c3e70997 type_name="CyDesigner.Common.Base.CyCustomData" version="2"><userData /></CyGuid_fdba8dfd-b15b-4469-9bbb-9e40c3e70997><properties /></CyGuid_7a7929f8-5e3b-4f86-a093-2d4ee6513111></custom_data></CyGuid_49cfd574-032a-4a64-b7be-d4eeeaf25e43>
 </CyGuid_60697ce6-dce2-4816-8680-4de0635742eb>
 <top_block v="TopDesign" />
-<selected_device v="CY8C5888AXI-LP096" />
+<selected_device v="CY8C5888LTI-LP097" />
 <CyGuid_495451fe-d201-4d01-b22d-5d3f5609ac37 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtComponentMgr" version="4" xml_contents_version="1">
 <library_deps>
 <library_dep persistent="${CyRoot}\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj" />
@@ -4331,5 +4331,5 @@
 <ignored_deps />
 </CyGuid_495451fe-d201-4d01-b22d-5d3f5609ac37>
 <boot_component v="cy_boot_v4_20" />
-<current_generation v="93" /><BootloaderTag hexFile="" elfFile="" /></CyGuid_fec8f9e8-2365-4bdb-96d3-a4380222e01b>
+<current_generation v="121" /><BootloaderTag hexFile="" elfFile="" /></CyGuid_fec8f9e8-2365-4bdb-96d3-a4380222e01b>
 </CyXmlSerializer>

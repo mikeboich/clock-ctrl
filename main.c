@@ -540,8 +540,8 @@ int main()
 
   for(;;){
     if(second_has_elapsed){
-//        LED_Reg_Write(toggle_var);
-//        toggle_var=1-toggle_var;
+        LED_Reg_Write(toggle_var);
+        toggle_var=1-toggle_var;
     }
     if(second_has_elapsed && (display_mode != menuMode)){
       // tweak error_term used to sync pendulum with seconds:
