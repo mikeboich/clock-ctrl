@@ -471,7 +471,7 @@ void hw_test(){
 }
 void hw_test2(){
   seg_or_flag test_pattern[] = {
-    {128,128,254,254,pos,0x99},
+    {128,128,254,254,cir,0x99},
     {255,255,0,0,cir,0x00},
   }; 
 
