@@ -31,7 +31,6 @@
 
 // Real time clock variables:
 volatile int second_has_elapsed = 0;
-//int led_state = 0;  // we blink this once/second
 
 
 typedef enum{flwMode, textMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
@@ -43,13 +42,12 @@ typedef enum{blank_unprimed,blank_primed,drawing}  draw_state;  // States of the
 
 uint8 current_mask=0;
 volatile draw_state current_state = blank_unprimed;
-uint8 shape_to_mux[] = {2,0,1};
-volatile int times_to_loop = 0;
 
+volatile int times_to_loop = 0;
 volatile int cycle_count=0;  // poor man's timer
 int error_term=0;            // difference between hw counters and 1 pps edge
 
-int last_refresh=0,loops_per_frame=0;
+int last_refresh=0,loops_per_frame=0;   // for performance measurement
 
 /* Define the start-of-segment interrupt routine 
    This routine loads the next 8 bit segment mask from the display list,
@@ -97,15 +95,6 @@ void compile_flw(){
         
     }
 }
-
-// test case data:
-seg_or_flag test_segs[] = {
-  {128,128,255,255,cir,0xff},
-  {128,128,96,96,neg,0x99},
-  {128,128,96,0,pos,0x99},
-  {128,128,0,96,pos,0x99},
-  {255,255,0,0,cir,0xff},
-};
 
 #define HR_HAND_WIDTH 8
 #define HR_HAND_LENGTH 60
@@ -333,17 +322,11 @@ void render_pendulum_buffer(){
 
 
 void display_buffer(uint8 which_buffer){
-  //long start_count = cycle_count;
   seg_or_flag *seg_ptr = seg_buffer[which_buffer];
   while(seg_ptr->seg_data.x_offset != 0xff){
 
     if(current_state==blank_unprimed){
      CyDelayUs(64);
-//        Z_Reset_Reg_Write(0x1);
-//        CyDelayUs(1);
-//        Z_Reset_Reg_Write(0x0);
-
-        
       uint8 int_status = CyEnterCriticalSection();
             
       set_DACfor_seg(seg_ptr,0,0);
@@ -366,20 +349,13 @@ void display_buffer(uint8 which_buffer){
       if(times_to_loop==0) times_to_loop = 1;
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
     
-    // test:
-     //times_to_loop=1;
-
-     
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
     
       current_mask = seg_ptr->seg_data.mask;
-//    }
-//      if(seg_ptr->seg_data.arc_type != cir) current_mask ^= 0xff;
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
-     // strobe_LDAC();  this is done in the interrupt routine
       seg_ptr++;
           
       CyExitCriticalSection(int_status);
@@ -390,7 +366,6 @@ void display_buffer(uint8 which_buffer){
             char c = UART_1_GetByte() & 0x00ff;
             consume_char(c);
         }
-   
     }
   }
 }
@@ -513,12 +488,12 @@ int main()
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
-// init_gps();
+ init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
 
-  initTime();
+  //initTime();
    
 
   /* initialize sysfont: */
@@ -531,12 +506,7 @@ int main()
  init_prefs();
     
   CyDelay(100);
-  //hw_test();
- // dispatch_menu(0,2);
- // dispatch_menu(0,3);
-
   uint8 toggle_var=0;
-  hw_test2();
 
   for(;;){
     if(second_has_elapsed){
@@ -549,8 +519,8 @@ int main()
     } 
     second_has_elapsed = 0;     
     RTC_1_TIME_DATE *now;
-    int phase = SixtyHz_Read();
-    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
+//    int phase = SixtyHz_Read();
+//    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     
     switch (display_mode){
 
@@ -572,9 +542,9 @@ int main()
       break;
     
     case analogMode:
-      display_buffer(ANALOG_BUFFER);
       now = RTC_1_ReadTime();
       updateAnalogClock(now->Hour,now->Min,now->Sec);
+      display_buffer(ANALOG_BUFFER);
       break;
     
     case pongMode:
