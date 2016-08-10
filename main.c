@@ -349,10 +349,17 @@ void display_buffer(uint8 which_buffer){
       if(times_to_loop==0) times_to_loop = 1;
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
     
+    
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
     
       current_mask = seg_ptr->seg_data.mask;
+    // experiment to get rid of doubled diagonal lines:
+        if(seg_ptr->seg_data.mask == 0x99){
+          current_mask = 0x81;
+          times_to_loop *= 2;
+    }
+
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
@@ -446,13 +453,14 @@ void hw_test(){
 }
 void hw_test2(){
   seg_or_flag test_pattern[] = {
-    {128,128,254,254,cir,0x99},
+    {128,128,254,254,pos,0x81},
+    {128,128,254,254,neg,0x99},
     {255,255,0,0,cir,0x00},
   }; 
 
    clear_buffer(ANALOG_BUFFER);
     compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
-    //compileString("1",255,128,ANALOG_BUFFER,4,APPEND);
+    //compileString("W2S",255,128,ANALOG_BUFFER,4,APPEND);
     while(!button_clicked){
       display_buffer(ANALOG_BUFFER);
     }
@@ -507,10 +515,10 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-
+  hw_test2();
   for(;;){
     if(second_has_elapsed){
-        LED_Reg_Write(toggle_var);
+//        LED_Reg_Write(toggle_var);
         toggle_var=1-toggle_var;
     }
     if(second_has_elapsed && (display_mode != menuMode)){
