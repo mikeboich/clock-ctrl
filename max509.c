@@ -36,11 +36,11 @@ void strobe_LDAC(){
 // a few instructions later, rather than doing Load immediate,
 void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
   setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
-  CyDelayUs(2);
+  CyDelayUs(1);
   setImmediate(DAC_Reg_B | DAC_Pre_Load |s->seg_data.y_size);
-  CyDelayUs(2);
+  CyDelayUs(1);
   setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x + ss_x_offset)));
-  CyDelayUs(2);
+  CyDelayUs(1);
   setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y + ss_y_offset)));
 
 }

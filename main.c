@@ -355,10 +355,10 @@ void display_buffer(uint8 which_buffer){
     
       current_mask = seg_ptr->seg_data.mask;
     // experiment to get rid of doubled diagonal lines:
-        if(seg_ptr->seg_data.mask == 0x99){
-          current_mask = 0x81;
-          times_to_loop *= 2;
-    }
+//        if(seg_ptr->seg_data.mask == 0x99){
+//          current_mask = 0x81;
+//          times_to_loop *= 2;
+//    }
 
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
