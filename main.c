@@ -453,8 +453,8 @@ void hw_test(){
 }
 void hw_test2(){
   seg_or_flag test_pattern[] = {
-    {128,128,128,100,pos,0xff},
-    {128,128,100,128,neg,0xff},
+    {128,128,128,100,pos,0x99},
+    {128,128,100,128,neg,0x99},
     {255,255,0,0,cir,0x00},
   }; 
 
@@ -515,7 +515,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test();
+  hw_test2();
   for(;;){
     if(second_has_elapsed){
         LED_Reg_Write(toggle_var);
