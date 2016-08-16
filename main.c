@@ -444,8 +444,8 @@ void hw_test(){
   }; 
 
    clear_buffer(ANALOG_BUFFER);
-    compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
-    //compileString("1",255,128,ANALOG_BUFFER,4,APPEND);
+    //compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
+    compileString("stn2k",255,128,ANALOG_BUFFER,4,APPEND);
     while(!button_clicked){
       display_buffer(ANALOG_BUFFER);
     }
@@ -453,8 +453,8 @@ void hw_test(){
 }
 void hw_test2(){
   seg_or_flag test_pattern[] = {
-    {128,128,254,254,pos,0x81},
-    {128,128,254,254,neg,0x99},
+    {128,128,128,100,pos,0xff},
+    {128,128,100,128,neg,0xff},
     {255,255,0,0,cir,0x00},
   }; 
 
@@ -501,7 +501,7 @@ int main()
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
 
-  //initTime();
+//  initTime();
    
 
   /* initialize sysfont: */
@@ -515,10 +515,10 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test2();
+  hw_test();
   for(;;){
     if(second_has_elapsed){
-//        LED_Reg_Write(toggle_var);
+        LED_Reg_Write(toggle_var);
         toggle_var=1-toggle_var;
     }
     if(second_has_elapsed && (display_mode != menuMode)){
