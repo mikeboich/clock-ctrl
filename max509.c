@@ -35,6 +35,7 @@ void strobe_LDAC(){
 // Things work better when I preload the DAC and then strobe LDAC
 // a few instructions later, rather than doing Load immediate,
 void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
+  //CyDelayUs(1);
   setImmediate(DAC_Reg_A | DAC_Pre_Load | s->seg_data.x_size);
   CyDelayUs(1);
   setImmediate(DAC_Reg_B | DAC_Pre_Load |s->seg_data.y_size);
@@ -42,25 +43,26 @@ void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
   setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x + ss_x_offset)));
   CyDelayUs(1);
   setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y + ss_y_offset)));
+ // CyDelayUs(1);
 
 }
 
 void bringup_test(){
-    uint8 h[4] = {0,64,128,255};
-    uint8 v[4] = {0,64,128,255};
+    uint8 h[6] = {0,64,127,127,64,0};
+    uint8 v[6] = {0,64,127,127,64,0};
     
     int i;
     
     
-    for(i=0;i<4;i++){
+    for(i=0;i<6;i++){
         setImmediate(DAC_Reg_A | DAC_Pre_Load | h[i]);
-        CyDelayUs(2);
+        CyDelayUs(1);
         setImmediate(DAC_Reg_B | DAC_Pre_Load | v[i]);
-        CyDelayUs(2);
+        CyDelayUs(1);
         setImmediate(DAC_Reg_C | DAC_Pre_Load | h[i]);
-        CyDelayUs(2);
+        CyDelayUs(1);
         setImmediate(DAC_Reg_D | DAC_Pre_Load | v[i]);
-        CyDelayUs(2);
+        CyDelayUs(1);
         strobe_LDAC();
         CyDelay(1000);
     }

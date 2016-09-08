@@ -1,4 +1,22 @@
- /*  main.c
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*  main.c
 
     Copyright (C) 2016 Michael Boich
 
@@ -498,12 +516,12 @@ int main()
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
- //init_gps();
+ init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
 
-  initTime();
+ // initTime();
    
 
   /* initialize sysfont: */
@@ -517,7 +535,6 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  bringup_test();
 
   for(;;){
     if(second_has_elapsed){
