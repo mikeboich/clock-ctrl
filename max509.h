@@ -31,5 +31,7 @@ void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y);
 
 void strobe_LDAC();
 
+void bringup_test();
+
 #endif
 /* [] END OF FILE */

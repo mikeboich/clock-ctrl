@@ -453,8 +453,10 @@ void hw_test(){
 }
 void hw_test2(){
   seg_or_flag test_pattern[] = {
-    {128,128,128,100,pos,0x99},
-    {128,128,100,128,neg,0x99},
+    {0,0,0,0,cir,0xff},
+    {0,128,100,128,cir,0xff},
+    {128,0,100,128,cir,0xff},
+    {128,128,100,128,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
 
@@ -496,12 +498,12 @@ int main()
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
- init_gps();
+ //init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
 
-//  initTime();
+  initTime();
    
 
   /* initialize sysfont: */
@@ -515,7 +517,8 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test2();
+  bringup_test();
+
   for(;;){
     if(second_has_elapsed){
         LED_Reg_Write(toggle_var);

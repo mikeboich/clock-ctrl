@@ -44,4 +44,25 @@ void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
   setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y + ss_y_offset)));
 
 }
+
+void bringup_test(){
+    uint8 h[4] = {0,64,128,255};
+    uint8 v[4] = {0,64,128,255};
+    
+    int i;
+    
+    
+    for(i=0;i<4;i++){
+        setImmediate(DAC_Reg_A | DAC_Pre_Load | h[i]);
+        CyDelayUs(2);
+        setImmediate(DAC_Reg_B | DAC_Pre_Load | v[i]);
+        CyDelayUs(2);
+        setImmediate(DAC_Reg_C | DAC_Pre_Load | h[i]);
+        CyDelayUs(2);
+        setImmediate(DAC_Reg_D | DAC_Pre_Load | v[i]);
+        CyDelayUs(2);
+        strobe_LDAC();
+        CyDelay(1000);
+    }
+}
 /* [] END OF FILE */
