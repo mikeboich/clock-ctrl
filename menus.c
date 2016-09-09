@@ -41,7 +41,7 @@ menu *current_menu = &main_menu;
 
 
 void display_menu(menu the_menu){
-  compile_menu(&the_menu,MENU_BUFFER);
+  compile_menu(&the_menu,MAIN_BUFFER);
   //active_menu = &the_menu;
   
 }
@@ -52,7 +52,7 @@ void compile_menu(menu *the_menu, int which_buffer){
   char item_str[80] = "";
  
   y = 128+(the_menu->n_items/2)*40;
-  clear_buffer(MENU_BUFFER);
+  clear_buffer(MAIN_BUFFER);
   for(item_index=0;item_index<the_menu->n_items;item_index++){
     item_str[0] = 0;
     if(item_index==the_menu->highlighted_item_index) strcat(item_str,">");
@@ -103,15 +103,15 @@ void compile_time_screen(int a[],int selected_field){
   char num_buf[8];
   char format_str[7][8] = {"%02i/","%02i/","%i","%02i:","%02i:","%02i","%s"};
     
-  clear_buffer(ANALOG_BUFFER);
+  clear_buffer(MAIN_BUFFER);
   for(field=0; field<6; field++){
     num_buf[0] = 0;     // make string null string
     sprintf(num_buf, format_str[field],a[field]);
     if(selected_field!=field || blink_time())
-      compileString(num_buf,x_pos[field],y_pos[field],ANALOG_BUFFER,1,APPEND);
+      compileString(num_buf,x_pos[field],y_pos[field],MAIN_BUFFER,1,APPEND);
   }
   if(selected_field!=field || blink_time())
-    compileString(day_names[a[6]],255,y_pos[6],ANALOG_BUFFER,1,APPEND);
+    compileString(day_names[a[6]],255,y_pos[6],MAIN_BUFFER,1,APPEND);
 }
 
 void display_buffer(uint8 which_buffer);
@@ -132,7 +132,7 @@ void set_the_time(){
     
   while(!done){
     compile_time_screen(time_params,selected_field);
-    display_buffer(ANALOG_BUFFER);
+    display_buffer(MAIN_BUFFER);
     int new_counter = QuadDec_1_GetCounter();
     if(prev_counter != new_counter){
       time_params[selected_field] += (new_counter-prev_counter); 
@@ -199,14 +199,14 @@ void align_screen2(){
   }; 
    uint8 masks[9] ={0,1,2,4,8,16,32,64,128};
    uint8 x,y,i;
-   clear_buffer(ANALOG_BUFFER);
+   clear_buffer(MAIN_BUFFER);
   x=y=0;
   for(i=0;i<9;i++){
     test_pattern[0].seg_data.mask=masks[i]^0xff;
-    clear_buffer(ANALOG_BUFFER);
-    compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
+    clear_buffer(MAIN_BUFFER);
+    compileSegments(test_pattern,MAIN_BUFFER,APPEND);
     while(!button_clicked){
-      display_buffer(ANALOG_BUFFER);
+      display_buffer(MAIN_BUFFER);
     }
     button_clicked = 0;  // consume the button_click
       
@@ -230,14 +230,14 @@ void align_screen(){
   }; 
    uint8 masks[9] ={0,1,2,4,8,16,32,64,128};
    uint8 x,y,i;
-   clear_buffer(ANALOG_BUFFER);
+   clear_buffer(MAIN_BUFFER);
   x=y=0;
   for(i=0;i<9;i++){
     test_pattern[0].seg_data.mask=masks[i]^0xff;
-    clear_buffer(ANALOG_BUFFER);
-    compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
+    clear_buffer(MAIN_BUFFER);
+    compileSegments(test_pattern,MAIN_BUFFER,APPEND);
     while(!button_clicked){
-      display_buffer(ANALOG_BUFFER);
+      display_buffer(MAIN_BUFFER);
     }
     button_clicked = 0;  // consume the button_click
       
@@ -257,8 +257,8 @@ void set_locale(){
         if(new_offset<-23) new_offset += 24;
         
         sprintf(offset_buf,"UTC Offset: %i", new_offset);
-        compileString(offset_buf,16,128,ANALOG_BUFFER,1,0);
-        display_buffer(ANALOG_BUFFER);   
+        compileString(offset_buf,16,128,MAIN_BUFFER,1,0);
+        display_buffer(MAIN_BUFFER);   
     }
     button_clicked = 0;
     global_prefs.prefs_data.utc_offset = new_offset;
@@ -282,8 +282,8 @@ void set_switch_interval(){
         else{
             sprintf(interval_buf,"Don't auto-switch");
         }
-        compileString(interval_buf,16,128,ANALOG_BUFFER,1,0);
-        display_buffer(ANALOG_BUFFER);   
+        compileString(interval_buf,16,128,MAIN_BUFFER,1,0);
+        display_buffer(MAIN_BUFFER);   
     }
     button_clicked = 0;
     global_prefs.prefs_data.switch_interval = new_interval;

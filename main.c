@@ -1,21 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*  main.c
 
     Copyright (C) 2016 Michael Boich
@@ -108,7 +90,7 @@ void compile_flw(){
     
     if(cycle_count-lastUpdate > 31250){  // one second update interval..
         rw = random_word();
-        compileString(rw,255,88,ANALOG_BUFFER,5,OVERWRITE);
+        compileString(rw,255,88,MAIN_BUFFER,5,OVERWRITE);
         lastUpdate = cycle_count;
         
     }
@@ -128,9 +110,9 @@ void drawClockHands(int h, int m, int s){
 
 
   // not doing the 2-d hands yet, just lines
-  line(128,128,128 + sin(hour_angle)*HR_HAND_LENGTH,128 + cos(hour_angle) * HR_HAND_LENGTH,ANALOG_BUFFER);  // draw the hour hand
-  line(128,128,128 + sin(minute_angle)*MIN_HAND_LENGTH ,128 + cos(minute_angle) * MIN_HAND_LENGTH,ANALOG_BUFFER);
-  line(128,128,128 + sin(second_angle)*SEC_HAND_LENGTH,128 + cos(second_angle) * SEC_HAND_LENGTH,ANALOG_BUFFER);
+  line(128,128,128 + sin(hour_angle)*HR_HAND_LENGTH,128 + cos(hour_angle) * HR_HAND_LENGTH,MAIN_BUFFER);  // draw the hour hand
+  line(128,128,128 + sin(minute_angle)*MIN_HAND_LENGTH ,128 + cos(minute_angle) * MIN_HAND_LENGTH,MAIN_BUFFER);
+  line(128,128,128 + sin(second_angle)*SEC_HAND_LENGTH,128 + cos(second_angle) * SEC_HAND_LENGTH,MAIN_BUFFER);
 }
 
 void updateAnalogClock(int hour, int min,int sec){
@@ -140,17 +122,17 @@ void updateAnalogClock(int hour, int min,int sec){
   seg_or_flag face[] = {{128,128,255,255,cir,0xff},
 			{128,128,8,8,cir,0xff},
 			{.flag=0xff}};
-  compileSegments(face,ANALOG_BUFFER,OVERWRITE);
-  compileString("12",110,218,ANALOG_BUFFER,1,APPEND);
-  compileString("6",118,16,ANALOG_BUFFER,1,APPEND);
-  compileString("3",220,120,ANALOG_BUFFER,1,APPEND);
-  compileString("9",20,120,ANALOG_BUFFER,1,APPEND);
+  compileSegments(face,MAIN_BUFFER,OVERWRITE);
+  compileString("12",110,218,MAIN_BUFFER,1,APPEND);
+  compileString("6",118,16,MAIN_BUFFER,1,APPEND);
+  compileString("3",220,120,MAIN_BUFFER,1,APPEND);
+  compileString("9",20,120,MAIN_BUFFER,1,APPEND);
     
   drawClockHands(hour,min,sec);
  // experimental one revoultion/second widget:
 //  float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
 //  float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
-//  circle(x,y,16,ANALOG_BUFFER);
+//  circle(x,y,16,MAIN_BUFFER);
 }
 
 /* ************* Pong Game ************* */
@@ -271,31 +253,31 @@ void pong_update(){
     
 }
 
-void render_pong_buffer(pong_state the_state){
+void render_MAIN_BUFFER(pong_state the_state){
   int x,y;
   RTC_1_TIME_DATE *the_time;
     
   the_time = RTC_1_ReadTime();
     
-  clear_buffer(PONG_BUFFER);
+  clear_buffer(MAIN_BUFFER);
   // draw the left paddle
   for(y=the_state.paddle_position[0]-(PADDLE_HEIGHT/2);y<the_state.paddle_position[0]+(PADDLE_HEIGHT/2)+1;y++) \
-    line(0,y,PADDLE_WIDTH,y,PONG_BUFFER);
+    line(0,y,PADDLE_WIDTH,y,MAIN_BUFFER);
   // draw the right paddle:
   for(y=the_state.paddle_position[1]-(PADDLE_HEIGHT/2);y<the_state.paddle_position[1]+(PADDLE_HEIGHT/2)+1;y++) \
-    line(254-PADDLE_WIDTH,y,254,y,PONG_BUFFER);
+    line(254-PADDLE_WIDTH,y,254,y,MAIN_BUFFER);
     
   // draw puck:
   x = the_state.puck_position[0];
   if(puck_visible()){
     for(y=the_state.puck_position[1]-2;y<the_state.puck_position[1]+3;y++)
-      line(x-2,y,x+2,y,PONG_BUFFER);
+      line(x-2,y,x+2,y,MAIN_BUFFER);
   }
     
   // draw the centerline:
   x=128;
   for(y=240;y>0;y-=32){
-    line(128,y,128,y-16,PONG_BUFFER);   
+    line(128,y,128,y-16,MAIN_BUFFER);   
   }
     
   // draw the hours and minutes as two scores:
@@ -303,10 +285,10 @@ void render_pong_buffer(pong_state the_state){
   int the_hour = the_time->Hour;
   int the_minute = the_time->Min;
   sprintf(time_str,"%02i",the_hour);
-  compileString(time_str,32,200,PONG_BUFFER,2,APPEND);
+  compileString(time_str,32,200,MAIN_BUFFER,2,APPEND);
     
   sprintf(time_str,"%02i",the_minute);
-  compileString(time_str,174,200,PONG_BUFFER,2,APPEND);
+  compileString(time_str,174,200,MAIN_BUFFER,2,APPEND);
     
 }
 
@@ -319,22 +301,22 @@ void render_pendulum_buffer(){
 
   // render the time in seconds
   sprintf(sec_str,"%02i",the_time->Sec);
-  compileString(sec_str,255,32,PONG_BUFFER,2,OVERWRITE);
+  compileString(sec_str,255,32,MAIN_BUFFER,2,OVERWRITE);
 
   // render the hour and minute:  
   sprintf(hr_min_string,"%02i:%02i",the_time->Hour,the_time->Min);
-  compileString(hr_min_string,255,130,PONG_BUFFER,3,APPEND);
+  compileString(hr_min_string,255,130,MAIN_BUFFER,3,APPEND);
 
   // render the pendulum shaft:  
   x = 128.0+200*sin(sin(2*M_PI*(cycle_count-error_term)/31250.0)/2.5);
   y = 250.0 - 200*cos(sin(2*M_PI*(cycle_count-error_term)/31250.0)/2.5);
-  line(128,250,x,y,PONG_BUFFER);
+  line(128,250,x,y,MAIN_BUFFER);
 
   //render the pendulum bob:
-  for(i=32;i>0;i-=8) circle(x,y,i,PONG_BUFFER);
+  for(i=32;i>0;i-=8) circle(x,y,i,MAIN_BUFFER);
 
   //render the point from which the pendulum swings:
-  circle(128,250,8,PONG_BUFFER);
+  circle(128,250,8,MAIN_BUFFER);
 
 }
 
@@ -344,7 +326,7 @@ void display_buffer(uint8 which_buffer){
   while(seg_ptr->seg_data.x_offset != 0xff){
 
     if(current_state==blank_unprimed){
-     CyDelayUs(64);
+     CyDelayUs(11);
       uint8 int_status = CyEnterCriticalSection();
             
       set_DACfor_seg(seg_ptr,0,0);
@@ -434,18 +416,15 @@ void updateTimeDisplay(){
     
     
   sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
-  compileString(time_string,255,46,ANALOG_BUFFER,3,OVERWRITE);
-
-  //    sprintf(time_string,"%i:%02i",hours,minutes);
-  //    compileString(time_string,0,0,4);
+  compileString(time_string,255,46,MAIN_BUFFER,3,OVERWRITE);
 
   sprintf(date_string,"%s %i, %i",month_names[month-1],day_of_month,year);
  
-  compileString(date_string,255,142,ANALOG_BUFFER,1,APPEND);
+  compileString(date_string,255,142,MAIN_BUFFER,1,APPEND);
      
   char dw[12];
   sprintf(dw,"%s",day_names[day_of_week-1]);
-  compileString(dw,255,202,ANALOG_BUFFER,2,APPEND);
+  compileString(dw,255,202,MAIN_BUFFER,2,APPEND);
 
 
 }
@@ -461,11 +440,11 @@ void hw_test(){
     {255,255,0,0,cir,0x00},
   }; 
 
-   clear_buffer(ANALOG_BUFFER);
-    //compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
-    compileString("stn2k",255,128,ANALOG_BUFFER,4,APPEND);
+   clear_buffer(MAIN_BUFFER);
+    //compileSegments(test_pattern,MAIN_BUFFER,APPEND);
+    compileString("stn2k",255,128,MAIN_BUFFER,4,APPEND);
     while(!button_clicked){
-      display_buffer(ANALOG_BUFFER);
+      display_buffer(MAIN_BUFFER);
     }
     button_clicked = 0;  // consume the button_click
 }
@@ -478,11 +457,12 @@ void hw_test2(){
     {255,255,0,0,cir,0x00},
   }; 
 
-   clear_buffer(ANALOG_BUFFER);
-    compileSegments(test_pattern,ANALOG_BUFFER,APPEND);
-    //compileString("W2S",255,128,ANALOG_BUFFER,4,APPEND);
+   clear_buffer(MAIN_BUFFER);
+    //compileSegments(test_pattern,MAIN_BUFFER,APPEND);
+    compileString("{&W2S}",255,180,MAIN_BUFFER,1,APPEND);
+    compileString("{&w2s}",255,148,MAIN_BUFFER,1,APPEND);
     while(!button_clicked){
-      display_buffer(ANALOG_BUFFER);
+      display_buffer(MAIN_BUFFER);
     }
     button_clicked = 0;  // consume the button_click
 }
@@ -535,7 +515,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-
+  hw_test2();
   for(;;){
     if(second_has_elapsed){
         LED_Reg_Write(toggle_var);
@@ -554,14 +534,14 @@ int main()
 
     case gpsDebugMode:
       
-      compile_substring(sentence,32,255,64,ANALOG_BUFFER,1,OVERWRITE);
-      compile_substring(&sentence[32],32,255,32,ANALOG_BUFFER,1,APPEND);
-      display_buffer(ANALOG_BUFFER);
+      compile_substring(sentence,32,255,64,MAIN_BUFFER,1,OVERWRITE);
+      compile_substring(&sentence[32],32,255,32,MAIN_BUFFER,1,APPEND);
+      display_buffer(MAIN_BUFFER);
       break;
     
      case flwMode:
       compile_flw();
-      display_buffer(ANALOG_BUFFER);
+      display_buffer(MAIN_BUFFER);
       break;
     
     case textMode:
@@ -572,24 +552,24 @@ int main()
     case analogMode:
       now = RTC_1_ReadTime();
       updateAnalogClock(now->Hour,now->Min,now->Sec);
-      display_buffer(ANALOG_BUFFER);
+      display_buffer(MAIN_BUFFER);
       break;
     
     case pongMode:
-      display_buffer(PONG_BUFFER);
+      display_buffer(MAIN_BUFFER);
       pong_update();
-      render_pong_buffer(game_state);
+      render_MAIN_BUFFER(game_state);
       break;
 
     case pendulumMode:
-      display_buffer(PONG_BUFFER);  // reuse the Pong buffer
-      clear_buffer(PONG_BUFFER);
+      display_buffer(MAIN_BUFFER);  // reuse the Pong buffer
+      clear_buffer(MAIN_BUFFER);
       render_pendulum_buffer();
       break;
 
     case menuMode:
       display_menu(main_menu);
-      display_buffer(MENU_BUFFER);
+      display_buffer(MAIN_BUFFER);
       break;
 
     }

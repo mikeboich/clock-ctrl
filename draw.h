@@ -21,11 +21,9 @@
 #include "font.h"
     
 // constants plus buffers to hold drawlists:
-#define BUF_ENTRIES 350
+#define BUF_ENTRIES 1500
 #define DEBUG_BUFFER 1
-#define ANALOG_BUFFER 0
-#define PONG_BUFFER 0
-#define MENU_BUFFER 0
+#define MAIN_BUFFER 0
     
 #define OVERWRITE 0
 #define APPEND 1
