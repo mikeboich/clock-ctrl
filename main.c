@@ -45,6 +45,7 @@ volatile draw_state current_state = blank_unprimed;
 
 volatile int times_to_loop = 0;
 volatile int cycle_count=0;  // poor man's timer
+int frame_toggle = 0;   // performance measurement
 int error_term=0;            // difference between hw counters and 1 pps edge
 
 int last_refresh=0,loops_per_frame=0;   // for performance measurement
@@ -130,9 +131,9 @@ void updateAnalogClock(int hour, int min,int sec){
     
   drawClockHands(hour,min,sec);
  // experimental one revoultion/second widget:
-//  float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
-//  float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
-//  circle(x,y,16,MAIN_BUFFER);
+  float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
+  float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
+  circle(x,y,16,MAIN_BUFFER);
 }
 
 /* ************* Pong Game ************* */
@@ -285,10 +286,10 @@ void render_MAIN_BUFFER(pong_state the_state){
   int the_hour = the_time->Hour;
   int the_minute = the_time->Min;
   sprintf(time_str,"%02i",the_hour);
-  compileString(time_str,32,200,MAIN_BUFFER,2,APPEND);
+  compileString(time_str,36,200,MAIN_BUFFER,2,APPEND);
     
   sprintf(time_str,"%02i",the_minute);
-  compileString(time_str,174,200,MAIN_BUFFER,2,APPEND);
+  compileString(time_str,160,200,MAIN_BUFFER,2,APPEND);
     
 }
 
@@ -323,10 +324,14 @@ void render_pendulum_buffer(){
 
 void display_buffer(uint8 which_buffer){
   seg_or_flag *seg_ptr = seg_buffer[which_buffer];
+  FrameDrawReg_Write(frame_toggle);
+  frame_toggle = 1 - frame_toggle;
+
   while(seg_ptr->seg_data.x_offset != 0xff){
 
     if(current_state==blank_unprimed){
      CyDelayUs(11);
+
       uint8 int_status = CyEnterCriticalSection();
             
       set_DACfor_seg(seg_ptr,0,0);
@@ -354,11 +359,6 @@ void display_buffer(uint8 which_buffer){
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
     
       current_mask = seg_ptr->seg_data.mask;
-    // experiment to get rid of doubled diagonal lines:
-//        if(seg_ptr->seg_data.mask == 0x99){
-//          current_mask = 0x81;
-//          times_to_loop *= 2;
-//    }
 
       ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
@@ -441,7 +441,7 @@ void hw_test(){
   }; 
 
    clear_buffer(MAIN_BUFFER);
-    //compileSegments(test_pattern,MAIN_BUFFER,APPEND);
+    compileSegments(test_pattern,MAIN_BUFFER,APPEND);
     compileString("stn2k",255,128,MAIN_BUFFER,4,APPEND);
     while(!button_clicked){
       display_buffer(MAIN_BUFFER);
@@ -456,13 +456,16 @@ void hw_test2(){
     {128,128,100,128,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
+  int toggle_state=0;
 
    clear_buffer(MAIN_BUFFER);
     //compileSegments(test_pattern,MAIN_BUFFER,APPEND);
-    compileString("{&W2S}",255,180,MAIN_BUFFER,1,APPEND);
-    compileString("{&w2s}",255,148,MAIN_BUFFER,1,APPEND);
+    compileString("2",255,180,MAIN_BUFFER,4,APPEND);
+    //compileString("{&w2s}",255,148,MAIN_BUFFER,1,APPEND);
     while(!button_clicked){
       display_buffer(MAIN_BUFFER);
+      int d = QuadDec_1_GetCounter();
+      CyDelay(d);
     }
     button_clicked = 0;  // consume the button_click
 }
@@ -501,7 +504,7 @@ int main()
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
 
- // initTime();
+  //initTime();
    
 
   /* initialize sysfont: */
@@ -590,7 +593,6 @@ int main()
       last_refresh = cycle_count;
 
     }
-    
     int interval = global_prefs.prefs_data.switch_interval;
     
     if(display_mode != menuMode && interval==0) display_mode = QuadDec_1_GetCounter() % 6;
