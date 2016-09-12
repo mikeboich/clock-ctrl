@@ -460,7 +460,7 @@ void hw_test2(){
 
    clear_buffer(MAIN_BUFFER);
     //compileSegments(test_pattern,MAIN_BUFFER,APPEND);
-    compileString("2",255,180,MAIN_BUFFER,4,APPEND);
+    compileString("2u",255,180,MAIN_BUFFER,4,APPEND);
     //compileString("{&w2s}",255,148,MAIN_BUFFER,1,APPEND);
     while(!button_clicked){
       display_buffer(MAIN_BUFFER);
@@ -488,12 +488,9 @@ int main()
   // Start the quadrature decoder(aka "the knob"):
   QuadDec_1_Start();
 
-  // Initialize button interrupt (which is a routine that polls the button at 60Hz):
+  // Initialize button interrupt (an interrupt routine that polls the button at 60Hz):
   button_isr_Start();
 
-  // initialize the pseudo 1pps interrupt from the gps:
-  //one_pps_int_Start();
-    
   /* Initialize Wave Interrupt, which manages the circles: */
   isr_1_StartEx(wave_started);
   CyGlobalIntEnable;
