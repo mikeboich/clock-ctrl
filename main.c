@@ -460,8 +460,8 @@ void hw_test2(){
 
    clear_buffer(MAIN_BUFFER);
     //compileSegments(test_pattern,MAIN_BUFFER,APPEND);
-    compileString("2u",255,180,MAIN_BUFFER,4,APPEND);
-    //compileString("{&w2s}",255,148,MAIN_BUFFER,1,APPEND);
+    //compileString("2u",255,180,MAIN_BUFFER,4,APPEND);
+    compileString("hark",255,64,MAIN_BUFFER,5,APPEND);
     while(!button_clicked){
       display_buffer(MAIN_BUFFER);
       int d = QuadDec_1_GetCounter();
@@ -479,11 +479,13 @@ int main()
   /* Start VDACs */
   VDAC8_1_Start();
   VDAC8_2_Start();
-    
+  
+  CyDelay(50);
     
  
   /* Initialize the shift register: */
   ShiftReg_1_Start();
+  CyDelay(50);
 
   // Start the quadrature decoder(aka "the knob"):
   QuadDec_1_Start();
@@ -491,8 +493,9 @@ int main()
   // Initialize button interrupt (an interrupt routine that polls the button at 60Hz):
   button_isr_Start();
 
-  /* Initialize Wave Interrupt, which manages the circles: */
+  /* Initialize Wave Interrupt, which triggers at the start of each sinuisoid period: */
   isr_1_StartEx(wave_started);
+  CyDelay(50);
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
@@ -527,8 +530,10 @@ int main()
     } 
     second_has_elapsed = 0;     
     RTC_1_TIME_DATE *now;
-//    int phase = SixtyHz_Read();
-//    while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
+    if(global_prefs.prefs_data.sync_to_60Hz || 1){
+      int phase = SixtyHz_Read();
+      while(SixtyHz_Read() == 0);   // wait for a 60Hz edge..
+    }
     
     switch (display_mode){
 
