@@ -21,14 +21,15 @@
 #include "font.h"
     
 // constants plus buffers to hold drawlists:
-#define BUF_ENTRIES 1500
+#define BUF_ENTRIES 300
 #define DEBUG_BUFFER 1
 #define MAIN_BUFFER 0
+#define AUX_BUFFER 2
     
 #define OVERWRITE 0
 #define APPEND 1
 
-extern seg_or_flag seg_buffer[2][BUF_ENTRIES];
+extern seg_or_flag seg_buffer[3][BUF_ENTRIES];
 
 struct menu;  // "forward" definition of menu is fine for this purpose
 

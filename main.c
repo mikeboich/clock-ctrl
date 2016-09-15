@@ -518,21 +518,24 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test2();
+  //hw_test2();
+
+// The main loop:
   for(;;){
-    if(second_has_elapsed){
+    if(second_has_elapsed){    // toggle the blue lED once/second
         LED_Reg_Write(toggle_var);
         toggle_var=1-toggle_var;
     }
     if(second_has_elapsed && (display_mode != menuMode)){
-      // tweak error_term used to sync pendulum with seconds:
+      // tweak error_term used to sync pendulum with second boundary:
       error_term = (cycle_count % 31250);
+      second_has_elapsed = 0;     
+
     } 
-    second_has_elapsed = 0;     
     RTC_1_TIME_DATE *now;
-    if(global_prefs.prefs_data.sync_to_60Hz || 1){
+    if(global_prefs.prefs_data.sync_to_60Hz && 0){
       int phase = SixtyHz_Read();
-      while(SixtyHz_Read() == 0);   // wait for a 60Hz edge..
+      while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     }
     
     switch (display_mode){

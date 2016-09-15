@@ -55,7 +55,7 @@ void compile_menu(menu *the_menu, int which_buffer){
   clear_buffer(MAIN_BUFFER);
   for(item_index=0;item_index<the_menu->n_items;item_index++){
     item_str[0] = 0;
-    if(item_index==the_menu->highlighted_item_index) strcat(item_str,">");
+    if(item_index==the_menu->highlighted_item_index) strcat(item_str,"->");
     strcat(item_str,the_menu->items[item_index]);
     compileString(item_str,255,y,which_buffer,1,APPEND);
     y -= 40;
