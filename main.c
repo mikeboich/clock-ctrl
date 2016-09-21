@@ -91,6 +91,7 @@ void compile_flw(){
     
     if(cycle_count-lastUpdate > 31250){  // one second update interval..
         rw = random_word();
+        rw = next_word();
         compileString(rw,255,88,MAIN_BUFFER,5,OVERWRITE);
         lastUpdate = cycle_count;
         

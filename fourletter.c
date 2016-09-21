@@ -12,6 +12,9 @@
 #include <string.h>
 #include "RTC_1.h"
 
+int flw_index = 0;
+int n_flw_words = 0;
+
 char *flws[] ={
         "abet","able","ably","abut","aced","aces","ache","achy","acid","acme",
 			"acne","acre","acts","adds","adze","aero","afar","agar","aged","ages",
@@ -301,6 +304,7 @@ char *flws[] ={
 			"zing","zips","ziti","zits","zone","zonk","zoom","zoos","zori","zzzz"
   };
 
+uint8 sequential_mode=1;
 
 int count_flws(char *the_words[]){
     int n=0;
@@ -318,8 +322,20 @@ char *random_word(){
     return flws[rand() % number_of_flws];
 }
 
+char *next_word(){
+    //static int index = 0;
+    char *result; 
+    result = flws[flw_index++];
+    if(flw_index >= n_flw_words)
+      flw_index = 0;
+    return (result);
+}
+
 void init_flws(){
     RTC_1_TIME_DATE *t = RTC_1_ReadTime();
     uint seed = 86400*t->DayOfYear + 3600*t->Hour + 60*t->Min + t->Sec;
     srand(seed);
+    n_flw_words = count_flws(flws);
+    flw_index = seed % n_flw_words;
+   
 }
