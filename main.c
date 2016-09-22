@@ -534,7 +534,7 @@ int main()
 
     } 
     RTC_1_TIME_DATE *now;
-    if(global_prefs.prefs_data.sync_to_60Hz && 0){
+    if(global_prefs.prefs_data.sync_to_60Hz || 1){
       int phase = SixtyHz_Read();
       while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     }
