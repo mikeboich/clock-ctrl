@@ -500,12 +500,12 @@ int main()
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
- init_gps();
+// init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
 
-  //initTime();
+  initTime();
    
 
   /* initialize sysfont: */
