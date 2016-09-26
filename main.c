@@ -500,12 +500,12 @@ int main()
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
-// init_gps();
+ init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
 
-  initTime();
+ // initTime();
    
 
   /* initialize sysfont: */
@@ -534,7 +534,7 @@ int main()
 
     } 
     RTC_1_TIME_DATE *now;
-    if(global_prefs.prefs_data.sync_to_60Hz || 1){
+    if(global_prefs.prefs_data.sync_to_60Hz && 0){
       int phase = SixtyHz_Read();
       while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
     }
