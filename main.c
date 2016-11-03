@@ -324,6 +324,8 @@ void render_pendulum_buffer(){
 
 
 void display_buffer(uint8 which_buffer){
+    #define PI 3
+    
   seg_or_flag *seg_ptr = seg_buffer[which_buffer];
   FrameDrawReg_Write(frame_toggle);
   frame_toggle = 1 - frame_toggle;
@@ -349,12 +351,25 @@ void display_buffer(uint8 which_buffer){
           Phase_Register_Write(0x2);
           break;
     }
-              
+      // trying SGITeach brightness algorithm, vs my stupid simple one:
+    
+      if(seg_ptr->seg_data.arc_type == cir){
+        if(seg_ptr->seg_data.x_size == seg_ptr->seg_data.y_size)
+          times_to_loop = PI*seg_ptr->seg_data.x_size;
+        else{
+            uint16 a = seg_ptr->seg_data.x_size/2;
+            uint16 b = seg_ptr->seg_data.y_size/2;
+            times_to_loop = PI*(3*(a+b) - sqrt((3*a*b)*(a+3*b)));          
+        }
+        if(times_to_loop < 5){
+            seg_ptr->seg_data.mask = 0x11;
+        }
+    }
       times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
 	  seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
       if(times_to_loop==0) times_to_loop = 1;
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
-    
+      
     
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
