@@ -450,15 +450,13 @@ void waitForClick(){
 }
 void hw_test(){
   seg_or_flag test_pattern[] = {
-    {128,128,254,254,cir,0x0aa},
-    {128,128,128,0,pos,0x99},
-    {128,128,0,128,pos,0xff},
+    {128,128,100,100,cir,0x0ff},
     {255,255,0,0,cir,0x00},
   }; 
 
    clear_buffer(MAIN_BUFFER);
     compileSegments(test_pattern,MAIN_BUFFER,APPEND);
-    compileString("stn2k",255,128,MAIN_BUFFER,4,APPEND);
+    compileString("0",255,128,MAIN_BUFFER,2,APPEND);
     while(!button_clicked){
       display_buffer(MAIN_BUFFER);
     }
@@ -466,20 +464,26 @@ void hw_test(){
 }
 void hw_test2(){
   seg_or_flag test_pattern[] = {
-    {0,0,0,0,cir,0xff},
-    {0,128,100,128,cir,0xff},
-    {128,0,100,128,cir,0xff},
-    {128,128,100,128,cir,0xff},
+    {128,128,100,100,cir,0xff},
+    {128,128,50,50,cir,0xaa},
+    {128,128,25,25,cir,0x55},
     {255,255,0,0,cir,0x00},
   }; 
   int toggle_state=0;
 
    clear_buffer(MAIN_BUFFER);
-    //compileSegments(test_pattern,MAIN_BUFFER,APPEND);
+    compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
     //compileString("2u",255,180,MAIN_BUFFER,4,APPEND);
-    compileString("hark",255,64,MAIN_BUFFER,5,APPEND);
+    //compileString("hark",255,64,MAIN_BUFFER,5,APPEND);
+    int x=100;
     while(!button_clicked){
       display_buffer(MAIN_BUFFER);
+      if(--x == 0){
+        test_pattern[1].seg_data.mask ^= 0xff;
+        test_pattern[2].seg_data.mask ^= 0xff;
+        compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
+        x=100;
+    }
       int d = QuadDec_1_GetCounter();
       CyDelay(d);
     }
@@ -491,6 +495,7 @@ int main()
     int last_switch = 0;
   /* Start up the SPI interface: */
   SPIM_1_Start();
+  CyDelay(10);
     
   /* Start VDACs */
   VDAC8_1_Start();
@@ -505,9 +510,11 @@ int main()
 
   // Start the quadrature decoder(aka "the knob"):
   QuadDec_1_Start();
+  CyDelay(50);
 
   // Initialize button interrupt (an interrupt routine that polls the button at 60Hz):
   button_isr_Start();
+  CyDelay(50);
 
   /* Initialize Wave Interrupt, which triggers at the start of each sinuisoid period: */
   isr_1_StartEx(wave_started);
@@ -534,7 +541,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  //hw_test2();
+  hw_test();
 
 // The main loop:
   for(;;){
