@@ -353,7 +353,7 @@ void display_buffer(uint8 which_buffer){
     }
       // trying SGITeach brightness algorithm, vs my stupid simple one:
     
-      if(seg_ptr->seg_data.arc_type == cir){
+ /*     if(seg_ptr->seg_data.arc_type == cir){
         if(seg_ptr->seg_data.x_size == seg_ptr->seg_data.y_size)
           times_to_loop = PI*seg_ptr->seg_data.x_size;
         else{
@@ -361,11 +361,13 @@ void display_buffer(uint8 which_buffer){
             uint16 b = seg_ptr->seg_data.y_size/2;
             times_to_loop = PI*(3*(a+b) - sqrt((3*a*b)*(a+3*b)));          
         }
+    
         if(times_to_loop < 5){
             seg_ptr->seg_data.mask = 0x11;
         }
     }
-      times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
+    */
+    times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
 	  seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
       if(times_to_loop==0) times_to_loop = 1;
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
