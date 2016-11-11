@@ -25,6 +25,8 @@ uint8 days_in_month[2][12] = {{31,28,31,30,31,30,31,31,30,31,30,31},\
                             {31,29,31,30,31,30,31,31,30,31,30,31}};
 
 int8 utc_offset = -7;
+extern int one_pps_available;  // GPS is generating one_pps output
+
 
 char *field_n(uint8 n, char *sentence){
     char *c = sentence;
@@ -85,7 +87,7 @@ void set_rtc_to_gps(){
     static int time_is_set=0;
     static int seed = 0;
     
-    if(!time_is_set){
+    if(1){
     RTC_1_TIME_DATE *t = RTC_1_ReadTime();
     //char *c = field_n(&sentence[9]);
     t->Hour = a_to_uint8(field_n(1,sentence));
@@ -103,8 +105,8 @@ void set_rtc_to_gps(){
         seed = t->Sec+60*t->Min+3600*t->Hour+86400*t->DayOfYear;
         srand(seed);
     }
-    //RTC_1_Start();
-    //RTC_1_Stop();
+    RTC_1_Start();
+    RTC_1_Stop();
     time_is_set = 1;
     }  
 }

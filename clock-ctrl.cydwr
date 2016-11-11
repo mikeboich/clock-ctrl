@@ -398,6 +398,7 @@
     <Data key="InHexFileKey" value="False" />
   </Group>
   <Group key="Interrupt">
+    <Data key="0c3049f2-6733-4d6c-ab15-6194b2d6b50f" value="7" />
     <Data key="59c33ef1-6267-4c54-b105-2790244267be" value="5" />
     <Data key="b0162966-0060-4af5-82d1-fcb491ad7619/10dce1ed-dd83-44c0-9cff-cc3ee25204cd" value="6" />
     <Data key="b0162966-0060-4af5-82d1-fcb491ad7619/0758f7e0-b58c-4a6b-bb59-e7d003cac7de" value="6" />

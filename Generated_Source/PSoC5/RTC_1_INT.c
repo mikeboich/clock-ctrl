@@ -53,8 +53,6 @@ static void RTC_1_EverySecondHandler(void)
 {
     /*  Place your every second handler code here. */
     /* `#START EVERY_SECOND_HANDLER_CODE` */
-  extern int second_has_elapsed;
-  second_has_elapsed = 1;
     /* `#END` */
     
     #ifdef RTC_1_EVERY_SECOND_HANDLER_CALLBACK

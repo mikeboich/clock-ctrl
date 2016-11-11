@@ -32,6 +32,8 @@
 // Real time clock variables:
 volatile int second_has_elapsed = 0;
 
+volatile int one_pps_available = 0;
+
 
 typedef enum{flwMode, textMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
 clock_type display_mode=pendulumMode;
@@ -521,13 +523,14 @@ int main()
   /* Initialize Wave Interrupt, which triggers at the start of each sinuisoid period: */
   isr_1_StartEx(wave_started);
   CyDelay(50);
-  CyGlobalIntEnable;
+  //initialize the onePPS interrupt:
+  one_pps_int_Start();
+
+CyGlobalIntEnable;
 
 // start the UART for gps communications:
  init_gps();
 
-//initialize the onePPS interrupt:
- one_pps_int_Start();
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
@@ -546,9 +549,9 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  LED_Reg_Write(1);
-  hw_test();
-  LED_Reg_Write(0);
+//  LED_Reg_Write(1);
+//  hw_test();
+//  LED_Reg_Write(0);
 
 
 // The main loop:
