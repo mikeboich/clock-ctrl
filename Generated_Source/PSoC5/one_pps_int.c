@@ -1,5 +1,5 @@
 /*******************************************************************************
-* File Name: gps_interrupt.c  
+* File Name: one_pps_int.c  
 * Version 1.70
 *
 *  Description:
@@ -18,15 +18,15 @@
 
 #include <cydevice_trm.h>
 #include <CyLib.h>
-#include <gps_interrupt.h>
+#include <one_pps_int.h>
 #include "cyapicallbacks.h"
 
-#if !defined(gps_interrupt__REMOVED) /* Check for removal by optimization */
+#if !defined(one_pps_int__REMOVED) /* Check for removal by optimization */
 
 /*******************************************************************************
 *  Place your includes, defines and code here 
 ********************************************************************************/
-/* `#START gps_interrupt_intc` */
+/* `#START one_pps_int_intc` */
 
 /* `#END` */
 
@@ -42,7 +42,7 @@ CY_ISR_PROTO(IntDefaultHandler);
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_Start
+* Function Name: one_pps_int_Start
 ********************************************************************************
 *
 * Summary:
@@ -58,24 +58,24 @@ CY_ISR_PROTO(IntDefaultHandler);
 *   None
 *
 *******************************************************************************/
-void gps_interrupt_Start(void)
+void one_pps_int_Start(void)
 {
     /* For all we know the interrupt is active. */
-    gps_interrupt_Disable();
+    one_pps_int_Disable();
 
-    /* Set the ISR to point to the gps_interrupt Interrupt. */
-    gps_interrupt_SetVector(&gps_interrupt_Interrupt);
+    /* Set the ISR to point to the one_pps_int Interrupt. */
+    one_pps_int_SetVector(&one_pps_int_Interrupt);
 
     /* Set the priority. */
-    gps_interrupt_SetPriority((uint8)gps_interrupt_INTC_PRIOR_NUMBER);
+    one_pps_int_SetPriority((uint8)one_pps_int_INTC_PRIOR_NUMBER);
 
     /* Enable it. */
-    gps_interrupt_Enable();
+    one_pps_int_Enable();
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_StartEx
+* Function Name: one_pps_int_StartEx
 ********************************************************************************
 *
 * Summary:
@@ -101,24 +101,24 @@ void gps_interrupt_Start(void)
 *   None
 *
 *******************************************************************************/
-void gps_interrupt_StartEx(cyisraddress address)
+void one_pps_int_StartEx(cyisraddress address)
 {
     /* For all we know the interrupt is active. */
-    gps_interrupt_Disable();
+    one_pps_int_Disable();
 
-    /* Set the ISR to point to the gps_interrupt Interrupt. */
-    gps_interrupt_SetVector(address);
+    /* Set the ISR to point to the one_pps_int Interrupt. */
+    one_pps_int_SetVector(address);
 
     /* Set the priority. */
-    gps_interrupt_SetPriority((uint8)gps_interrupt_INTC_PRIOR_NUMBER);
+    one_pps_int_SetPriority((uint8)one_pps_int_INTC_PRIOR_NUMBER);
 
     /* Enable it. */
-    gps_interrupt_Enable();
+    one_pps_int_Enable();
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_Stop
+* Function Name: one_pps_int_Stop
 ********************************************************************************
 *
 * Summary:
@@ -131,22 +131,22 @@ void gps_interrupt_StartEx(cyisraddress address)
 *   None
 *
 *******************************************************************************/
-void gps_interrupt_Stop(void)
+void one_pps_int_Stop(void)
 {
     /* Disable this interrupt. */
-    gps_interrupt_Disable();
+    one_pps_int_Disable();
 
     /* Set the ISR to point to the passive one. */
-    gps_interrupt_SetVector(&IntDefaultHandler);
+    one_pps_int_SetVector(&IntDefaultHandler);
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_Interrupt
+* Function Name: one_pps_int_Interrupt
 ********************************************************************************
 *
 * Summary:
-*   The default Interrupt Service Routine for gps_interrupt.
+*   The default Interrupt Service Routine for one_pps_int.
 *
 *   Add custom code between the coments to keep the next version of this file
 *   from over writting your code.
@@ -157,31 +157,41 @@ void gps_interrupt_Stop(void)
 *   None
 *
 *******************************************************************************/
-CY_ISR(gps_interrupt_Interrupt)
+CY_ISR(one_pps_int_Interrupt)
 {
-    #ifdef gps_interrupt_INTERRUPT_INTERRUPT_CALLBACK
-        gps_interrupt_Interrupt_InterruptCallback();
-    #endif /* gps_interrupt_INTERRUPT_INTERRUPT_CALLBACK */ 
+    #ifdef one_pps_int_INTERRUPT_INTERRUPT_CALLBACK
+        one_pps_int_Interrupt_InterruptCallback();
+    #endif /* one_pps_int_INTERRUPT_INTERRUPT_CALLBACK */ 
 
     /*  Place your Interrupt code here. */
-    /* `#START gps_interrupt_Interrupt` */
-#include "GPS_Status.h"
+    /* `#START one_pps_int_Interrupt` */
+    // We're assuming a gps with 1 PPS signal here
+    // The interrupt calls the RTC interrupt routine
 #include "LED_Reg.h"
-#include "GPS_Status.h"
-    GPS_Status_ClearInterrupt();  // pin-based interrupt needs to be cleared
-    LED_Reg_Write(GPS_Status_Read());
+#include "One_PPS_In.h"
+#include "RTC_1.h"
+    static uint8 tv=0;
+    One_PPS_In_ClearInterrupt();
+    LED_Reg_Write(tv);
+    tv = 1-tv;
+    extern int second_has_elapsed;
+    second_has_elapsed = 1;
+    extern int one_pps_available;
+    one_pps_available = 1;
+
+    RTC_1_ISR();    // advance the RTC.  The one PPS signal has replaced the 32KHz crystal as our time base 
     /* `#END` */
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_SetVector
+* Function Name: one_pps_int_SetVector
 ********************************************************************************
 *
 * Summary:
-*   Change the ISR vector for the Interrupt. Note calling gps_interrupt_Start
+*   Change the ISR vector for the Interrupt. Note calling one_pps_int_Start
 *   will override any effect this method would have had. To set the vector 
-*   before the component has been started use gps_interrupt_StartEx instead.
+*   before the component has been started use one_pps_int_StartEx instead.
 * 
 *   When defining ISR functions, the CY_ISR and CY_ISR_PROTO macros should be 
 *   used to provide consistent definition across compilers:
@@ -201,18 +211,18 @@ CY_ISR(gps_interrupt_Interrupt)
 *   None
 *
 *******************************************************************************/
-void gps_interrupt_SetVector(cyisraddress address)
+void one_pps_int_SetVector(cyisraddress address)
 {
     cyisraddress * ramVectorTable;
 
     ramVectorTable = (cyisraddress *) *CYINT_VECT_TABLE;
 
-    ramVectorTable[CYINT_IRQ_BASE + (uint32)gps_interrupt__INTC_NUMBER] = address;
+    ramVectorTable[CYINT_IRQ_BASE + (uint32)one_pps_int__INTC_NUMBER] = address;
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_GetVector
+* Function Name: one_pps_int_GetVector
 ********************************************************************************
 *
 * Summary:
@@ -225,26 +235,26 @@ void gps_interrupt_SetVector(cyisraddress address)
 *   Address of the ISR in the interrupt vector table.
 *
 *******************************************************************************/
-cyisraddress gps_interrupt_GetVector(void)
+cyisraddress one_pps_int_GetVector(void)
 {
     cyisraddress * ramVectorTable;
 
     ramVectorTable = (cyisraddress *) *CYINT_VECT_TABLE;
 
-    return ramVectorTable[CYINT_IRQ_BASE + (uint32)gps_interrupt__INTC_NUMBER];
+    return ramVectorTable[CYINT_IRQ_BASE + (uint32)one_pps_int__INTC_NUMBER];
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_SetPriority
+* Function Name: one_pps_int_SetPriority
 ********************************************************************************
 *
 * Summary:
 *   Sets the Priority of the Interrupt. 
 *
-*   Note calling gps_interrupt_Start or gps_interrupt_StartEx will 
+*   Note calling one_pps_int_Start or one_pps_int_StartEx will 
 *   override any effect this API would have had. This API should only be called
-*   after gps_interrupt_Start or gps_interrupt_StartEx has been called. 
+*   after one_pps_int_Start or one_pps_int_StartEx has been called. 
 *   To set the initial priority for the component, use the Design-Wide Resources
 *   Interrupt Editor.
 *
@@ -259,14 +269,14 @@ cyisraddress gps_interrupt_GetVector(void)
 *   None
 *
 *******************************************************************************/
-void gps_interrupt_SetPriority(uint8 priority)
+void one_pps_int_SetPriority(uint8 priority)
 {
-    *gps_interrupt_INTC_PRIOR = priority << 5;
+    *one_pps_int_INTC_PRIOR = priority << 5;
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_GetPriority
+* Function Name: one_pps_int_GetPriority
 ********************************************************************************
 *
 * Summary:
@@ -281,19 +291,19 @@ void gps_interrupt_SetPriority(uint8 priority)
 *    PSoC 4: Priority is from 0 to 3.
 *
 *******************************************************************************/
-uint8 gps_interrupt_GetPriority(void)
+uint8 one_pps_int_GetPriority(void)
 {
     uint8 priority;
 
 
-    priority = *gps_interrupt_INTC_PRIOR >> 5;
+    priority = *one_pps_int_INTC_PRIOR >> 5;
 
     return priority;
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_Enable
+* Function Name: one_pps_int_Enable
 ********************************************************************************
 *
 * Summary:
@@ -308,15 +318,15 @@ uint8 gps_interrupt_GetPriority(void)
 *   None
 *
 *******************************************************************************/
-void gps_interrupt_Enable(void)
+void one_pps_int_Enable(void)
 {
     /* Enable the general interrupt. */
-    *gps_interrupt_INTC_SET_EN = gps_interrupt__INTC_MASK;
+    *one_pps_int_INTC_SET_EN = one_pps_int__INTC_MASK;
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_GetState
+* Function Name: one_pps_int_GetState
 ********************************************************************************
 *
 * Summary:
@@ -329,15 +339,15 @@ void gps_interrupt_Enable(void)
 *   1 if enabled, 0 if disabled.
 *
 *******************************************************************************/
-uint8 gps_interrupt_GetState(void)
+uint8 one_pps_int_GetState(void)
 {
     /* Get the state of the general interrupt. */
-    return ((*gps_interrupt_INTC_SET_EN & (uint32)gps_interrupt__INTC_MASK) != 0u) ? 1u:0u;
+    return ((*one_pps_int_INTC_SET_EN & (uint32)one_pps_int__INTC_MASK) != 0u) ? 1u:0u;
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_Disable
+* Function Name: one_pps_int_Disable
 ********************************************************************************
 *
 * Summary:
@@ -350,15 +360,15 @@ uint8 gps_interrupt_GetState(void)
 *   None
 *
 *******************************************************************************/
-void gps_interrupt_Disable(void)
+void one_pps_int_Disable(void)
 {
     /* Disable the general interrupt. */
-    *gps_interrupt_INTC_CLR_EN = gps_interrupt__INTC_MASK;
+    *one_pps_int_INTC_CLR_EN = one_pps_int__INTC_MASK;
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_SetPending
+* Function Name: one_pps_int_SetPending
 ********************************************************************************
 *
 * Summary:
@@ -377,14 +387,14 @@ void gps_interrupt_Disable(void)
 *   interrupts).
 *
 *******************************************************************************/
-void gps_interrupt_SetPending(void)
+void one_pps_int_SetPending(void)
 {
-    *gps_interrupt_INTC_SET_PD = gps_interrupt__INTC_MASK;
+    *one_pps_int_INTC_SET_PD = one_pps_int__INTC_MASK;
 }
 
 
 /*******************************************************************************
-* Function Name: gps_interrupt_ClearPending
+* Function Name: one_pps_int_ClearPending
 ********************************************************************************
 *
 * Summary:
@@ -402,9 +412,9 @@ void gps_interrupt_SetPending(void)
 *   None
 *
 *******************************************************************************/
-void gps_interrupt_ClearPending(void)
+void one_pps_int_ClearPending(void)
 {
-    *gps_interrupt_INTC_CLR_PD = gps_interrupt__INTC_MASK;
+    *one_pps_int_INTC_CLR_PD = one_pps_int__INTC_MASK;
 }
 
 #endif /* End check for removal by optimization */
