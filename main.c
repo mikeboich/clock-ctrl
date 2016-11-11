@@ -526,6 +526,9 @@ int main()
 // start the UART for gps communications:
  init_gps();
 
+//initialize the onePPS interrupt:
+ one_pps_int_Start();
+
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
 
@@ -543,20 +546,20 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
+  LED_Reg_Write(1);
   hw_test();
+  LED_Reg_Write(0);
+
 
 // The main loop:
   for(;;){
     if(second_has_elapsed){    // toggle the blue lED once/second
-        LED_Reg_Write(toggle_var);
-        toggle_var=1-toggle_var;
-    }
-    if(second_has_elapsed && (display_mode != menuMode)){
+//        LED_Reg_Write(1);
+//        toggle_var = 1-toggle_var;
       // tweak error_term used to sync pendulum with second boundary:
-      error_term = (cycle_count % 31250);
-      second_has_elapsed = 0;     
-
-    } 
+        error_term = (cycle_count % 31250);
+        second_has_elapsed = 0;     
+    }
     RTC_1_TIME_DATE *now;
     if(global_prefs.prefs_data.sync_to_60Hz && 0){
       int phase = SixtyHz_Read();
