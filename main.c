@@ -31,6 +31,7 @@
 
 // Real time clock variables:
 volatile int second_has_elapsed = 0;
+volatile int pps_available=0;
 
 
 typedef enum{flwMode, textMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
@@ -521,6 +522,8 @@ int main()
   /* Initialize Wave Interrupt, which triggers at the start of each sinuisoid period: */
   isr_1_StartEx(wave_started);
   CyDelay(50);
+
+  one_pps_int_Start();
   CyGlobalIntEnable;
 
 // start the UART for gps communications:
@@ -547,10 +550,10 @@ int main()
 
 // The main loop:
   for(;;){
-    if(second_has_elapsed){    // toggle the blue lED once/second
-        LED_Reg_Write(toggle_var);
-        toggle_var=1-toggle_var;
-    }
+//    if(second_has_elapsed){    // toggle the blue lED once/second
+//        LED_Reg_Write(toggle_var);
+//        toggle_var=1-toggle_var;
+//    }
     if(second_has_elapsed && (display_mode != menuMode)){
       // tweak error_term used to sync pendulum with second boundary:
       error_term = (cycle_count % 31250);

@@ -82,7 +82,10 @@ uint8 a_to_uint8(char *s){
     return 10*(s[0] - 0x30) + (s[1] - 0x30);
 }
 void set_rtc_to_gps(){
+    extern int pps_available;
     static int seed = 0;
+    static int time_set=0;
+    
     RTC_1_TIME_DATE *t = RTC_1_ReadTime();
     //char *c = field_n(&sentence[9]);
     t->Hour = a_to_uint8(field_n(1,sentence));
@@ -100,8 +103,12 @@ void set_rtc_to_gps(){
         seed = t->Sec+60*t->Min+3600*t->Hour+86400*t->DayOfYear;
         srand(seed);
     }
+    time_set=1;
+    
+    if(!pps_available){
     RTC_1_Start();
     RTC_1_Stop();
+    }
    
 }
 
@@ -145,7 +152,7 @@ void consume_char(char c){
                 buf_index=0;
                 state = awaiting_dollar;
                 
-                second_has_elapsed = 1;
+               // second_has_elapsed = 1;
                 set_rtc_to_gps();
             }
             break;
