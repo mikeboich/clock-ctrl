@@ -85,12 +85,13 @@ void set_rtc_to_gps(){
     extern int pps_available;
     static int seed = 0;
     static int time_set=0;
-    
+    if(!time_set){
     RTC_1_TIME_DATE *t = RTC_1_ReadTime();
     //char *c = field_n(&sentence[9]);
     t->Hour = a_to_uint8(field_n(1,sentence));
     t->Min = a_to_uint8(field_n(1,sentence)+2);
-    t->Sec = a_to_uint8(field_n(1,sentence)+4);   
+    t->Sec = a_to_uint8(field_n(1,sentence)+4); 
+    //RTC_1_WriteSecond(a_to_uint8(field_n(1,sentence)+4));
     
     t->DayOfMonth = a_to_uint8(field_n(9,sentence));
     t->Month = a_to_uint8(field_n(9,sentence)+2);
@@ -104,6 +105,7 @@ void set_rtc_to_gps(){
         srand(seed);
     }
     time_set=1;
+  }
     
     if(!pps_available){
     RTC_1_Start();

@@ -173,10 +173,8 @@ CY_ISR(one_pps_int_Interrupt)
     extern int pps_available;
     extern int second_has_elapsed;
     pps_available=1;
-    second_has_elapsed = 1;
     
     one_pps_int_ClearPending();    
-    //int x = One_PPS_In_ClearInterrupt();
     
     LED_Reg_Write(toggle_var);
     int_test_Write(toggle_var);

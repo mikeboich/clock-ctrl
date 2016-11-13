@@ -546,7 +546,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test();
+  //hw_test();
 
 // The main loop:
   for(;;){
@@ -556,7 +556,7 @@ int main()
 //    }
     if(second_has_elapsed && (display_mode != menuMode)){
       // tweak error_term used to sync pendulum with second boundary:
-      error_term = (cycle_count % 31250);
+      //error_term = (cycle_count % 31250);
       second_has_elapsed = 0;     
 
     } 
