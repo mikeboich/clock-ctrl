@@ -19,6 +19,7 @@ void send_command(char *s); // send a command with checksum and crlf
 
 // state machine that consumes characters and constructs sentence(s):
 void consume_char(char c);
+void set_rtc_to_gps();
 
 void offset_time(RTC_1_TIME_DATE *t, int hours);
 void increment_date(RTC_1_TIME_DATE *t, int incr);

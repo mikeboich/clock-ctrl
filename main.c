@@ -47,7 +47,7 @@ volatile draw_state current_state = blank_unprimed;
 volatile int times_to_loop = 0;
 volatile int cycle_count=0;  // poor man's timer
 int frame_toggle = 0;   // performance measurement
-int error_term=0;            // difference between hw counters and 1 pps edge
+volatile int error_term=0;            // difference between hw counters and 1 pps edge
 
 int last_refresh=0,loops_per_frame=0;   // for performance measurement
 
@@ -550,16 +550,11 @@ int main()
 
 // The main loop:
   for(;;){
-//    if(second_has_elapsed){    // toggle the blue lED once/second
-//        LED_Reg_Write(toggle_var);
-//        toggle_var=1-toggle_var;
-//    }
-    if(second_has_elapsed && (display_mode != menuMode)){
-      // tweak error_term used to sync pendulum with second boundary:
-      //error_term = (cycle_count % 31250);
-      second_has_elapsed = 0;     
+    if(second_has_elapsed){    // toggle the blue lED once/second
+       // set_rtc_to_gps();
+        second_has_elapsed=0;
+    }
 
-    } 
     RTC_1_TIME_DATE *now;
     if(global_prefs.prefs_data.sync_to_60Hz && 0){
       int phase = SixtyHz_Read();

@@ -71,6 +71,9 @@ void init_gps(){
      send_command("$PSRF103,06,00,00,01");
 //send_command("$PSRF103,00,01,00,01");
     //hard_command();
+    RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
+    RTC_1_Start();
+    RTC_1_Stop();
 }
 typedef enum {awaiting_dollar,awaiting_char, in_sentence} gps_parse_state;
 extern int second_has_elapsed;
@@ -85,7 +88,7 @@ void set_rtc_to_gps(){
     extern int pps_available;
     static int seed = 0;
     static int time_set=0;
-    if(!time_set){
+    if(1){
     RTC_1_TIME_DATE *t = RTC_1_ReadTime();
     //char *c = field_n(&sentence[9]);
     t->Hour = a_to_uint8(field_n(1,sentence));
@@ -107,11 +110,11 @@ void set_rtc_to_gps(){
     time_set=1;
   }
     
-    if(!pps_available){
-    RTC_1_Start();
-    RTC_1_Stop();
-    }
-   
+//    if(!pps_available){
+//    RTC_1_Start();
+//    RTC_1_Stop();
+//    }
+//   
 }
 
 void consume_char(char c){
@@ -155,7 +158,7 @@ void consume_char(char c){
                 state = awaiting_dollar;
                 
                // second_has_elapsed = 1;
-                set_rtc_to_gps();
+               set_rtc_to_gps();
             }
             break;
     }
