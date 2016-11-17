@@ -88,7 +88,7 @@ void set_rtc_to_gps(){
     extern int pps_available;
     static int seed = 0;
     static int time_set=0;
-    if(1){
+    if(!time_set){
     RTC_1_TIME_DATE *t = RTC_1_ReadTime();
     //char *c = field_n(&sentence[9]);
     t->Hour = a_to_uint8(field_n(1,sentence));

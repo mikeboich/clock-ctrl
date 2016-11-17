@@ -167,18 +167,14 @@ CY_ISR(one_pps_int_Interrupt)
     /* `#START one_pps_int_Interrupt` */
     #include "RTC_1.h"
     #include "LED_Reg.h"
-    #include "int_test.h"
+    #include "int_debug_reg.h"
     #include "One_PPS_In.h"
-    static int toggle_var = 0;
     extern int pps_available;
     extern int second_has_elapsed;
     pps_available=1;
-    
-    one_pps_int_ClearPending();    
-    
-    LED_Reg_Write(toggle_var);
-    int_test_Write(toggle_var);
-    toggle_var = 1-toggle_var;
+    one_pps_int_ClearPending();  
+ 
+    int_debug_reg_Write(!int_debug_reg_Read());
     
     RTC_1_ISR();
     /* `#END` */
