@@ -172,38 +172,25 @@ CY_ISR(button_isr_Interrupt)
     #define BUTTON_UP 1
 
     extern int button_clicked;
-    extern volatile int second_has_elapsed;
     static uint8 initialized=0;
     static uint8 states[2];  //  [0] = current, [1] = previous
-    static int temp_time=0;
-    uint8 tmp;
-    static uint8 foo=1;
+    uint8 button_state;
     // Clock-based interrupt, so no need to clear anything:
-    tmp = EncoderButton_Read();
+    button_state = EncoderButton_Read();
     
     if(!initialized){
      initialized=1;
-     states[0]=states[1]=tmp;      
+     states[0]=states[1]=button_state;      
     }
     else{
      states[1]=states[0];
-     states[0]=tmp;
-    
-    // temporary hack until I install a 32KHz crystal:
-//    temp_time+=1;
-//    if(temp_time >=60) {
-//        second_has_elapsed=1;
-//        temp_time=0;
-//        LED_Reg_Write(1);
+     states[0]=button_state;
     }
     
-     // my "value add vs the example code:"
+     // my "value add" vs the example code:
     // button_clicked is "sticky" by convention.  The main thread consumes it by resetting it.
-     if(states[0] != states[1] && tmp==BUTTON_DOWN){
+     if(states[0] != states[1] && button_state==BUTTON_DOWN){
         button_clicked=1;
-//        LED_Reg_Write(foo);
-//        foo=1-foo;
-//      }
     }
     
     /* `#END` */
