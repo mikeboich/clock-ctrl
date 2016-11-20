@@ -288,9 +288,7 @@ void set_switch_interval(){
     button_clicked = 0;
     global_prefs.prefs_data.switch_interval = new_interval;
     flush_prefs();
-    QuadDec_1_SetCounter(saved_decoder);
-        
-    
+    QuadDec_1_SetCounter(saved_decoder);    
 }
 void dispatch_menu(int menu_number, int item_number){
   // save the decoder position, so that it makes sense upon returning:

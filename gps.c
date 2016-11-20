@@ -101,6 +101,7 @@ void set_rtc_to_gps(){
     t->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
     //int x = get_gmt_offset();
     offset_time(t,global_prefs.prefs_data.utc_offset);
+    RTC_1_Init();
     
     // create a seed for the random number generator based on time and date:
     if(seed==0){
@@ -110,11 +111,6 @@ void set_rtc_to_gps(){
     time_set=1;
   }
     
-//    if(!pps_available){
-//    RTC_1_Start();
-//    RTC_1_Stop();
-//    }
-//   
 }
 
 void consume_char(char c){

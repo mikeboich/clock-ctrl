@@ -34,8 +34,9 @@ volatile int second_has_elapsed = 0;
 volatile int pps_available=0;
 
 
-typedef enum{flwMode, textMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
+typedef enum{textMode,flwMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
 clock_type display_mode=pendulumMode;
+clock_type saved_mode;
 
 int verbose_mode = 0;
 
@@ -631,9 +632,12 @@ int main()
         button_clicked=0;  // consume the click
         if(display_mode==menuMode){
             dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
-            display_mode = textMode;
+            display_mode = saved_mode;
         }
-        else display_mode = menuMode;
+        else {
+            saved_mode = display_mode;
+            display_mode = menuMode;
+        }
     }
     else{
      if(display_mode != menuMode && interval!=0 && cycle_count-last_switch > interval*31250){
