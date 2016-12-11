@@ -484,25 +484,20 @@ void hw_test2(){
 //    {128,128,25,25,cir,0x55},
     {255,255,0,0,cir,0x00},
   }; 
-  int toggle_state=0;
-
-   clear_buffer(MAIN_BUFFER);
-    compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
-    //compileString("2u",255,180,MAIN_BUFFER,4,APPEND);
-    //compileString("hark",255,64,MAIN_BUFFER,5,APPEND);
-    int x=100;
+  int x,y;
+  int radius = 8;
+  while(radius < 64){
+  clear_buffer(MAIN_BUFFER);
+  for(x=32;x<255;x+=2*radius)
+    for(y=32;y<255;y+=2*radius){
+        circle(x,y,radius,MAIN_BUFFER);
+    }
     while(!button_clicked){
-      display_buffer(MAIN_BUFFER);
-      if(--x == 0){
-        test_pattern[1].seg_data.mask ^= 0xff;
-        test_pattern[2].seg_data.mask ^= 0xff;
-        compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
-        x=100;
+        display_buffer(MAIN_BUFFER);
     }
-      int d = QuadDec_1_GetCounter();
-      CyDelay(d);
-    }
-    button_clicked = 0;  // consume the button_click
+    button_clicked=0;
+    radius = radius + 8;
+  }
 }
 
 int main() 
@@ -558,7 +553,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test();
+  hw_test2();
 
 // The main loop:
   for(;;){
