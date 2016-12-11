@@ -39,6 +39,13 @@ menu *current_menu = &main_menu;
 
 
 
+void sync_to_60Hz(){
+     if(global_prefs.prefs_data.sync_to_60Hz || 1){
+      int phase = SixtyHz_Read();
+      while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
+    }
+   
+}
 
 void display_menu(menu the_menu){
   compile_menu(&the_menu,MAIN_BUFFER);
@@ -166,6 +173,7 @@ void char_test(){
   compileString(str4,255,60,0,2,APPEND);
     
   while(!button_clicked){
+    sync_to_60Hz();
     display_buffer(0);   
   }
   button_clicked = 0;

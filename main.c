@@ -500,6 +500,7 @@ void hw_test2(){
   }
 }
 
+
 int main() 
 {
     int last_switch = 0;
@@ -553,7 +554,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test2();
+  //hw_test2();
 
 // The main loop:
   for(;;){
