@@ -40,10 +40,11 @@ clock_type saved_mode;
 
 int verbose_mode = 0;
 
-typedef enum{blank_unprimed,blank_primed,drawing}  draw_state;  // States of the draw loop/interrupt code
+typedef enum{blank_unprimed,blank_primed,drawing,last_period}  draw_state;  // States of the draw loop/interrupt code
 
 uint8 current_mask=0;
 volatile draw_state current_state = blank_unprimed;
+volatile int current_phase=0;  // phase of sin lookup machinery
 
 volatile int times_to_loop = 0;
 volatile int cycle_count=0;  // poor man's timer
@@ -68,8 +69,14 @@ void wave_started(){
     ShiftReg_1_WriteData(0x0);
     break;
 
+  case last_period:
+    ShiftReg_1_WriteData(0x0);  // next period is blanked
+    current_state = blank_unprimed;
+    break;
+
   case blank_primed:
     current_state = drawing;
+    Phase_Register_Write(current_phase);
     strobe_LDAC();
     break;
     
@@ -77,7 +84,7 @@ void wave_started(){
     times_to_loop -= 1;
     if(times_to_loop==0){
       ShiftReg_1_WriteData(0x0);  // blank on the next cycle
-      current_state = blank_unprimed;
+      current_state = last_period;
     }
     else {
       ShiftReg_1_WriteData(current_mask);
@@ -335,22 +342,23 @@ void display_buffer(uint8 which_buffer){
   while(seg_ptr->seg_data.x_offset != 0xff){
 
     if(current_state==blank_unprimed){
-     CyDelayUs(11);
-
       uint8 int_status = CyEnterCriticalSection();
             
       set_DACfor_seg(seg_ptr,0,0);
       switch(seg_ptr->seg_data.arc_type){
         case cir:
-          Phase_Register_Write(0x1);
+          //Phase_Register_Write(0x1);
+        current_phase=0x1;
           break;
         
         case pos:
-          Phase_Register_Write(0x0);
+          //Phase_Register_Write(0x0);
+          current_phase = 0x0;
           break;
         
         case neg:
-          Phase_Register_Write(0x2);
+          //Phase_Register_Write(0x2);
+        current_phase = 0x2;
           break;
     }
       // trying SGITeach brightness algorithm, vs my stupid simple one:
@@ -371,9 +379,9 @@ void display_buffer(uint8 which_buffer){
     */
     times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
 	  seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
-      if(times_to_loop==0) times_to_loop = 1;
-      if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
-      
+    if(times_to_loop==0) times_to_loop = 1;
+    if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
+    
     
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
@@ -454,13 +462,16 @@ void waitForClick(){
 }
 void hw_test(){
   seg_or_flag test_pattern[] = {
-    {128,128,100,100,cir,0x0ff},
+    {128,128,192,32,cir,0x0ff},
+    {128,128,32,192,cir,0x0ff},
+    {128,128,32,32,cir,0x0ff},
     {255,255,0,0,cir,0x00},
   }; 
 
    clear_buffer(MAIN_BUFFER);
     compileSegments(test_pattern,MAIN_BUFFER,APPEND);
-    compileString("0",255,128,MAIN_BUFFER,2,APPEND);
+    compileString("234%&",255,230,MAIN_BUFFER,1,APPEND);
+//    compileString("asdfghjkl;",255,0,MAIN_BUFFER,1,APPEND);
     while(!button_clicked){
       display_buffer(MAIN_BUFFER);
     }
@@ -468,9 +479,9 @@ void hw_test(){
 }
 void hw_test2(){
   seg_or_flag test_pattern[] = {
-    {128,128,100,100,cir,0xff},
-    {128,128,50,50,cir,0xaa},
-    {128,128,25,25,cir,0x55},
+    {128,128,32,128,cir,0xff},
+//    {128,128,50,50,cir,0xaa},
+//    {128,128,25,25,cir,0x55},
     {255,255,0,0,cir,0x00},
   }; 
   int toggle_state=0;
@@ -547,7 +558,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  //hw_test();
+  hw_test();
 
 // The main loop:
   for(;;){
