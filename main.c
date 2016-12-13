@@ -34,7 +34,7 @@ volatile int second_has_elapsed = 0;
 volatile int pps_available=0;
 
 
-typedef enum{textMode,flwMode,analogMode, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
+typedef enum{textMode,flwMode,analogMode0,analogMode1,analogMode2, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -118,12 +118,15 @@ void drawClockHands(int h, int m, int s){
   float hour_angle = (h/12.0) * M_PI * 2.0 + (m/60.0)*(M_PI/6.0);  // hour hand angle (we'll ignore the seconds)
   float minute_angle = (m/60.0) * M_PI*2.0 + (s/60.0)*(M_PI/30.0);  // minute hand angle
   float second_angle = ((s/60.0))*M_PI*2.0;
+  //float second_angle = ((s/60.0))*M_PI*2.0+(((cycle_count % 31250)/31250.0)*M_PI*2.0)/60.0;
 
 
   // not doing the 2-d hands yet, just lines
   line(128,128,128 + sin(hour_angle)*HR_HAND_LENGTH,128 + cos(hour_angle) * HR_HAND_LENGTH,MAIN_BUFFER);  // draw the hour hand
   line(128,128,128 + sin(minute_angle)*MIN_HAND_LENGTH ,128 + cos(minute_angle) * MIN_HAND_LENGTH,MAIN_BUFFER);
-  line(128,128,128 + sin(second_angle)*SEC_HAND_LENGTH,128 + cos(second_angle) * SEC_HAND_LENGTH,MAIN_BUFFER);
+  if(display_mode < analogMode2){
+    line(128,128,128 + sin(second_angle)*SEC_HAND_LENGTH,128 + cos(second_angle) * SEC_HAND_LENGTH,MAIN_BUFFER);
+  }
 }
 
 void updateAnalogClock(int hour, int min,int sec){
@@ -140,10 +143,13 @@ void updateAnalogClock(int hour, int min,int sec){
   compileString("9",20,120,MAIN_BUFFER,1,APPEND);
     
   drawClockHands(hour,min,sec);
+
+  if(display_mode == analogMode0){
  // experimental one revoultion/second widget:
-  float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
-  float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
-  circle(x,y,16,MAIN_BUFFER);
+      float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
+      float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
+      circle(x,y,16,MAIN_BUFFER);
+    }
 }
 
 /* ************* Pong Game ************* */
@@ -392,8 +398,9 @@ void display_buffer(uint8 which_buffer){
 
       current_state = blank_primed;
       seg_ptr++;
-          
+        
       CyExitCriticalSection(int_status);
+    
     }
     else{
          // check serial port for gps characters:
@@ -583,7 +590,9 @@ int main()
       display_buffer(0);
       break;
     
-    case analogMode:
+    case analogMode0:
+    case analogMode1:
+    case analogMode2:
       now = RTC_1_ReadTime();
       updateAnalogClock(now->Hour,now->Min,now->Sec);
       display_buffer(MAIN_BUFFER);
@@ -626,7 +635,7 @@ int main()
     }
     int interval = global_prefs.prefs_data.switch_interval;
     
-    if(display_mode != menuMode && interval==0) display_mode = QuadDec_1_GetCounter() % 6;
+    if(display_mode != menuMode && interval==0) display_mode = QuadDec_1_GetCounter() % 8;
     else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
@@ -643,7 +652,7 @@ int main()
     }
     else{
      if(display_mode != menuMode && interval!=0 && cycle_count-last_switch > interval*31250){
-       display_mode = (cycle_count / (interval*31250)) % 5;   // switch every 10 seconds
+       display_mode = (cycle_count / (interval*31250)) % 7;   // switch every 10 seconds
         last_switch=cycle_count;  
     }
     }
