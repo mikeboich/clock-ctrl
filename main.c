@@ -338,7 +338,7 @@ void display_buffer(uint8 which_buffer){
   seg_or_flag *seg_ptr = seg_buffer[which_buffer];
   FrameDrawReg_Write(frame_toggle);
   frame_toggle = 1 - frame_toggle;
-
+  sync_to_60Hz();
   while(seg_ptr->seg_data.x_offset != 0xff){
 
     if(current_state==blank_unprimed){
@@ -488,8 +488,8 @@ void hw_test2(){
   int radius = 8;
   while(radius < 64){
   clear_buffer(MAIN_BUFFER);
-  for(x=32;x<255;x+=2*radius)
-    for(y=32;y<255;y+=2*radius){
+  for(x=radius;x<255-radius;x+=2*radius)
+    for(y=radius;y<255-radius;y+=2*radius){
         circle(x,y,radius,MAIN_BUFFER);
     }
     while(!button_clicked){
@@ -554,7 +554,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  //hw_test2();
+  hw_test2();
 
 // The main loop:
   for(;;){
@@ -562,12 +562,7 @@ int main()
        // set_rtc_to_gps();
         second_has_elapsed=0;
     }
-
     RTC_1_TIME_DATE *now;
-    if(global_prefs.prefs_data.sync_to_60Hz && 0){
-      int phase = SixtyHz_Read();
-      while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
-    }
     
     switch (display_mode){
 
