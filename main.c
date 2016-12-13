@@ -495,15 +495,15 @@ void hw_test2(){
   int radius = 8;
   while(radius < 64){
   clear_buffer(MAIN_BUFFER);
-  for(x=radius;x<255-radius;x+=2*radius)
-    for(y=radius;y<255-radius;y+=2*radius){
+  for(x=radius;x<256-radius;x+=2*radius)
+    for(y=radius;y<256-radius;y+=2*radius){
         circle(x,y,radius,MAIN_BUFFER);
     }
     while(!button_clicked){
         display_buffer(MAIN_BUFFER);
     }
     button_clicked=0;
-    radius = radius + 8;
+    radius = radius *=2;
   }
 }
 
