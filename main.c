@@ -579,7 +579,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test2();
+  //hw_test2();
 
 // The main loop:
   for(;;){

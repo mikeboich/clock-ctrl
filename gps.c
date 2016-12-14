@@ -84,22 +84,39 @@ char sentence[256] = "Hello World";
 uint8 a_to_uint8(char *s){
     return 10*(s[0] - 0x30) + (s[1] - 0x30);
 }
+
+// Sets the RTC to equal the incoming GPS Time, EXCEPT, if the incoming time is just one second
+// greater than the current RTC time, we'll optimistically assume that the onePPS interrupt will arrive 
+// in the next second, and set the time for us.
+// because I'm lazy, I only check this when decrementing the incoming second count doesn't cause an underflow
+// 
 void set_rtc_to_gps(){
     extern int pps_available;
     static int seed = 0;
     static int time_set=0;
-    if(!time_set){
+    if(1){
     RTC_1_TIME_DATE *t = RTC_1_ReadTime();
+    RTC_1_TIME_DATE *incoming_time;
     //char *c = field_n(&sentence[9]);
+    incoming_time->Hour = a_to_uint8(field_n(1,sentence));
+    incoming_time->Min = a_to_uint8(field_n(1,sentence)+2);
+    incoming_time->Sec = a_to_uint8(field_n(1,sentence)+4); 
+    offset_time(incoming_time,global_prefs.prefs_data.utc_offset);  // so we can compare to RTC, which is already offset
+   
+    if(time_set && incoming_time->Sec!=0){
+        if(incoming_time->Sec-1 == t->Sec && incoming_time->Min==t->Min && incoming_time->Hour==t->Hour)
+          return;  // do nothing in this case
+    }
+    // if we reach this point, we need to set the time:
+    
     t->Hour = a_to_uint8(field_n(1,sentence));
     t->Min = a_to_uint8(field_n(1,sentence)+2);
     t->Sec = a_to_uint8(field_n(1,sentence)+4); 
-    //RTC_1_WriteSecond(a_to_uint8(field_n(1,sentence)+4));
     
     t->DayOfMonth = a_to_uint8(field_n(9,sentence));
     t->Month = a_to_uint8(field_n(9,sentence)+2);
     t->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
-    //int x = get_gmt_offset();
+    
     offset_time(t,global_prefs.prefs_data.utc_offset);
     RTC_1_Init();
     
