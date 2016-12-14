@@ -40,7 +40,7 @@ clock_type saved_mode;
 
 int verbose_mode = 0;
 
-typedef enum{blank_unprimed,blank_primed,drawing,last_period}  draw_state;  // States of the draw loop/interrupt code
+typedef enum{blank_unprimed,blank_primed,drawing,last_period,hw_testing}  draw_state;  // States of the draw loop/interrupt code
 
 uint8 current_mask=0;
 volatile draw_state current_state = blank_unprimed;
@@ -64,6 +64,10 @@ void wave_started(){
   isr_1_ClearPending();       // clear the interrupt
   cycle_count++;
   switch(current_state){
+
+  case hw_testing:
+    ShiftReg_1_WriteData(0xff);
+    break;
 
   case blank_unprimed:
     ShiftReg_1_WriteData(0x0);
@@ -469,16 +473,30 @@ void waitForClick(){
 }
 void hw_test(){
   seg_or_flag test_pattern[] = {
-    {128,128,192,32,cir,0x0ff},
-    {128,128,32,192,cir,0x0ff},
-    {128,128,32,32,cir,0x0ff},
+    {128,128,64,64,cir,0x01},
+    {128,128,64,64,cir,0x02},
+    {128,128,64,64,cir,0x04},
+    {128,128,64,64,cir,0x08},
+    {128,128,64,64,cir,0x10},
+    {128,128,64,64,cir,0x20},
+    {128,128,64,64,cir,0x40},
+    {128,128,64,64,cir,0x80},
+    {128,200,64,64,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
 
+   set_DACfor_seg(test_pattern,0,0);
+   strobe_LDAC();
+   ShiftReg_1_WriteData(0xff);
+   Phase_Register_Write(0x1);
+   current_state = hw_testing;
+   CyDelay(5000);
+   current_state = blank_unprimed;
+
    clear_buffer(MAIN_BUFFER);
     compileSegments(test_pattern,MAIN_BUFFER,APPEND);
-    compileString("234%&",255,230,MAIN_BUFFER,1,APPEND);
-//    compileString("asdfghjkl;",255,0,MAIN_BUFFER,1,APPEND);
+    
+    
     while(!button_clicked){
       display_buffer(MAIN_BUFFER);
     }
