@@ -94,39 +94,38 @@ void set_rtc_to_gps(){
     extern int pps_available;
     static int seed = 0;
     static int time_set=0;
-    if(1){
-    RTC_1_TIME_DATE *t = RTC_1_ReadTime();
-    RTC_1_TIME_DATE *incoming_time;
-    //char *c = field_n(&sentence[9]);
-    incoming_time->Hour = a_to_uint8(field_n(1,sentence));
-    incoming_time->Min = a_to_uint8(field_n(1,sentence)+2);
-    incoming_time->Sec = a_to_uint8(field_n(1,sentence)+4); 
-    offset_time(incoming_time,global_prefs.prefs_data.utc_offset);  // so we can compare to RTC, which is already offset
+
+    RTC_1_TIME_DATE *rtc_time = RTC_1_ReadTime();
+    RTC_1_TIME_DATE gps_time;
+
+    gps_time.Hour = a_to_uint8(field_n(1,sentence));
+    gps_time.Min = a_to_uint8(field_n(1,sentence)+2);
+    gps_time.Sec = a_to_uint8(field_n(1,sentence)+4); 
+    offset_time(&gps_time,global_prefs.prefs_data.utc_offset);  // so we can compare to RTC, which is already offset
    
-    if(time_set && incoming_time->Sec!=0){
-        if(incoming_time->Sec-1 == t->Sec && incoming_time->Min==t->Min && incoming_time->Hour==t->Hour)
+    if(time_set && gps_time.Sec!=0){
+        if(gps_time.Sec-1 == rtc_time->Sec && gps_time.Min==rtc_time->Min && gps_time.Hour==rtc_time->Hour)
           return;  // do nothing in this case
     }
     // if we reach this point, we need to set the time:
     
-    t->Hour = a_to_uint8(field_n(1,sentence));
-    t->Min = a_to_uint8(field_n(1,sentence)+2);
-    t->Sec = a_to_uint8(field_n(1,sentence)+4); 
+    rtc_time->Hour = a_to_uint8(field_n(1,sentence));
+    rtc_time->Min = a_to_uint8(field_n(1,sentence)+2);
+    rtc_time->Sec = a_to_uint8(field_n(1,sentence)+4); 
     
-    t->DayOfMonth = a_to_uint8(field_n(9,sentence));
-    t->Month = a_to_uint8(field_n(9,sentence)+2);
-    t->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
+    rtc_time->DayOfMonth = a_to_uint8(field_n(9,sentence));
+    rtc_time->Month = a_to_uint8(field_n(9,sentence)+2);
+    rtc_time->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
     
-    offset_time(t,global_prefs.prefs_data.utc_offset);
+    offset_time(rtc_time,global_prefs.prefs_data.utc_offset);
     RTC_1_Init();
     
     // create a seed for the random number generator based on time and date:
     if(seed==0){
-        seed = t->Sec+60*t->Min+3600*t->Hour+86400*t->DayOfYear;
+        seed = rtc_time->Sec+60*rtc_time->Min+3600*rtc_time->Hour+86400*rtc_time->DayOfYear;
         srand(seed);
     }
     time_set=1;
-  }
     
 }
 
