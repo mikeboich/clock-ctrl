@@ -33,7 +33,7 @@ extern menu *active_menu;
 // utility function:
 void sync_to_60Hz();
 // display a menu:
-void display_menu(menu the_menu);
+void render_menu(menu the_menu);
 
 void compile_menu(menu *the_menu, int which_buffer);
 

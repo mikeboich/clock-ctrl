@@ -47,7 +47,7 @@ void sync_to_60Hz(){
    
 }
 
-void display_menu(menu the_menu){
+void render_menu(menu the_menu){
   compile_menu(&the_menu,MAIN_BUFFER);
   //active_menu = &the_menu;
   

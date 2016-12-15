@@ -54,12 +54,12 @@ static void RTC_1_EverySecondHandler(void)
     /*  Place your every second handler code here. */
     /* `#START EVERY_SECOND_HANDLER_CODE` */
   #include "gps.h"
-    #include "LED_Pin.h"
-    #include "LED_Reg.h"
-  extern int error_term,cycle_count;
+  #include "LED_Pin.h"
+  #include "LED_Reg.h"
+  extern int phase_error,cycle_count;
   extern int second_has_elapsed;
-  second_has_elapsed = 1;
-  error_term = (cycle_count % 31250);
+  
+  phase_error = (cycle_count % 31250);
   LED_Reg_Write(!LED_Pin_Read());
     /* `#END` */
     

@@ -165,6 +165,7 @@ void consume_char(char c){
               sentence[buf_index++] = c;
               if(c==NEWLINE){
                 sentence_avail=1;
+                sentence[buf_index++] = 0;  //terminate the string
                 index=0;
                 buf_index=0;
                 state = awaiting_dollar;

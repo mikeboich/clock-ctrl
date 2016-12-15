@@ -30,7 +30,6 @@
 #include <math.h>
 
 // Real time clock variables:
-volatile int second_has_elapsed = 0;
 volatile int pps_available=0;
 
 
@@ -49,7 +48,7 @@ volatile int current_phase=0;  // phase of sin lookup machinery
 volatile int times_to_loop = 0;
 volatile int cycle_count=0;  // poor man's timer
 int frame_toggle = 0;   // performance measurement
-volatile int error_term=0;            // difference between hw counters and 1 pps edge
+volatile int phase_error=0;            // difference between (cycle_count % 31250) and 1 pps edge
 
 int last_refresh=0,loops_per_frame=0;   // for performance measurement
 
@@ -98,7 +97,7 @@ void wave_started(){
 }
 
 // Show a four letter word:
-void compile_flw(){
+void render_flw(){
     char *rw;
     static int lastUpdate=0;
     
@@ -133,7 +132,7 @@ void drawClockHands(int h, int m, int s){
   }
 }
 
-void updateAnalogClock(int hour, int min,int sec){
+void renderAnalogClockBuffer(int hour, int min,int sec){
   int i;
   float angle=0.0;
   static char *nums[12] = {"12","1","2","3","4","5","6","7","8","9","10","11"};
@@ -150,8 +149,8 @@ void updateAnalogClock(int hour, int min,int sec){
 
   if(display_mode == analogMode0){
  // experimental one revoultion/second widget:
-      float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-error_term)/31250.0);
-      float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-error_term)/31250.0);
+      float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-phase_error)/31250.0);
+      float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-phase_error)/31250.0);
       circle(x,y,16,MAIN_BUFFER);
     }
 }
@@ -274,10 +273,9 @@ void pong_update(){
     
 }
 
-void render_MAIN_BUFFER(pong_state the_state){
+void render_pong_buffer(pong_state the_state,RTC_1_TIME_DATE *the_time){
   int x,y;
-  RTC_1_TIME_DATE *the_time;
-    
+  
   the_time = RTC_1_ReadTime();
     
   clear_buffer(MAIN_BUFFER);
@@ -329,8 +327,8 @@ void render_pendulum_buffer(){
   compileString(hr_min_string,255,130,MAIN_BUFFER,3,APPEND);
 
   // render the pendulum shaft:  
-  x = 128.0+200*sin(sin(2*M_PI*(cycle_count-error_term)/31250.0)/2.5);
-  y = 250.0 - 200*cos(sin(2*M_PI*(cycle_count-error_term)/31250.0)/2.5);
+  x = 128.0+200*sin(sin(2*M_PI*(cycle_count-phase_error)/31250.0)/2.5);
+  y = 250.0 - 200*cos(sin(2*M_PI*(cycle_count-phase_error)/31250.0)/2.5);
   line(128,250,x,y,MAIN_BUFFER);
 
   //render the pendulum bob:
@@ -341,7 +339,33 @@ void render_pendulum_buffer(){
 
 }
 
+void render_text_clock(){
+  char time_string[32];
+  char day_of_week_string[12];
+  char date_string[15];
 
+  RTC_1_TIME_DATE *the_time;
+  the_time = RTC_1_ReadTime();
+  int seconds = the_time->Sec;
+  int minutes = the_time->Min;
+  int hours = the_time->Hour;
+    
+  int day_of_week = the_time->DayOfWeek;
+  int month = the_time->Month;
+  int day_of_month = the_time->DayOfMonth;
+  int year = the_time->Year;
+        
+  sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
+  compileString(time_string,255,46,MAIN_BUFFER,3,OVERWRITE);
+
+  sprintf(date_string,"%s %i, %i",month_names[month-1],day_of_month,year);
+ 
+  compileString(date_string,255,142,MAIN_BUFFER,1,APPEND);
+     
+  char dw[12];
+  sprintf(dw,"%s",day_names[day_of_week-1]);
+  compileString(dw,255,202,MAIN_BUFFER,2,APPEND);
+}
 void display_buffer(uint8 which_buffer){
     #define PI 3
     
@@ -436,37 +460,7 @@ offset_time(the_time,-7);
   RTC_1_Start(); //done in gps_init at the moment...  
 }
 
-void updateTimeDisplay(){
-  char time_string[32];
-  char day_of_week_string[12];
-  char date_string[15];
 
-  RTC_1_TIME_DATE *the_time;
-  the_time = RTC_1_ReadTime();
-  int seconds = the_time->Sec;
-  int minutes = the_time->Min;
-  int hours = the_time->Hour;
-    
-  int day_of_week = the_time->DayOfWeek;
-  int month = the_time->Month;
-  int day_of_month = the_time->DayOfMonth;
-  int year = the_time->Year;
-    
-    
-    
-  sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
-  compileString(time_string,255,46,MAIN_BUFFER,3,OVERWRITE);
-
-  sprintf(date_string,"%s %i, %i",month_names[month-1],day_of_month,year);
- 
-  compileString(date_string,255,142,MAIN_BUFFER,1,APPEND);
-     
-  char dw[12];
-  sprintf(dw,"%s",day_names[day_of_week-1]);
-  compileString(dw,255,202,MAIN_BUFFER,2,APPEND);
-
-
-}
 void waitForClick(){
     while(!button_clicked);
     button_clicked=0;
@@ -521,14 +515,14 @@ void hw_test2(){
         display_buffer(MAIN_BUFFER);
     }
     button_clicked=0;
-    radius = radius *=2;
+    radius*=2;
   }
 }
 
 
 int main() 
 {
-    int last_switch = 0;
+  int last_switch = 0;
   /* Start up the SPI interface: */
   SPIM_1_Start();
   CyDelay(10);
@@ -539,7 +533,6 @@ int main()
   
   CyDelay(50);
     
- 
   /* Initialize the shift register: */
   ShiftReg_1_Start();
   CyDelay(50);
@@ -583,68 +576,62 @@ int main()
 
 // The main loop:
   for(;;){
-    if(second_has_elapsed){    // toggle the blue lED once/second
-       // set_rtc_to_gps();
-        second_has_elapsed=0;
-    }
-    RTC_1_TIME_DATE *now;
+    RTC_1_TIME_DATE *now = RTC_1_ReadTime();
     
     switch (display_mode){
 
     case gpsDebugMode:
       
-      compile_substring(sentence,32,255,64,MAIN_BUFFER,1,OVERWRITE);
-      compile_substring(&sentence[32],32,255,32,MAIN_BUFFER,1,APPEND);
+      compile_substring(sentence,16,255,128+32,MAIN_BUFFER,1,OVERWRITE);
+      compile_substring(&sentence[16],16,255,128,MAIN_BUFFER,1,APPEND);
+      compile_substring(&sentence[32],16,255,128-32,MAIN_BUFFER,1,APPEND);
       display_buffer(MAIN_BUFFER);
       break;
     
      case flwMode:
-      compile_flw();
+      render_flw();
       display_buffer(MAIN_BUFFER);
       break;
     
     case textMode:
-      updateTimeDisplay();
+      render_text_clock();
       display_buffer(0);
       break;
     
     case analogMode0:
     case analogMode1:
     case analogMode2:
-      now = RTC_1_ReadTime();
-      updateAnalogClock(now->Hour,now->Min,now->Sec);
+      renderAnalogClockBuffer(now->Hour,now->Min,now->Sec);
       display_buffer(MAIN_BUFFER);
       break;
     
     case pongMode:
       display_buffer(MAIN_BUFFER);
       pong_update();
-      render_MAIN_BUFFER(game_state);
+      render_pong_buffer(game_state,now);
       break;
 
     case pendulumMode:
-      display_buffer(MAIN_BUFFER);  // reuse the Pong buffer
+      display_buffer(MAIN_BUFFER);  
       clear_buffer(MAIN_BUFFER);
       render_pendulum_buffer();
       break;
 
     case menuMode:
-      display_menu(main_menu);
-      display_buffer(MAIN_BUFFER);
-      break;
+     render_menu(main_menu);
+     display_buffer(MAIN_BUFFER);
+     break;
 
     }
 
   //update the interim screen-saver:
-  RTC_1_TIME_DATE *t=RTC_1_ReadTime();
-  ss_x_offset = (t->Min) % 5;
-  ss_y_offset =(t->Min+2) % 5;
+  ss_x_offset = (now->Min) % 5;
+  ss_y_offset =(now->Min+2) % 5;
  
     if(verbose_mode){
       int elapsed = (cycle_count-last_refresh);
       char debug_str[32];
       sprintf(debug_str,"%i/%i/%i",31250/elapsed,elapsed,loops_per_frame);
-      //sprintf(debug_str,"%i",31250/elapsed);
       compileString(debug_str,255,230,DEBUG_BUFFER,1,OVERWRITE);
       loops_per_frame=0;
       display_buffer(DEBUG_BUFFER);
