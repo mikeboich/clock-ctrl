@@ -98,16 +98,16 @@ void wave_started(){
 
 // Show a four letter word:
 void render_flw(){
-    char *rw;
-    static int lastUpdate=0;
+  char *rw;
+  static int lastUpdate=0;
     
-    if(cycle_count-lastUpdate > 31250){  // one second update interval..
-        rw = random_word();
-        rw = next_word();
-        compileString(rw,255,88,MAIN_BUFFER,5,OVERWRITE);
-        lastUpdate = cycle_count;
+  if(cycle_count-lastUpdate > 31250){  // one second update interval..
+    rw = random_word();
+    rw = next_word();
+    compileString(rw,255,88,MAIN_BUFFER,5,OVERWRITE);
+    lastUpdate = cycle_count;
         
-    }
+  }
 }
 
 #define HR_HAND_WIDTH 8
@@ -132,7 +132,7 @@ void drawClockHands(int h, int m, int s){
   }
 }
 
-void renderAnalogClockBuffer(int hour, int min,int sec){
+void renderAnalogClockBuffer(RTC_1_TIME_DATE *t){
   int i;
   float angle=0.0;
   static char *nums[12] = {"12","1","2","3","4","5","6","7","8","9","10","11"};
@@ -145,14 +145,14 @@ void renderAnalogClockBuffer(int hour, int min,int sec){
   compileString("3",220,120,MAIN_BUFFER,1,APPEND);
   compileString("9",20,120,MAIN_BUFFER,1,APPEND);
     
-  drawClockHands(hour,min,sec);
+  drawClockHands(t->Hour,t->Min,t->Sec);
 
   if(display_mode == analogMode0){
- // experimental one revoultion/second widget:
-      float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-phase_error)/31250.0);
-      float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-phase_error)/31250.0);
-      circle(x,y,16,MAIN_BUFFER);
-    }
+    // experimental one revoultion/second widget:
+    float x = 128.0 + (SEC_HAND_LENGTH-4)*sin(2*M_PI*(cycle_count-phase_error)/31250.0);
+    float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-phase_error)/31250.0);
+    circle(x,y,16,MAIN_BUFFER);
+  }
 }
 
 /* ************* Pong Game ************* */
@@ -196,8 +196,8 @@ int puck_visible(){
     return 0;
 }
 void constrain(int *x, int xmin, int xmax){
-    if(*x>xmax) *x = xmax;
-    if(*x < xmin) *x = xmin;
+  if(*x>xmax) *x = xmax;
+  if(*x < xmin) *x = xmin;
 }
 void update_paddles(){
   int player;
@@ -367,7 +367,7 @@ void render_text_clock(){
   compileString(dw,255,202,MAIN_BUFFER,2,APPEND);
 }
 void display_buffer(uint8 which_buffer){
-    #define PI 3
+#define PI 3
     
   seg_or_flag *seg_ptr = seg_buffer[which_buffer];
   FrameDrawReg_Write(frame_toggle);
@@ -380,41 +380,41 @@ void display_buffer(uint8 which_buffer){
             
       set_DACfor_seg(seg_ptr,0,0);
       switch(seg_ptr->seg_data.arc_type){
-        case cir:
-          //Phase_Register_Write(0x1);
+      case cir:
+	//Phase_Register_Write(0x1);
         current_phase=0x1;
-          break;
+	break;
         
-        case pos:
-          //Phase_Register_Write(0x0);
-          current_phase = 0x0;
-          break;
+      case pos:
+	//Phase_Register_Write(0x0);
+	current_phase = 0x0;
+	break;
         
-        case neg:
-          //Phase_Register_Write(0x2);
+      case neg:
+	//Phase_Register_Write(0x2);
         current_phase = 0x2;
-          break;
-    }
+	break;
+      }
       // trying SGITeach brightness algorithm, vs my stupid simple one:
     
- /*     if(seg_ptr->seg_data.arc_type == cir){
-        if(seg_ptr->seg_data.x_size == seg_ptr->seg_data.y_size)
-          times_to_loop = PI*seg_ptr->seg_data.x_size;
-        else{
-            uint16 a = seg_ptr->seg_data.x_size/2;
-            uint16 b = seg_ptr->seg_data.y_size/2;
-            times_to_loop = PI*(3*(a+b) - sqrt((3*a*b)*(a+3*b)));          
-        }
+      /*     if(seg_ptr->seg_data.arc_type == cir){
+	     if(seg_ptr->seg_data.x_size == seg_ptr->seg_data.y_size)
+	     times_to_loop = PI*seg_ptr->seg_data.x_size;
+	     else{
+	     uint16 a = seg_ptr->seg_data.x_size/2;
+	     uint16 b = seg_ptr->seg_data.y_size/2;
+	     times_to_loop = PI*(3*(a+b) - sqrt((3*a*b)*(a+3*b)));          
+	     }
     
-        if(times_to_loop < 5){
-            seg_ptr->seg_data.mask = 0x11;
-        }
-    }
-    */
-    times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
-	  seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
-    if(times_to_loop==0) times_to_loop = 1;
-    if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
+	     if(times_to_loop < 5){
+	     seg_ptr->seg_data.mask = 0x11;
+	     }
+	     }
+      */
+      times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
+	seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
+      if(times_to_loop==0) times_to_loop = 1;
+      if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
     
     
       // performance measurement:
@@ -431,11 +431,11 @@ void display_buffer(uint8 which_buffer){
     
     }
     else{
-         // check serial port for gps characters:
-        while(UART_1_GetRxBufferSize()>0){
-            char c = UART_1_GetByte() & 0x00ff;
-            consume_char(c);
-        }
+      // check serial port for gps characters:
+      while(UART_1_GetRxBufferSize()>0){
+	char c = UART_1_GetByte() & 0x00ff;
+	consume_char(c);
+      }
     }
   }
 }
@@ -452,7 +452,7 @@ void initTime(){
   the_time->Min = 59;
   the_time->Sec = 50;
 
-offset_time(the_time,-7);
+  offset_time(the_time,-7);
 
   RTC_1_WriteTime(the_time);
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
@@ -462,8 +462,8 @@ offset_time(the_time,-7);
 
 
 void waitForClick(){
-    while(!button_clicked);
-    button_clicked=0;
+  while(!button_clicked);
+  button_clicked=0;
 }
 void hw_test(){
   seg_or_flag test_pattern[] = {
@@ -479,40 +479,40 @@ void hw_test(){
     {255,255,0,0,cir,0x00},
   }; 
 
-   set_DACfor_seg(test_pattern,0,0);
-   strobe_LDAC();
-   ShiftReg_1_WriteData(0xff);
-   Phase_Register_Write(0x1);
-   current_state = hw_testing;
-   CyDelay(5000);
-   current_state = blank_unprimed;
+  set_DACfor_seg(test_pattern,0,0);
+  strobe_LDAC();
+  ShiftReg_1_WriteData(0xff);
+  Phase_Register_Write(0x1);
+  current_state = hw_testing;
+  CyDelay(5000);
+  current_state = blank_unprimed;
 
-   clear_buffer(MAIN_BUFFER);
-    compileSegments(test_pattern,MAIN_BUFFER,APPEND);
+  clear_buffer(MAIN_BUFFER);
+  compileSegments(test_pattern,MAIN_BUFFER,APPEND);
     
     
-    while(!button_clicked){
-      display_buffer(MAIN_BUFFER);
-    }
-    button_clicked = 0;  // consume the button_click
+  while(!button_clicked){
+    display_buffer(MAIN_BUFFER);
+  }
+  button_clicked = 0;  // consume the button_click
 }
 void hw_test2(){
   seg_or_flag test_pattern[] = {
     {128,128,32,128,cir,0xff},
-//    {128,128,50,50,cir,0xaa},
-//    {128,128,25,25,cir,0x55},
+    //    {128,128,50,50,cir,0xaa},
+    //    {128,128,25,25,cir,0x55},
     {255,255,0,0,cir,0x00},
   }; 
   int x,y;
   int radius = 8;
   while(radius < 64){
-  clear_buffer(MAIN_BUFFER);
-  for(x=radius;x<256-radius;x+=2*radius)
-    for(y=radius;y<256-radius;y+=2*radius){
+    clear_buffer(MAIN_BUFFER);
+    for(x=radius;x<256-radius;x+=2*radius)
+      for(y=radius;y<256-radius;y+=2*radius){
         circle(x,y,radius,MAIN_BUFFER);
-    }
+      }
     while(!button_clicked){
-        display_buffer(MAIN_BUFFER);
+      display_buffer(MAIN_BUFFER);
     }
     button_clicked=0;
     radius*=2;
@@ -552,81 +552,72 @@ int main()
   one_pps_int_Start();
   CyGlobalIntEnable;
 
-// start the UART for gps communications:
- init_gps();
+  // start the UART for gps communications:
+  init_gps();
 
   //start the real-time clock component (since the system is a clock, after all)
   // When GPS is enabled, we don't call RTC_1_Start, since GPS supplies the 1 pps
 
- // initTime();
+  // initTime();
    
 
   /* initialize sysfont: */
   init_font();
 
- /* initialize the four letter word randomizer: */
+  /* initialize the four letter word randomizer: */
   init_flws();
 
-// initialize the EEPROM for saving prefs:
- init_prefs();
+  // initialize the EEPROM for saving prefs:
+  init_prefs();
     
   CyDelay(100);
   uint8 toggle_var=0;
   //hw_test2();
 
-// The main loop:
+  // The main loop:
   for(;;){
     RTC_1_TIME_DATE *now = RTC_1_ReadTime();
     
-    switch (display_mode){
+    switch (display_mode){  // render the appropriate segments into the main buffer, depending upon display mode
 
-    case gpsDebugMode:
-      
+    case gpsDebugMode:    
       compile_substring(sentence,16,255,128+32,MAIN_BUFFER,1,OVERWRITE);
       compile_substring(&sentence[16],16,255,128,MAIN_BUFFER,1,APPEND);
       compile_substring(&sentence[32],16,255,128-32,MAIN_BUFFER,1,APPEND);
-      display_buffer(MAIN_BUFFER);
       break;
     
-     case flwMode:
+    case flwMode:
       render_flw();
-      display_buffer(MAIN_BUFFER);
       break;
     
     case textMode:
       render_text_clock();
-      display_buffer(0);
       break;
     
     case analogMode0:
     case analogMode1:
     case analogMode2:
-      renderAnalogClockBuffer(now->Hour,now->Min,now->Sec);
-      display_buffer(MAIN_BUFFER);
+      renderAnalogClockBuffer(now);
       break;
     
     case pongMode:
-      display_buffer(MAIN_BUFFER);
       pong_update();
       render_pong_buffer(game_state,now);
       break;
 
     case pendulumMode:
-      display_buffer(MAIN_BUFFER);  
-      clear_buffer(MAIN_BUFFER);
       render_pendulum_buffer();
       break;
 
     case menuMode:
-     render_menu(main_menu);
-     display_buffer(MAIN_BUFFER);
-     break;
-
+      render_menu(main_menu);
+      break;
     }
+    display_buffer(MAIN_BUFFER);
 
-  //update the interim screen-saver:
-  ss_x_offset = (now->Min) % 5;
-  ss_y_offset =(now->Min+2) % 5;
+    //update the interim screen-saver:
+    ss_x_offset = (now->Min) % 5;
+    ss_y_offset =(now->Min+2) % 5;
  
     if(verbose_mode){
       int elapsed = (cycle_count-last_refresh);
@@ -638,28 +629,28 @@ int main()
       last_refresh = cycle_count;
 
     }
-    int interval = global_prefs.prefs_data.switch_interval;
+    int switch_interval = global_prefs.prefs_data.switch_interval;
     
-    if(display_mode != menuMode && interval==0) display_mode = QuadDec_1_GetCounter() % 8;
+    if(display_mode != menuMode && switch_interval==0) display_mode = QuadDec_1_GetCounter() % 8;
     else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
     if(button_clicked){
-        button_clicked=0;  // consume the click
-        if(display_mode==menuMode){
-            dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
-            display_mode = saved_mode;
-        }
-        else {
-            saved_mode = display_mode;
-            display_mode = menuMode;
-        }
+      button_clicked=0;  // consume the click
+      if(display_mode==menuMode){
+	dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
+	display_mode = saved_mode;
+      }
+      else {
+	saved_mode = display_mode;
+	display_mode = menuMode;
+      }
     }
     else{
-     if(display_mode != menuMode && interval!=0 && cycle_count-last_switch > interval*31250){
-       display_mode = (cycle_count / (interval*31250)) % 7;   // switch every 10 seconds
+      if(display_mode != menuMode && switch_interval!=0 && cycle_count-last_switch > switch_interval*31250){
+	display_mode = (cycle_count / (switch_interval*31250)) % 7;   // switch modes automatically
         last_switch=cycle_count;  
-    }
+      }
     }
   }
 }
