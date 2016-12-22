@@ -517,6 +517,11 @@ void hw_test2(){
     button_clicked=0;
     radius*=2;
   }
+  compileString("@%&",255,20,MAIN_BUFFER,4,OVERWRITE);
+  while(!button_clicked){
+    display_buffer(MAIN_BUFFER);
+  }
+
 }
 
 
@@ -572,7 +577,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  //hw_test2();
+  hw_test2();
 
   // The main loop:
   for(;;){
