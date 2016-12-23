@@ -103,7 +103,7 @@ void render_flw(){
     
   if(cycle_count-lastUpdate > 31250){  // one second update interval..
     rw = random_word();
-    rw = next_word();
+    //rw = next_word();  // uncomment this line to have sequential, rather than random words
     compileString(rw,255,88,MAIN_BUFFER,5,OVERWRITE);
     lastUpdate = cycle_count;
         
@@ -132,7 +132,7 @@ void drawClockHands(int h, int m, int s){
   }
 }
 
-void renderAnalogClockBuffer(RTC_1_TIME_DATE *t){
+void renderAnalogClockBuffer(RTC_1_TIME_DATE *now){
   int i;
   float angle=0.0;
   static char *nums[12] = {"12","1","2","3","4","5","6","7","8","9","10","11"};
@@ -145,7 +145,7 @@ void renderAnalogClockBuffer(RTC_1_TIME_DATE *t){
   compileString("3",220,120,MAIN_BUFFER,1,APPEND);
   compileString("9",20,120,MAIN_BUFFER,1,APPEND);
     
-  drawClockHands(t->Hour,t->Min,t->Sec);
+  drawClockHands(now->Hour,now->Min,now->Sec);
 
   if(display_mode == analogMode0){
     // experimental one revoultion/second widget:
@@ -276,8 +276,6 @@ void pong_update(){
 void render_pong_buffer(pong_state the_state,RTC_1_TIME_DATE *the_time){
   int x,y;
   
-  the_time = RTC_1_ReadTime();
-    
   clear_buffer(MAIN_BUFFER);
   // draw the left paddle
   for(y=the_state.paddle_position[0]-(PADDLE_HEIGHT/2);y<the_state.paddle_position[0]+(PADDLE_HEIGHT/2)+1;y++) \
@@ -312,11 +310,9 @@ void render_pong_buffer(pong_state the_state,RTC_1_TIME_DATE *the_time){
 }
 
 /*  Pendulum Clock *** */
-void render_pendulum_buffer(){
-  RTC_1_TIME_DATE *the_time;
+void render_pendulum_buffer(RTC_1_TIME_DATE *the_time){
   char sec_str[32],hr_min_string[32];
   float x,y,i;
-  the_time = RTC_1_ReadTime();
 
   // render the time in seconds
   sprintf(sec_str,"%02i",the_time->Sec);
@@ -339,13 +335,11 @@ void render_pendulum_buffer(){
 
 }
 
-void render_text_clock(){
+void render_text_clock(RTC_1_TIME_DATE *the_time){
   char time_string[32];
   char day_of_week_string[12];
   char date_string[15];
 
-  RTC_1_TIME_DATE *the_time;
-  the_time = RTC_1_ReadTime();
   int seconds = the_time->Sec;
   int minutes = the_time->Min;
   int hours = the_time->Hour;
@@ -378,7 +372,7 @@ void display_buffer(uint8 which_buffer){
     if(current_state==blank_unprimed){
       uint8 int_status = CyEnterCriticalSection();
             
-      set_DACfor_seg(seg_ptr,0,0);
+      set_DACfor_seg(seg_ptr,ss_x_offset,ss_y_offset);
       switch(seg_ptr->seg_data.arc_type){
       case cir:
 	//Phase_Register_Write(0x1);
@@ -479,7 +473,7 @@ void hw_test(){
     {255,255,0,0,cir,0x00},
   }; 
 
-  set_DACfor_seg(test_pattern,0,0);
+  set_DACfor_seg(test_pattern,ss_x_offset,ss_y_offset);
   strobe_LDAC();
   ShiftReg_1_WriteData(0xff);
   Phase_Register_Write(0x1);
@@ -517,11 +511,6 @@ void hw_test2(){
     button_clicked=0;
     radius*=2;
   }
-  compileString("@%&",255,20,MAIN_BUFFER,4,OVERWRITE);
-  while(!button_clicked){
-    display_buffer(MAIN_BUFFER);
-  }
-
 }
 
 
@@ -577,26 +566,33 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test2();
+  //hw_test2();
 
   // The main loop:
   for(;;){
     RTC_1_TIME_DATE *now = RTC_1_ReadTime();
-    
-    switch (display_mode){  // render the appropriate segments into the main buffer, depending upon display mode
+    /* Now render the appropriate contents into the display buffer, based upon 
+       the current display_mode.  (Note that we're wasting lots of cpu cycles in some cases,
+       since the display only changes when once/second for many of the display modes. 
+       That's ok, we don't have anything more important to do.
+    */
+    switch (display_mode){  
 
-    case gpsDebugMode:    
+    case gpsDebugMode:
       compile_substring(sentence,16,255,128+32,MAIN_BUFFER,1,OVERWRITE);
       compile_substring(&sentence[16],16,255,128,MAIN_BUFFER,1,APPEND);
       compile_substring(&sentence[32],16,255,128-32,MAIN_BUFFER,1,APPEND);
+      display_buffer(MAIN_BUFFER);
       break;
     
     case flwMode:
       render_flw();
+      display_buffer(MAIN_BUFFER);
       break;
     
     case textMode:
-      render_text_clock();
+      render_text_clock(now);
+      display_buffer(0);
       break;
     
     case analogMode0:
@@ -611,14 +607,14 @@ int main()
       break;
 
     case pendulumMode:
-      render_pendulum_buffer();
+      render_pendulum_buffer(now);
       break;
 
     case menuMode:
       render_menu(main_menu);
       break;
     }
-    display_buffer(MAIN_BUFFER);
+    display_buffer(MAIN_BUFFER);        // display whatever we put into the display buffer on the crt
 
     //update the interim screen-saver:
     ss_x_offset = (now->Min) % 5;

@@ -40,9 +40,9 @@ void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
   CyDelayUs(1);
   setImmediate(DAC_Reg_B | DAC_Pre_Load |s->seg_data.y_size);
   CyDelayUs(1);
-  setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x + ss_x_offset)));
+  setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x + x)));
   CyDelayUs(1);
-  setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y + ss_y_offset)));
+  setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y + y)));
  // CyDelayUs(1);
 
 }
