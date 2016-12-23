@@ -49,6 +49,7 @@ volatile int times_to_loop = 0;
 volatile int cycle_count=0;  // poor man's timer
 int frame_toggle = 0;   // performance measurement
 volatile int phase_error=0;            // difference between (cycle_count % 31250) and 1 pps edge
+volatile int seconds_adjustment=0;            // difference between (cycle_count % 60*31250) and 1 pps edge
 
 int last_refresh=0,loops_per_frame=0;   // for performance measurement
 
@@ -121,7 +122,10 @@ void drawClockHands(int h, int m, int s){
   float hour_angle = (h/12.0) * M_PI * 2.0 + (m/60.0)*(M_PI/6.0);  // hour hand angle (we'll ignore the seconds)
   float minute_angle = (m/60.0) * M_PI*2.0 + (s/60.0)*(M_PI/30.0);  // minute hand angle
   float second_angle = ((s/60.0))*M_PI*2.0;
-  //float second_angle = ((s/60.0))*M_PI*2.0+(((cycle_count % 31250)/31250.0)*M_PI*2.0)/60.0;
+
+  float fractional_angle = ((((cycle_count-seconds_adjustment) % (31250*60))/(31250.0*60))*M_PI*2.0);
+  
+  second_angle += fractional_angle;
 
 
   // not doing the 2-d hands yet, just lines
@@ -582,6 +586,9 @@ int main()
       compile_substring(sentence,16,255,128+32,MAIN_BUFFER,1,OVERWRITE);
       compile_substring(&sentence[16],16,255,128,MAIN_BUFFER,1,APPEND);
       compile_substring(&sentence[32],16,255,128-32,MAIN_BUFFER,1,APPEND);
+      char pe[64];
+      sprintf(pe,"phase error: %i",phase_error);
+      compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
       display_buffer(MAIN_BUFFER);
       break;
     

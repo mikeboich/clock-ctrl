@@ -57,9 +57,11 @@ static void RTC_1_EverySecondHandler(void)
   #include "LED_Pin.h"
   #include "LED_Reg.h"
   extern int phase_error,cycle_count;
-  extern int second_has_elapsed;
+  extern int seconds_adjustment;        // for sweep second hand.
+  //extern int second_has_elapsed;
   
   phase_error = (cycle_count % 31250);
+  seconds_adjustment = cycle_count % (31250*60);
   LED_Reg_Write(!LED_Pin_Read());
     /* `#END` */
     
