@@ -324,8 +324,8 @@ void render_pendulum_buffer(RTC_1_TIME_DATE *the_time){
 
   // render the pendulum shaft:  
   x = 128.0+200*sin(sin(2*M_PI*(cycle_count-phase_error)/31250.0)/2.5);
-  y = 245.0 - 200*cos(sin(2*M_PI*(cycle_count-phase_error)/31250.0)/2.5);
-  line(128,245,x,y,MAIN_BUFFER);
+  y = 250.0 - 200*cos(sin(2*M_PI*(cycle_count-phase_error)/31250.0)/2.5);
+  line(128,250,x,y,MAIN_BUFFER);
 
   //render the pendulum bob:
   for(i=32;i>0;i-=8) circle(x,y,i,MAIN_BUFFER);
