@@ -110,6 +110,7 @@ void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer){
 void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer){
   seg_or_flag the_line[] = {{0,0,0,0,pos,0x99},
 			    {.flag=0xff}};
+
   // We'd like to assume that x0 is the left-most point, so make it so:
   if(x0 > x1){
     uint8 tmp = x0;

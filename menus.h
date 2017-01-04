@@ -30,8 +30,10 @@ typedef struct {char *items[8]; int n_items; int highlighted_item_index; uint8 m
 extern menu main_menu;
 extern menu *active_menu;
 
-// utility function:
+// utility functions:
 void sync_to_60Hz();
+void wait_for_twist();
+
 // display a menu:
 void render_menu(menu the_menu);
 

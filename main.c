@@ -33,7 +33,7 @@
 volatile int pps_available=0;
 
 
-typedef enum{textMode,flwMode,analogMode0,analogMode1,analogMode2, pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
+typedef enum{textMode,flwMode,analogMode0,analogMode1,analogMode2, secondsOnly,pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -123,9 +123,8 @@ void drawClockHands(int h, int m, int s){
   float minute_angle = (m/60.0) * M_PI*2.0 + (s/60.0)*(M_PI/30.0);  // minute hand angle
   float second_angle = ((s/60.0))*M_PI*2.0;
 
-  float fractional_angle = ((((cycle_count-seconds_adjustment) % (31250*60))/(31250.0*60))*M_PI*2.0);
-  
-  second_angle += fractional_angle;
+//  float fractional_angle = 2*M_PI*(cycle_count-seconds_adjustment/60.0)/31250.0/60.0;
+//  second_angle = fractional_angle;
 
 
   // not doing the 2-d hands yet, just lines
@@ -134,6 +133,27 @@ void drawClockHands(int h, int m, int s){
   if(display_mode < analogMode2){
     line(128,128,128 + sin(second_angle)*SEC_HAND_LENGTH,128 + cos(second_angle) * SEC_HAND_LENGTH,MAIN_BUFFER);
   }
+
+//  if(display_mode > analogMode0){
+//    int tic;
+//    for(tic=1;tic<=60;tic++){
+//        float angle = M_TWOPI*(tic/60.0);
+//        float tic_inner_x,tic_outer_x,tic_inner_y,tic_outer_y;
+//        tic_inner_x = 128+128.0*cos(angle);
+//        tic_inner_y = 128+128.0*sin(angle);
+//        tic_outer_x = 128+192.0*cos(angle);
+//        tic_outer_y = 128+192.0*sin(angle);
+//        if(tic % 5 && display_mode>analogMode1){
+//        //line(128 + sin(angle)*MIN_HAND_LENGTH*1.2,128 + cos(angle) * MIN_HAND_LENGTH*1.2,\
+//         // 128 + sin(angle)*128.0,128 + cos(angle) * 128.0,MAIN_BUFFER);  // draw the hour hand
+//        }
+//        else {
+//          line(128 + sin(angle)*MIN_HAND_LENGTH*1.1,128 + cos(angle) * MIN_HAND_LENGTH*1.1,\
+//          128 + sin(angle)*128.0,128 + cos(angle) * 128.0,MAIN_BUFFER);  // draw the hour hand
+//          
+//        }
+//    }
+//  }
 }
 
 void renderAnalogClockBuffer(RTC_1_TIME_DATE *now){
@@ -144,8 +164,8 @@ void renderAnalogClockBuffer(RTC_1_TIME_DATE *now){
 			{128,128,8,8,cir,0xff},
 			{.flag=0xff}};
   compileSegments(face,MAIN_BUFFER,OVERWRITE);
-  compileString("12",110,218,MAIN_BUFFER,1,APPEND);
-  compileString("6",118,16,MAIN_BUFFER,1,APPEND);
+  compileString("12",112,216,MAIN_BUFFER,1,APPEND);
+  compileString("6",120,20,MAIN_BUFFER,1,APPEND);
   compileString("3",220,120,MAIN_BUFFER,1,APPEND);
   compileString("9",20,120,MAIN_BUFFER,1,APPEND);
     
@@ -324,7 +344,7 @@ void render_pendulum_buffer(RTC_1_TIME_DATE *the_time){
 
   // render the hour and minute:  
   sprintf(hr_min_string,"%02i:%02i",the_time->Hour,the_time->Min);
-  compileString(hr_min_string,255,130,MAIN_BUFFER,3,APPEND);
+  compileString(hr_min_string,255,115,MAIN_BUFFER,4,APPEND);
 
   // render the pendulum shaft:  
   x = 128.0+200*sin(sin(2*M_PI*(cycle_count-phase_error)/31250.0)/2.5);
@@ -363,6 +383,19 @@ void render_text_clock(RTC_1_TIME_DATE *the_time){
   char dw[12];
   sprintf(dw,"%s",day_names[day_of_week-1]);
   compileString(dw,255,202,MAIN_BUFFER,2,APPEND);
+}
+
+void renderSeconds(RTC_1_TIME_DATE *the_time){
+    char sec_str[4];
+    char hour_min_str[8];
+    char day_of_week_str[16];
+    
+    sprintf(hour_min_str,"%02i:%02i",the_time->Hour ,the_time->Min);
+    sprintf(sec_str,"%02i",the_time->Sec);
+    sprintf(day_of_week_str,"%s",day_names[the_time->DayOfWeek]);
+    compileString(sec_str,255,10,MAIN_BUFFER,2,OVERWRITE);
+    compileString(hour_min_str,255,85,MAIN_BUFFER,4,APPEND);
+    compileString(day_of_week_str,255,205,MAIN_BUFFER,2,APPEND);
 }
 void display_buffer(uint8 which_buffer){
 #define PI 3
@@ -463,6 +496,8 @@ void waitForClick(){
   while(!button_clicked);
   button_clicked=0;
 }
+
+
 void hw_test(){
   seg_or_flag test_pattern[] = {
     {128,128,64,64,cir,0x01},
@@ -574,6 +609,9 @@ int main()
 
   // The main loop:
   for(;;){
+    // test for now.  Turn off the LED part way into each 1 second period:
+      if(((cycle_count-phase_error) % 31250) > 2000) LED_Reg_Write(0x0);
+
     RTC_1_TIME_DATE *now = RTC_1_ReadTime();
     /* Now render the appropriate contents into the display buffer, based upon 
        the current display_mode.  (Note that we're wasting lots of cpu cycles in some cases,
@@ -584,9 +622,7 @@ int main()
 
     case gpsDebugMode:
       compile_substring(sentence,16,255,128+32,MAIN_BUFFER,1,OVERWRITE);
-      compile_substring(&sentence[16],16,255,128,MAIN_BUFFER,1,APPEND);
-      compile_substring(&sentence[32],16,255,128-32,MAIN_BUFFER,1,APPEND);
-      char pe[64];
+       char pe[64];
       sprintf(pe,"phase error: %i",phase_error);
       compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
       display_buffer(MAIN_BUFFER);
@@ -608,6 +644,10 @@ int main()
       renderAnalogClockBuffer(now);
       break;
     
+    case secondsOnly:
+      renderSeconds(now);
+      break;
+
     case pongMode:
       pong_update();
       render_pong_buffer(game_state,now);

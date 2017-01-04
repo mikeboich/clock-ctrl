@@ -62,7 +62,8 @@ static void RTC_1_EverySecondHandler(void)
   
   phase_error = (cycle_count % 31250);
   seconds_adjustment = cycle_count % (31250*60);
-  LED_Reg_Write(!LED_Pin_Read());
+  //LED_Reg_Write(!LED_Pin_Read());
+  LED_Reg_Write(0x1);
     /* `#END` */
     
     #ifdef RTC_1_EVERY_SECOND_HANDLER_CALLBACK

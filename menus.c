@@ -40,11 +40,17 @@ menu *current_menu = &main_menu;
 
 
 void sync_to_60Hz(){
+    static int phase=0;
      if(global_prefs.prefs_data.sync_to_60Hz && 0){
-      int phase = SixtyHz_Read();
+      phase = SixtyHz_Read();
       while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
+
     }
-   
+}
+
+void wait_for_twist(){
+ int tmp = QuadDec_1_GetCounter();
+ while(tmp==QuadDec_1_GetCounter());
 }
 
 void render_menu(menu the_menu){
@@ -166,8 +172,9 @@ void set_the_time(){
 }
 
 void char_test(){
-  compileString("abcdefghijklm",255,230,0,1,OVERWRITE);
-  compileString("nopqrstuvwxyz",255,180,0,1,APPEND);
+  //compileString("abcdefghijklm",255,230,0,1,OVERWRITE);
+  //compileString("nopqrstuvwxyz",255,180,0,1,APPEND);
+  clear_buffer(MAIN_BUFFER);
   compileString("~`!@#$%^&*()_-+={}",255,130,0,1,APPEND);
   char str4[] = {128,129,130,131,132,0};  //Japanese extended characters
   compileString(str4,255,60,0,2,APPEND);
