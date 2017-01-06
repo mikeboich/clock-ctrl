@@ -198,17 +198,17 @@ void char_test(){
 
 void align_screen2(){
   seg_or_flag test_pattern[] = {
-    {128,128,128,128,cir,0x0ff},
-    {128,192,8,8,cir,0xff},
-    {128,64,8,8,cir,0xff},
-    {64,128,8,8,cir,0xff},
-    {192,128,8,8,cir,0xff},
-    {128-45,128-45,8,8,cir,0xff},
-    {128-45,128+45,8,8,cir,0xff},
-    {128+45,128-45,8,8,cir,0xff},
-    {128+45,128+45,8,8,cir,0xff},
-    {128,128,64,0,pos,0x99},
-    {128,128,0,64,pos,0x99},
+    {128,128,254,254,cir,0x0ff},
+    {128,254,8,8,cir,0xff},  //top
+    {128,1,8,8,cir,0xff},  //bottom
+    {1,128,8,8,cir,0xff},   // 9 o'clock
+    {254,128,8,8,cir,0xff},
+    {128-90,128-90,8,8,cir,0xff},
+    {128-90,128+90,8,8,cir,0xff},
+    {128+90,128-90,8,8,cir,0xff},
+    {128+90,128+90,8,8,cir,0xff},
+    {128,128,128,0,pos,0x99},
+    {128,128,0,128,pos,0x99},
     {255,255,0,0,cir,0x00},
   }; 
    uint8 masks[9] ={0,1,2,4,8,16,32,64,128};
@@ -327,7 +327,7 @@ void dispatch_menu(int menu_number, int item_number){
       break;
             
     case 4:
-      align_screen();
+      align_screen2();
       break;
             
     case 5: 

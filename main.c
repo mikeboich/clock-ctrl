@@ -230,18 +230,28 @@ void update_paddles(){
   int should_miss[2] = {0,0}; //set to 1 if we want that player to miss
   
   if(puck_visible()){
-    if((the_time->Min ==59 && the_time->Sec>57) || game_state.puck_velocity[0]<0) should_miss[1]=1;
-    else if((the_time->Sec > 57) || game_state.puck_velocity[0]>0) should_miss[0]=1;
+    should_miss[1] = ((the_time->Min ==59 && the_time->Sec>58) || game_state.puck_velocity[0]<0) ? 1 :0;
+    should_miss[0] = ((the_time->Sec > 58) || game_state.puck_velocity[0]>0) ? 1 : 0;
 
     for(player=0;player<2;player++){
       if(!should_miss[player]){
-	if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] > PADDLE_MIN)
-	  game_state.paddle_position[player] -= 4;
-         
-	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
-	    game_state.paddle_position[player] < PADDLE_MAX) game_state.paddle_position[player] += 4;
+    	if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] > PADDLE_MIN)
+    	  game_state.paddle_position[player] -= 4;
+             
+    	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
+    	    game_state.paddle_position[player] < PADDLE_MAX) game_state.paddle_position[player] += 4;
 
-      }
+          }
+    else{
+    	if(game_state.paddle_position[player] > game_state.puck_position[1]) 
+          if(game_state.paddle_position[player] < PADDLE_MIN){
+    	    game_state.paddle_position[player] += 4;
+        }
+        
+             
+    	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
+    	    game_state.paddle_position[player] > PADDLE_MAX) game_state.paddle_position[player] -= 4;
+    }
     }
   }
 
@@ -392,7 +402,7 @@ void renderSeconds(RTC_1_TIME_DATE *the_time){
     
     sprintf(hour_min_str,"%02i:%02i",the_time->Hour ,the_time->Min);
     sprintf(sec_str,"%02i",the_time->Sec);
-    sprintf(day_of_week_str,"%s",day_names[the_time->DayOfWeek]);
+    sprintf(day_of_week_str,"%s",day_names[the_time->DayOfWeek-1]);
     compileString(sec_str,255,10,MAIN_BUFFER,2,OVERWRITE);
     compileString(hour_min_str,255,85,MAIN_BUFFER,4,APPEND);
     compileString(day_of_week_str,255,205,MAIN_BUFFER,2,APPEND);
@@ -666,6 +676,8 @@ int main()
     //update the  screen-saver offsets:
     ss_x_offset = (now->Min) % 5;
     ss_y_offset =(now->Min+2) % 5;
+//    ss_x_offset = 0;
+//    ss_y_offset =0;
  
     if(verbose_mode){
       int elapsed = (cycle_count-last_refresh);
@@ -696,7 +708,7 @@ int main()
     }
     else{
       if(display_mode != menuMode && switch_interval!=0 && cycle_count-last_switch > switch_interval*31250){
-	display_mode = (cycle_count / (switch_interval*31250)) % 7;   // switch modes automatically
+	display_mode = (cycle_count / (switch_interval*31250)) % 8;   // switch modes automatically
         last_switch=cycle_count;  
       }
     }
