@@ -16,6 +16,7 @@
     and coded in C.
 
 *******************************************************************************/
+#include "max509.h"
 #include "menus.h"
 #include "draw.h"
 #include "prefs.h"
@@ -30,7 +31,7 @@ extern int verbose_mode;
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
-menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Test","Align Screen","Cancel"},
+menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Test","Test Pattern","Cancel"},
 		  .n_items = 5,
 		  .highlighted_item_index = -1,
 		  .menu_number = 0};
@@ -41,7 +42,7 @@ menu *current_menu = &main_menu;
 
 void sync_to_60Hz(){
     static int phase=0;
-     if(global_prefs.prefs_data.sync_to_60Hz && 0){
+     if(global_prefs.prefs_data.sync_to_60Hz || 1){
       phase = SixtyHz_Read();
       while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
 
@@ -220,6 +221,8 @@ void align_screen2(){
     clear_buffer(MAIN_BUFFER);
     compileSegments(test_pattern,MAIN_BUFFER,APPEND);
     while(!button_clicked){
+    ss_x_offset = 0;
+    ss_y_offset =0;
       display_buffer(MAIN_BUFFER);
     }
     button_clicked = 0;  // consume the button_click

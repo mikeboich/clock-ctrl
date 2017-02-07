@@ -676,8 +676,6 @@ int main()
     //update the  screen-saver offsets:
     ss_x_offset = (now->Min) % 5;
     ss_y_offset =(now->Min+2) % 5;
-//    ss_x_offset = 0;
-//    ss_y_offset =0;
  
     if(verbose_mode){
       int elapsed = (cycle_count-last_refresh);
