@@ -42,7 +42,7 @@ menu *current_menu = &main_menu;
 
 void sync_to_60Hz(){
     static int phase=0;
-     if(global_prefs.prefs_data.sync_to_60Hz || 1){
+     if(global_prefs.prefs_data.sync_to_60Hz && 0){
       phase = SixtyHz_Read();
       while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
 

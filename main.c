@@ -25,15 +25,19 @@
 #include "max509.h"
 #include "fourletter.h"
 #include "gps.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 // Real time clock variables:
 volatile int pps_available=0;
 
 
-typedef enum{textMode,flwMode,analogMode0,analogMode1,analogMode2, secondsOnly,pongMode,pendulumMode,gpsDebugMode,menuMode} clock_type;
+typedef enum{textMode,flwMode,analogMode0,analogMode1,analogMode2, secondsOnly,pongMode,pendulumMode, \
+    trumpMode,xmasMode,gpsDebugMode,menuMode} clock_type;
+int nmodes = 10;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -177,6 +181,91 @@ void renderAnalogClockBuffer(RTC_1_TIME_DATE *now){
     float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-phase_error)/31250.0);
     circle(x,y,16,MAIN_BUFFER);
   }
+}
+asm (".global _scanf_float");
+
+void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0, char *caption1){
+    time_t current_time;
+    struct tm end_of_trump,tm_now;
+    double seconds_remaining;
+    double days_remaining;
+    char seconds_string[64] = "";
+    
+    tm_now.tm_year = now->Year-1900;
+    tm_now.tm_mon = now->Month-1;
+    tm_now.tm_mday = now->DayOfMonth;
+    tm_now.tm_hour = now->Hour;
+    tm_now.tm_min = now->Min;
+    tm_now.tm_sec = now->Sec;
+    tm_now.tm_isdst=0;
+    current_time = mktime(&tm_now);
+    
+    
+    seconds_remaining = difftime(event_time,current_time);
+    days_remaining = seconds_remaining/86400.0;  // Total punt!  subracting 3 since it's computing 3 too many days
+    
+    sprintf(seconds_string,"%.5f",days_remaining);
+    
+    compileString(seconds_string,255,140,MAIN_BUFFER,2,OVERWRITE);
+    compileString(caption0,255,90,MAIN_BUFFER,1,APPEND);
+    compileString(caption1,255,40,MAIN_BUFFER,1,APPEND);
+    
+    
+}
+void render_trump_buffer(RTC_1_TIME_DATE *now){
+    time_t current_time,end_time;
+    struct tm end_of_trump,tm_now;
+    double seconds_remaining;
+    double days_remaining;
+    char seconds_string[64] = "";
+    
+    tm_now.tm_year = now->Year-1900;
+    tm_now.tm_mon = now->Month-1;
+    tm_now.tm_mday = now->DayOfMonth;
+    tm_now.tm_hour = now->Hour;
+    tm_now.tm_min = now->Min;
+    tm_now.tm_sec = now->Sec;
+    tm_now.tm_isdst=0;
+    current_time = mktime(&tm_now);
+    
+    end_of_trump.tm_year = 2021-1900;
+    end_of_trump.tm_mon = 1-1;
+    end_of_trump.tm_mday = 20;
+    end_of_trump.tm_hour = 9;
+    end_of_trump.tm_min = 0;
+    end_of_trump.tm_sec = 0;
+    end_time = mktime(&end_of_trump);
+    
+    countdown_to_event(now,end_time,"Days of Trump","remaining");
+}
+void render_xmas_buffer(RTC_1_TIME_DATE *now){
+    time_t current_time,end_time;
+    struct tm xmas_time,tm_now;
+    double seconds_remaining;
+    double days_remaining;
+    char seconds_string[64] = "";
+    
+    tm_now.tm_year = now->Year-1900;
+    tm_now.tm_mon = now->Month-1;
+    tm_now.tm_mday = now->DayOfMonth;
+    tm_now.tm_hour = now->Hour;
+    tm_now.tm_min = now->Min;
+    tm_now.tm_sec = now->Sec;
+    tm_now.tm_isdst=0;
+    current_time = mktime(&tm_now);
+    
+    xmas_time.tm_year = now->Year-1900;
+    xmas_time.tm_mon = 12-1;
+    xmas_time.tm_mday = 25;
+    xmas_time.tm_hour = 0 ;
+    xmas_time.tm_min = 0;
+    xmas_time.tm_sec = 0;
+    if(xmas_time.tm_mon==12 && xmas_time.tm_mday>25){
+        xmas_time.tm_year += 1;
+    }
+    end_time = mktime(&xmas_time);
+    
+    countdown_to_event(now,end_time,"Shopping Days","'till Christmas!");
 }
 
 /* ************* Pong Game ************* */
@@ -354,7 +443,7 @@ void render_pendulum_buffer(RTC_1_TIME_DATE *the_time){
 
   // render the hour and minute:  
   sprintf(hr_min_string,"%02i:%02i",the_time->Hour,the_time->Min);
-  compileString(hr_min_string,255,115,MAIN_BUFFER,4,APPEND);
+  compileString(hr_min_string,255,115,MAIN_BUFFER,3,APPEND);
 
   // render the pendulum shaft:  
   x = 128.0+200*sin(sin(2*M_PI*(cycle_count-phase_error)/31250.0)/2.5);
@@ -667,6 +756,14 @@ int main()
       render_pendulum_buffer(now);
       break;
 
+    case trumpMode:
+      render_trump_buffer(now);
+      break;
+
+    case xmasMode:
+      render_xmas_buffer(now);
+      break;
+
     case menuMode:
       render_menu(main_menu);
       break;
@@ -689,7 +786,7 @@ int main()
     }
     int switch_interval = global_prefs.prefs_data.switch_interval;
     
-    if(display_mode != menuMode && switch_interval==0) display_mode = QuadDec_1_GetCounter() % 8;
+    if(display_mode != menuMode && switch_interval==0) display_mode = QuadDec_1_GetCounter() % nmodes;
     else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
@@ -706,7 +803,7 @@ int main()
     }
     else{
       if(display_mode != menuMode && switch_interval!=0 && cycle_count-last_switch > switch_interval*31250){
-	display_mode = (cycle_count / (switch_interval*31250)) % 8;   // switch modes automatically
+	display_mode = (cycle_count / (switch_interval*31250)) % nmodes;   // switch modes automatically
         last_switch=cycle_count;  
       }
     }
