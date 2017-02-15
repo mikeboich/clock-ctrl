@@ -182,8 +182,9 @@ void renderAnalogClockBuffer(RTC_1_TIME_DATE *now){
     circle(x,y,16,MAIN_BUFFER);
   }
 }
-asm (".global _scanf_float");
 
+asm (".global _scanf_float");       // forces floating point formatting code to load
+// for displaying things like "400 days of Trump to go!" or "332 shopping days till Christmas!":
 void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0, char *caption1){
     time_t current_time;
     struct tm end_of_trump,tm_now;
@@ -192,7 +193,7 @@ void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0,
     char seconds_string[64] = "";
     
     tm_now.tm_year = now->Year-1900;
-    tm_now.tm_mon = now->Month-1;
+    tm_now.tm_mon = now->Month-1;       // months are 0..11 rather than 1..12!
     tm_now.tm_mday = now->DayOfMonth;
     tm_now.tm_hour = now->Hour-global_prefs.prefs_data.utc_offset;
     tm_now.tm_min = now->Min;
@@ -216,7 +217,7 @@ void render_trump_buffer(RTC_1_TIME_DATE *now){
     time_t end_time;
     struct tm end_of_trump,tm_now;
     end_of_trump.tm_year = 2021-1900;
-    end_of_trump.tm_mon = 1-1;
+    end_of_trump.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
     end_of_trump.tm_mday = 20;
     end_of_trump.tm_hour = 17;
     end_of_trump.tm_min = 0;
@@ -226,33 +227,21 @@ void render_trump_buffer(RTC_1_TIME_DATE *now){
     countdown_to_event(now,end_time,"Days of Trump","remaining");
 }
 void render_xmas_buffer(RTC_1_TIME_DATE *now){
-    time_t current_time,end_time;
-    struct tm xmas_time,tm_now;
-    double seconds_remaining;
-    double days_remaining;
-    char seconds_string[64] = "";
-    
-    tm_now.tm_year = now->Year-1900;
-    tm_now.tm_mon = now->Month-1;
-    tm_now.tm_mday = now->DayOfMonth;
-    tm_now.tm_hour = now->Hour;
-    tm_now.tm_min = now->Min;
-    tm_now.tm_sec = now->Sec;
-    tm_now.tm_isdst=0;
-    current_time = mktime(&tm_now);
+    time_t end_time;
+    struct tm xmas_time;
     
     xmas_time.tm_year = now->Year-1900;
-    xmas_time.tm_mon = 12-1;
+    xmas_time.tm_mon = 12-1;   // months are 0..11 rather than 1..12!
     xmas_time.tm_mday = 25;
     xmas_time.tm_hour = 0 ;
     xmas_time.tm_min = 0;
     xmas_time.tm_sec = 0;
-    if(xmas_time.tm_mon==12 && xmas_time.tm_mday>25){
+    if(now->Month == 12 && now->DayOfMonth>25){
         xmas_time.tm_year += 1;
     }
     end_time = mktime(&xmas_time);
     
-    countdown_to_event(now,end_time,"Shopping Days","'till Christmas!");
+    countdown_to_event(now,end_time,"Shopping Days","until Christmas!");
 }
 
 /* ************* Pong Game ************* */
