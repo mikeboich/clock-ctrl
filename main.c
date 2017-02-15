@@ -194,7 +194,7 @@ void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0,
     tm_now.tm_year = now->Year-1900;
     tm_now.tm_mon = now->Month-1;
     tm_now.tm_mday = now->DayOfMonth;
-    tm_now.tm_hour = now->Hour;
+    tm_now.tm_hour = now->Hour-global_prefs.prefs_data.utc_offset;
     tm_now.tm_min = now->Min;
     tm_now.tm_sec = now->Sec;
     tm_now.tm_isdst=0;
@@ -213,25 +213,12 @@ void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0,
     
 }
 void render_trump_buffer(RTC_1_TIME_DATE *now){
-    time_t current_time,end_time;
+    time_t end_time;
     struct tm end_of_trump,tm_now;
-    double seconds_remaining;
-    double days_remaining;
-    char seconds_string[64] = "";
-    
-    tm_now.tm_year = now->Year-1900;
-    tm_now.tm_mon = now->Month-1;
-    tm_now.tm_mday = now->DayOfMonth;
-    tm_now.tm_hour = now->Hour;
-    tm_now.tm_min = now->Min;
-    tm_now.tm_sec = now->Sec;
-    tm_now.tm_isdst=0;
-    current_time = mktime(&tm_now);
-    
     end_of_trump.tm_year = 2021-1900;
     end_of_trump.tm_mon = 1-1;
     end_of_trump.tm_mday = 20;
-    end_of_trump.tm_hour = 9;
+    end_of_trump.tm_hour = 17;
     end_of_trump.tm_min = 0;
     end_of_trump.tm_sec = 0;
     end_time = mktime(&end_of_trump);
