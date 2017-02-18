@@ -35,9 +35,10 @@
 volatile int pps_available=0;
 
 
-typedef enum{textMode,flwMode,analogMode0,analogMode1,analogMode2, secondsOnly,pongMode,pendulumMode, \
-    trumpMode,xmasMode,gpsDebugMode,menuMode} clock_type;
+typedef enum{textMode,flwMode,analogMode1, secondsOnly,pongMode,pendulumMode, \
+    trumpMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,menuMode} clock_type;
 int nmodes = 10;
+int n_auto_modes=8;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -185,9 +186,10 @@ void renderAnalogClockBuffer(RTC_1_TIME_DATE *now){
 
 asm (".global _scanf_float");       // forces floating point formatting code to load
 // for displaying things like "400 days of Trump to go!" or "332 shopping days till Christmas!":
+// the 
 void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0, char *caption1){
     time_t current_time;
-    struct tm end_of_trump,tm_now;
+    struct tm tm_now;
     double seconds_remaining;
     double days_remaining;
     char seconds_string[64] = "";
@@ -195,7 +197,7 @@ void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0,
     tm_now.tm_year = now->Year-1900;
     tm_now.tm_mon = now->Month-1;       // months are 0..11 rather than 1..12!
     tm_now.tm_mday = now->DayOfMonth;
-    tm_now.tm_hour = now->Hour-global_prefs.prefs_data.utc_offset;
+    tm_now.tm_hour = now->Hour;
     tm_now.tm_min = now->Min;
     tm_now.tm_sec = now->Sec;
     tm_now.tm_isdst=0;
@@ -203,7 +205,7 @@ void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0,
     
     
     seconds_remaining = difftime(event_time,current_time);
-    days_remaining = seconds_remaining/86400.0;  // Total punt!  subracting 3 since it's computing 3 too many days
+    days_remaining = seconds_remaining/86400.0;  
     
     sprintf(seconds_string,"%.5f",days_remaining);
     
@@ -219,7 +221,7 @@ void render_trump_buffer(RTC_1_TIME_DATE *now){
     end_of_trump.tm_year = 2021-1900;
     end_of_trump.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
     end_of_trump.tm_mday = 20;
-    end_of_trump.tm_hour = 17;
+    end_of_trump.tm_hour = 17 + global_prefs.prefs_data.utc_offset;  // local time corresponding to 1700UTC
     end_of_trump.tm_min = 0;
     end_of_trump.tm_sec = 0;
     end_time = mktime(&end_of_trump);
@@ -233,7 +235,7 @@ void render_xmas_buffer(RTC_1_TIME_DATE *now){
     xmas_time.tm_year = now->Year-1900;
     xmas_time.tm_mon = 12-1;   // months are 0..11 rather than 1..12!
     xmas_time.tm_mday = 25;
-    xmas_time.tm_hour = 0 ;
+    xmas_time.tm_hour = 0;  //  midnight local time
     xmas_time.tm_min = 0;
     xmas_time.tm_sec = 0;
     if(now->Month == 12 && now->DayOfMonth>25){
@@ -779,7 +781,7 @@ int main()
     }
     else{
       if(display_mode != menuMode && switch_interval!=0 && cycle_count-last_switch > switch_interval*31250){
-	display_mode = (cycle_count / (switch_interval*31250)) % nmodes;   // switch modes automatically
+	display_mode = (cycle_count / (switch_interval*31250)) % n_auto_modes;   // switch modes automatically
         last_switch=cycle_count;  
       }
     }
