@@ -56,7 +56,7 @@ static void RTC_1_EverySecondHandler(void)
   #include "gps.h"
   #include "LED_Pin.h"
   #include "LED_Reg.h"
-  extern int phase_error,cycle_count;
+  extern volatile int phase_error,cycle_count;
   extern int seconds_adjustment;        // for sweep second hand.
   //extern int second_has_elapsed;
   

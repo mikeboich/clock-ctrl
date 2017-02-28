@@ -37,7 +37,7 @@ volatile int pps_available=0;
 
 typedef enum{textMode,flwMode,analogMode1, secondsOnly,pongMode,pendulumMode, \
     trumpMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,menuMode} clock_type;
-int nmodes = 10;
+int nmodes = 11;
 int n_auto_modes=8;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
@@ -577,15 +577,7 @@ void waitForClick(){
 
 void hw_test(){
   seg_or_flag test_pattern[] = {
-    {128,128,64,64,cir,0x01},
-    {128,128,64,64,cir,0x02},
-    {128,128,64,64,cir,0x04},
-    {128,128,64,64,cir,0x08},
-    {128,128,64,64,cir,0x10},
-    {128,128,64,64,cir,0x20},
-    {128,128,64,64,cir,0x40},
-    {128,128,64,64,cir,0x80},
-    {128,200,64,64,cir,0xff},
+    {128,128,128,128,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
 
@@ -682,12 +674,12 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  //hw_test2();
+  //hw_test();
 
   // The main loop:
   for(;;){
     // test for now.  Turn off the LED part way into each 1 second period:
-      if(((cycle_count-phase_error) % 31250) > 2000) LED_Reg_Write(0x0);
+    if(((cycle_count-phase_error) % 31250) > 2000) LED_Reg_Write(0x0);
 
     RTC_1_TIME_DATE *now = RTC_1_ReadTime();
     /* Now render the appropriate contents into the display buffer, based upon 
