@@ -36,9 +36,9 @@ volatile int pps_available=0;
 
 
 typedef enum{textMode,flwMode,analogMode1, secondsOnly,pongMode,pendulumMode, \
-    trumpMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,menuMode} clock_type;
-int nmodes = 11;
-int n_auto_modes=8;
+    trumpMode,xmasMode,wordClockMode,analogMode0,analogMode2,gpsDebugMode,menuMode} clock_type;
+int nmodes = 12;
+int n_auto_modes=9;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -244,6 +244,89 @@ void render_xmas_buffer(RTC_1_TIME_DATE *now){
     end_time = mktime(&xmas_time);
     
     countdown_to_event(now,end_time,"Shopping Days","until Christmas!");
+}
+void render_word_clock(RTC_1_TIME_DATE *now){
+    char *strs[] = {"o'clock","b"};
+    char *hour_strings[] = {"twelve","one","two","three","four","five","six","seven","eight","nine","ten","eleven"};
+    char *minute_strings[] = {"not-used","five","ten","a quarter","twenty","twenty-five"};
+    char past_or_until[8];
+    int exact=0;
+    
+    char time_string[3][64];
+    
+    if(now->Min > 57 || now->Min<3){
+        if(now->Min==0)
+            sprintf(time_string[0],"It's exactly");
+        else
+            sprintf(time_string[0],"It's about");
+        compileString(time_string[0],255,160,MAIN_BUFFER,2,OVERWRITE);
+        int the_hour = now->Min > 56 ? now->Hour+1 : now->Hour;
+        sprintf(time_string[0],"%s ",hour_strings[the_hour % 12]);
+        compileString(time_string[0],255,108,MAIN_BUFFER,2,APPEND);
+        sprintf(time_string[0],"0'clock");
+        compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
+        return;
+    }
+    
+    if(now->Min >=3 && now->Min <=57){
+        if(now->Min > 27 && now->Min < 33){
+            if(now->Min==30)
+                compileString("It's exactly",255,150,MAIN_BUFFER,2,OVERWRITE);
+            else
+                compileString("It's about",255,150,MAIN_BUFFER,2,OVERWRITE);
+                
+            compileString("half past",255,100,MAIN_BUFFER,2,APPEND);
+            sprintf(time_string[0],"%s",hour_strings[ now->Hour % 12]);
+            compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
+            return;
+        }
+        else{
+            // round to nearest 5 minutes:
+            int approx_minute = 5*(now->Min / 5);
+            int past_until_index;
+            if((now->Min - approx_minute) > 2){
+                approx_minute += 5;
+            }
+            exact = (approx_minute ==  now->Min);
+            
+            if(exact)
+                compileString("It's exactly",255,200,MAIN_BUFFER,2,OVERWRITE);
+            else
+                compileString("It's about",255,200,MAIN_BUFFER,2,OVERWRITE);
+            if(now->Min <= 27){
+                past_until_index = approx_minute / 5;
+                sprintf(time_string[0],"%s",minute_strings[past_until_index]);
+                compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);
+                sprintf(time_string[0],"past");
+                compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);
+                sprintf(time_string[0],"%s",hour_strings[now->Hour % 12]);
+                compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
+          
+            }
+            if(now->Min >= 33){
+                approx_minute = 60-approx_minute;
+                past_until_index = approx_minute / 5;
+                sprintf(time_string[0],"%s",minute_strings[(approx_minute/5)]);
+                compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);                
+                sprintf(time_string[0],"'till");
+                compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);                
+                sprintf(time_string[0],"%s",hour_strings[((now->Hour+1)) % 12]);
+                compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);                
+            }
+/*           if(now->Min >= 28 && now->Min<=32){
+                compileString("It's about",255,200,MAIN_BUFFER,2,OVERWRITE);
+                past_until_index = approx_minute / 5;
+                sprintf(time_string[0],"half");
+                compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);
+                sprintf(time_string[0],"past");
+                compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);
+                sprintf(time_string[0],"%s",hour_strings[now->Hour % 12]);
+                compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
+            }
+*/
+        }
+    }
+    
 }
 
 /* ************* Pong Game ************* */
@@ -732,6 +815,10 @@ int main()
 
     case xmasMode:
       render_xmas_buffer(now);
+      break;
+
+    case wordClockMode:
+      render_word_clock(now);
       break;
 
     case menuMode:
