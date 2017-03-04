@@ -263,7 +263,7 @@ void render_word_clock(RTC_1_TIME_DATE *now){
         int the_hour = now->Min > 56 ? now->Hour+1 : now->Hour;
         sprintf(time_string[0],"%s ",hour_strings[the_hour % 12]);
         compileString(time_string[0],255,108,MAIN_BUFFER,2,APPEND);
-        sprintf(time_string[0],"0'clock");
+        sprintf(time_string[0],"O'clock");
         compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
         return;
     }
