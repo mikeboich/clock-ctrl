@@ -43,7 +43,7 @@ void set_DACfor_seg(seg_or_flag *s,uint8 x, uint8 y){
   setImmediate(DAC_Reg_C | DAC_Pre_Load | (255-(s->seg_data.x_offset + x)));
   CyDelayUs(1);
   setImmediate(DAC_Reg_D | DAC_Pre_Load | (255-(s->seg_data.y_offset + y)));
- // CyDelayUs(1);
+  CyDelayUs(1);
 
 }
 

@@ -685,9 +685,9 @@ void hw_test(){
 }
 void hw_test2(){
   seg_or_flag test_pattern[] = {
-    {128,128,32,128,cir,0xff},
-    //    {128,128,50,50,cir,0xaa},
-    //    {128,128,25,25,cir,0x55},
+    {128,128,254,254,pos,0x90},
+    {128,128,254,254,neg,0x9},
+    {128,128,254,254,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
   int x,y;
@@ -704,6 +704,11 @@ void hw_test2(){
     button_clicked=0;
     radius*=2;
   }
+
+  compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
+  while(!button_clicked) display_buffer(MAIN_BUFFER);
+  button_clicked = 0;
+
 }
 
 
@@ -759,7 +764,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  //hw_test();
+  hw_test2();
 
   // The main loop:
   for(;;){
