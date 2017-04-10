@@ -35,10 +35,10 @@
 volatile int pps_available=0;
 
 
-typedef enum{textMode,flwMode,analogMode1, secondsOnly,pongMode,pendulumMode, \
+typedef enum{textMode,flwMode,analogMode1, secondsOnly,pongMode,pendulumMode,trump_elapsed_mode, \
     trumpMode,xmasMode,wordClockMode,analogMode0,analogMode2,gpsDebugMode,menuMode} clock_type;
-int nmodes = 12;
-int n_auto_modes=9;
+int nmodes = 13;
+int n_auto_modes=10;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -139,26 +139,6 @@ void drawClockHands(int h, int m, int s){
     line(128,128,128 + sin(second_angle)*SEC_HAND_LENGTH,128 + cos(second_angle) * SEC_HAND_LENGTH,MAIN_BUFFER);
   }
 
-//  if(display_mode > analogMode0){
-//    int tic;
-//    for(tic=1;tic<=60;tic++){
-//        float angle = M_TWOPI*(tic/60.0);
-//        float tic_inner_x,tic_outer_x,tic_inner_y,tic_outer_y;
-//        tic_inner_x = 128+128.0*cos(angle);
-//        tic_inner_y = 128+128.0*sin(angle);
-//        tic_outer_x = 128+192.0*cos(angle);
-//        tic_outer_y = 128+192.0*sin(angle);
-//        if(tic % 5 && display_mode>analogMode1){
-//        //line(128 + sin(angle)*MIN_HAND_LENGTH*1.2,128 + cos(angle) * MIN_HAND_LENGTH*1.2,\
-//         // 128 + sin(angle)*128.0,128 + cos(angle) * 128.0,MAIN_BUFFER);  // draw the hour hand
-//        }
-//        else {
-//          line(128 + sin(angle)*MIN_HAND_LENGTH*1.1,128 + cos(angle) * MIN_HAND_LENGTH*1.1,\
-//          128 + sin(angle)*128.0,128 + cos(angle) * 128.0,MAIN_BUFFER);  // draw the hour hand
-//          
-//        }
-//    }
-//  }
 }
 
 void renderAnalogClockBuffer(RTC_1_TIME_DATE *now){
@@ -205,7 +185,8 @@ void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0,
     
     
     seconds_remaining = difftime(event_time,current_time);
-    days_remaining = seconds_remaining/86400.0;  
+    days_remaining = fabs(seconds_remaining/86400.0);  
+    
     
     sprintf(seconds_string,"%.5f",days_remaining);
     
@@ -215,16 +196,37 @@ void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0,
     
     
 }
-void render_trump_buffer(RTC_1_TIME_DATE *now){
-    time_t end_time;
-    struct tm end_of_trump,tm_now;
+void render_trump_elapsed_buffer(RTC_1_TIME_DATE *now){
+    time_t end_time,start_time;
+    struct tm end_of_trump,start_of_trump;
     end_of_trump.tm_year = 2021-1900;
-    end_of_trump.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
-    end_of_trump.tm_mday = 20;
-    end_of_trump.tm_hour = 17 + global_prefs.prefs_data.utc_offset;  // local time corresponding to 1700UTC
-    end_of_trump.tm_min = 0;
-    end_of_trump.tm_sec = 0;
+    start_of_trump.tm_year = 2017-1900;
+    start_of_trump.tm_mon = end_of_trump.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
+    start_of_trump.tm_mday = end_of_trump.tm_mday = 20;
+    start_of_trump.tm_hour = end_of_trump.tm_hour = 17 + global_prefs.prefs_data.utc_offset;  // local time corresponding to 1700UTC
+    start_of_trump.tm_min = end_of_trump.tm_min = 0;
+    start_of_trump.tm_sec = end_of_trump.tm_sec = 0;
+    
     end_time = mktime(&end_of_trump);
+    start_time = mktime(&start_of_trump);
+    
+    
+    countdown_to_event(now,start_time,"Days of Trump","elapsed");
+}
+
+void render_trump_buffer(RTC_1_TIME_DATE *now){
+    time_t end_time,start_time;
+    struct tm end_of_trump,start_of_trump;
+    start_of_trump.tm_year = end_of_trump.tm_year = 2021-1900;
+    start_of_trump.tm_mon = end_of_trump.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
+    start_of_trump.tm_mday = end_of_trump.tm_mday = 20;
+    start_of_trump.tm_hour = end_of_trump.tm_hour = 17 + global_prefs.prefs_data.utc_offset;  // local time corresponding to 1700UTC
+    start_of_trump.tm_min = end_of_trump.tm_min = 0;
+    start_of_trump.tm_sec = end_of_trump.tm_sec = 0;
+    
+    end_time = mktime(&end_of_trump);
+    start_time = mktime(&start_of_trump);
+    
     
     countdown_to_event(now,end_time,"Days of Trump","remaining");
 }
@@ -811,6 +813,11 @@ int main()
 
     case trumpMode:
       render_trump_buffer(now);
+      break;
+
+
+    case trump_elapsed_mode:
+      render_trump_elapsed_buffer(now);
       break;
 
     case xmasMode:

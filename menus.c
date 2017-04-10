@@ -31,8 +31,8 @@ extern int verbose_mode;
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
-menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Test","Test Pattern","Cancel"},
-		  .n_items = 5,
+menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Test","Test Pattern","Sync to 60Hz","Cancel"},
+		  .n_items = 6,
 		  .highlighted_item_index = -1,
 		  .menu_number = 0};
 
@@ -42,7 +42,7 @@ menu *current_menu = &main_menu;
 
 void sync_to_60Hz(){
     static int phase=0;
-     if(global_prefs.prefs_data.sync_to_60Hz && 0){
+     if(global_prefs.prefs_data.sync_to_60Hz){
       phase = SixtyHz_Read();
       while(SixtyHz_Read() == phase);   // wait for a 60Hz edge..
 
@@ -59,20 +59,20 @@ void render_menu(menu the_menu){
   //active_menu = &the_menu;
   
 }
-
+#define MENU_Y_SPACING 32
 void compile_menu(menu *the_menu, int which_buffer){
   int item_index;
   int y;
   char item_str[80] = "";
  
-  y = 128+(the_menu->n_items/2)*40;
+  y = 128+(the_menu->n_items/2)*MENU_Y_SPACING;
   clear_buffer(MAIN_BUFFER);
   for(item_index=0;item_index<the_menu->n_items;item_index++){
     item_str[0] = 0;
     if(item_index==the_menu->highlighted_item_index) strcat(item_str,"->");
     strcat(item_str,the_menu->items[item_index]);
     compileString(item_str,255,y,which_buffer,1,APPEND);
-    y -= 40;
+    y -= MENU_Y_SPACING;
   }
 }
 
@@ -282,6 +282,28 @@ void set_locale(){
     flush_prefs();
     QuadDec_1_SetCounter(saved_decoder);
 }
+void set_sync(){
+    char *strings[2] = {"don't sync","sync"};
+    int sync = global_prefs.prefs_data.sync_to_60Hz;
+    int saved_decoder = QuadDec_1_GetCounter();
+    char *yes_or_no;
+    int new_sync;
+    
+    while(! button_clicked){
+        new_sync = (QuadDec_1_GetCounter() - saved_decoder)+sync;
+        if(new_sync>1) new_sync =0;
+        if(new_sync<0) new_sync =1;
+        
+        yes_or_no = strings[new_sync];
+        clear_buffer(MAIN_BUFFER);
+        compileString(yes_or_no,255,128,MAIN_BUFFER,1,OVERWRITE);
+        display_buffer(MAIN_BUFFER);   
+    }
+    button_clicked = 0;
+    global_prefs.prefs_data.sync_to_60Hz = new_sync;
+    flush_prefs();
+    QuadDec_1_SetCounter(saved_decoder);
+}
 void set_switch_interval(){
     int switch_interval = global_prefs.prefs_data.switch_interval;
     int saved_decoder = QuadDec_1_GetCounter();
@@ -333,8 +355,10 @@ void dispatch_menu(int menu_number, int item_number){
       align_screen2();
       break;
             
-    case 5: 
+    case 5:
+      set_sync();
       break;
+    
     }                 
   }
   QuadDec_1_SetCounter(prev_counter);   // restore the knob position
