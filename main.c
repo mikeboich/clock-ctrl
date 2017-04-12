@@ -659,19 +659,22 @@ void waitForClick(){
   button_clicked=0;
 }
 
-
+#define LINELEN 128
 void hw_test(){
   seg_or_flag test_pattern[] = {
     {128,128,128,128,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
 
-  set_DACfor_seg(test_pattern,ss_x_offset,ss_y_offset);
+  set_DACfor_seg(test_pattern,0,0);
   strobe_LDAC();
   ShiftReg_1_WriteData(0xff);
-  Phase_Register_Write(0x1);
+  Phase_Register_Write(0x2);
   current_state = hw_testing;
-  CyDelay(5000);
+    while(!button_clicked){
+    display_buffer(MAIN_BUFFER);
+  }
+  button_clicked = 0;  // consume the button_click
   current_state = blank_unprimed;
 
   clear_buffer(MAIN_BUFFER);
@@ -685,13 +688,25 @@ void hw_test(){
 }
 void hw_test2(){
   seg_or_flag test_pattern[] = {
-    {128,128,254,254,pos,0x90},
-    {128,128,254,254,neg,0x9},
+    {128,128,LINELEN,LINELEN,pos,0xff},
+    {128,128,LINELEN,LINELEN,neg,0xff},
     {128,128,254,254,cir,0xff},
+    {128,128,244,244,cir,0xff},
+    {128,128,234,234,cir,0xff},
+    {255,255,0,0,cir,0x00},
+  }; 
+  seg_or_flag test_pattern2[] = {
+    {128,128,LINELEN,LINELEN,pos,0x99},
+    {128,128,LINELEN,LINELEN,neg,0x99},
+    {128,128,254,254,cir,0x99},
+    {128,128,244,244,cir,0xff},
+    {128,128,234,234,cir,0x99},
     {255,255,0,0,cir,0x00},
   }; 
   int x,y;
   int radius = 8;
+
+// Small circle test:
   while(radius < 64){
     clear_buffer(MAIN_BUFFER);
     for(x=radius;x<256-radius;x+=2*radius)
@@ -706,6 +721,10 @@ void hw_test2(){
   }
 
   compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
+  while(!button_clicked) display_buffer(MAIN_BUFFER);
+  button_clicked = 0;
+
+  compileSegments(test_pattern2,MAIN_BUFFER,OVERWRITE);
   while(!button_clicked) display_buffer(MAIN_BUFFER);
   button_clicked = 0;
 
