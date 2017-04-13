@@ -102,6 +102,32 @@ void wave_started(){
   }
 }
 
+void renderGPSDebug(RTC_1_TIME_DATE *now){
+  RTC_1_TIME_DATE utc_time = *now;
+  char pe[64];
+  sprintf(pe,"phase error: %i",phase_error);
+  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
+
+  offset_time(&utc_time,-global_prefs.prefs_data.utc_offset);
+  char time_string[32];
+  char day_of_week_string[12];
+  char date_string[15];
+
+  int seconds = utc_time.Sec;
+  int minutes = utc_time.Min;
+  int hours = utc_time.Hour;
+    
+        
+//  sprintf(time_string,"UTC");
+//  compileString(time_string,255,210,MAIN_BUFFER,2,OVERWRITE); 
+  sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
+  compileString(time_string,255,144,MAIN_BUFFER,1,OVERWRITE); 
+  sprintf(pe,"phase error: %i",phase_error);
+  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
+
+
+}
+
 // Show a four letter word:
 void render_flw(){
   char *rw;
@@ -799,10 +825,7 @@ int main()
     switch (display_mode){  
 
     case gpsDebugMode:
-      compile_substring(sentence,16,255,128+32,MAIN_BUFFER,1,OVERWRITE);
-       char pe[64];
-      sprintf(pe,"phase error: %i",phase_error);
-      compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
+      renderGPSDebug(now);
       display_buffer(MAIN_BUFFER);
       break;
     
