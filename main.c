@@ -585,6 +585,17 @@ void renderSeconds(RTC_1_TIME_DATE *the_time){
     compileString(hour_min_str,255,85,MAIN_BUFFER,4,APPEND);
     compileString(day_of_week_str,255,205,MAIN_BUFFER,2,APPEND);
 }
+uint8_t cordicSqrt(uint16_t value){
+    uint8_t delta,loop,result;
+    
+    for(delta=0b10000000,result=0,loop=1;loop<=8; loop++){
+        result |= delta;
+        if(((uint16_t)result * ((uint16_t)result)) > value)
+          result &= ~delta;
+        delta >>= 1;
+    }
+    return result;
+}
 void display_buffer(uint8 which_buffer){
 #define PI 3
     
@@ -614,28 +625,58 @@ void display_buffer(uint8 which_buffer){
         current_phase = 0x2;
 	break;
       }
-      // trying SGITeach brightness algorithm, vs my stupid simple one:
+#define SGI_TEACH   
+#ifdef SGI_TEACH    
+      // trying SGITeach brightness algorithm, vs my stupid very simple one:
+#define SQR(a) a*a
+#define LINE_DIM_OCTANT 0x81
+#define CIRCLE_DIM_OCTANT 0x55
+#define CIRCLE_VERY_DIM_OCTANT 0x05
+#define CIRCLE_VERY_VERY_DIM_OCTANT  0x1
+
+
+  if(seg_ptr->seg_data.arc_type == cir){
+	if(seg_ptr->seg_data.x_size == seg_ptr->seg_data.y_size)
+	  times_to_loop = PI*seg_ptr->seg_data.x_size;  // circle case
+	else{
+	  uint16 a = seg_ptr->seg_data.x_size/2;
+	  uint16 b = seg_ptr->seg_data.y_size/2;
+	  times_to_loop = PI*(3*(a+b) - cordicSqrt((3*a+b)*(a+3*b))); // ellipse case         
+	}
     
-      /*     if(seg_ptr->seg_data.arc_type == cir){
-	     if(seg_ptr->seg_data.x_size == seg_ptr->seg_data.y_size)
-	     times_to_loop = PI*seg_ptr->seg_data.x_size;
-	     else{
-	     uint16 a = seg_ptr->seg_data.x_size/2;
-	     uint16 b = seg_ptr->seg_data.y_size/2;
-	     times_to_loop = PI*(3*(a+b) - sqrt((3*a*b)*(a+3*b)));          
-	     }
-    
-	     if(times_to_loop < 5){
-	     seg_ptr->seg_data.mask = 0x11;
-	     }
-	     }
-      */
+	if(times_to_loop < 10){
+	seg_ptr->seg_data.mask = CIRCLE_VERY_DIM_OCTANT;
+	}
+	if(times_to_loop < 5){
+	seg_ptr->seg_data.mask = CIRCLE_VERY_VERY_DIM_OCTANT;
+	}
+      }
+      else{  // line of some sort..
+	if(seg_ptr->seg_data.y_size==0)
+	  times_to_loop = seg_ptr->seg_data.x_size;
+	else
+	  if(seg_ptr->seg_data.x_size==0)
+	    times_to_loop = seg_ptr->seg_data.y_size;
+	  else times_to_loop = sqrt(SQR((uint16_t)seg_ptr->seg_data.x_size) + SQR((uint16_t)seg_ptr->seg_data.y_size));
+	times_to_loop = PI * times_to_loop/2;  // lines are drawn twice
+    if(times_to_loop < 20)
+      seg_ptr->seg_data.mask = LINE_DIM_OCTANT;
+  }
+
+      if(times_to_loop < 20)
+	times_to_loop = 2;
+      else
+	times_to_loop /=10;
+
+#else      
+
+      // old brightness routine:
       times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
-	seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
+      seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
       if(times_to_loop==0) times_to_loop = 1;
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
     
-    
+#endif    
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
     
