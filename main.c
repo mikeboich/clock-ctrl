@@ -105,8 +105,6 @@ void wave_started(){
 void renderGPSDebug(RTC_1_TIME_DATE *now){
   RTC_1_TIME_DATE utc_time = *now;
   char pe[64];
-//  sprintf(pe,"phase error: %Lu",phase_error);
-//  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
 
   offset_time(&utc_time,-global_prefs.prefs_data.utc_offset);
   char time_string[32];
@@ -118,8 +116,6 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
   int hours = utc_time.Hour;
     
         
-//  sprintf(time_string,"UTC");
-//  compileString(time_string,255,210,MAIN_BUFFER,2,OVERWRITE); 
   sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
   compileString(time_string,255,144,MAIN_BUFFER,1,OVERWRITE); 
   sprintf(pe,"phase error: %Lu",phase_error);
@@ -611,17 +607,14 @@ void display_buffer(uint8 which_buffer){
       set_DACfor_seg(seg_ptr,ss_x_offset,ss_y_offset);
       switch(seg_ptr->seg_data.arc_type){
       case cir:
-	//Phase_Register_Write(0x1);
-        current_phase=0x1;
+        current_phase=0x1;   // phase register can't be written here, as drawing may still be active, so set current_phase instead
 	break;
         
       case pos:
-	//Phase_Register_Write(0x0);
-	current_phase = 0x0;
+	  current_phase = 0x0;
 	break;
         
       case neg:
-	//Phase_Register_Write(0x2);
         current_phase = 0x2;
 	break;
       }
