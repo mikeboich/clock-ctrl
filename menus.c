@@ -173,9 +173,9 @@ void set_the_time(){
 }
 
 void char_test(){
-  //compileString("abcdefghijklm",255,230,0,1,OVERWRITE);
-  //compileString("nopqrstuvwxyz",255,180,0,1,APPEND);
-  clear_buffer(MAIN_BUFFER);
+  compileString("abcdefghijklm",255,230,0,1,OVERWRITE);
+  compileString("nopqrstuvwxyz",255,180,0,1,APPEND);
+  //clear_buffer(MAIN_BUFFER);
   compileString("~`!@#$%^&*()_-+={}",255,130,0,1,APPEND);
   char str4[] = {128,129,130,131,132,0};  //Japanese extended characters
   compileString(str4,255,60,0,2,APPEND);

@@ -51,9 +51,9 @@ volatile draw_state current_state = blank_unprimed;
 volatile int current_phase=0;  // phase of sin lookup machinery
 
 volatile int times_to_loop = 0;
-volatile int cycle_count=0;  // poor man's timer
+volatile uint64_t cycle_count=0;  // poor man's timer
 int frame_toggle = 0;   // performance measurement
-volatile int phase_error=0;            // difference between (cycle_count % 31250) and 1 pps edge
+volatile uint64_t phase_error=0;            // difference between (cycle_count % 31250) and 1 pps edge
 volatile int seconds_adjustment=0;            // difference between (cycle_count % 60*31250) and 1 pps edge
 
 int last_refresh=0,loops_per_frame=0;   // for performance measurement
@@ -105,7 +105,7 @@ void wave_started(){
 void renderGPSDebug(RTC_1_TIME_DATE *now){
   RTC_1_TIME_DATE utc_time = *now;
   char pe[64];
-  sprintf(pe,"phase error: %i",phase_error);
+  sprintf(pe,"phase error: %llu",phase_error);
   compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
 
   offset_time(&utc_time,-global_prefs.prefs_data.utc_offset);
@@ -122,7 +122,7 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
 //  compileString(time_string,255,210,MAIN_BUFFER,2,OVERWRITE); 
   sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
   compileString(time_string,255,144,MAIN_BUFFER,1,OVERWRITE); 
-  sprintf(pe,"phase error: %i",phase_error);
+  sprintf(pe,"phase error: %llu",phase_error);
   compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
 
 
