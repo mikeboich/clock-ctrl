@@ -105,8 +105,8 @@ void wave_started(){
 void renderGPSDebug(RTC_1_TIME_DATE *now){
   RTC_1_TIME_DATE utc_time = *now;
   char pe[64];
-  sprintf(pe,"phase error: %llu",phase_error);
-  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
+//  sprintf(pe,"phase error: %Lu",phase_error);
+//  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
 
   offset_time(&utc_time,-global_prefs.prefs_data.utc_offset);
   char time_string[32];
@@ -122,7 +122,7 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
 //  compileString(time_string,255,210,MAIN_BUFFER,2,OVERWRITE); 
   sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
   compileString(time_string,255,144,MAIN_BUFFER,1,OVERWRITE); 
-  sprintf(pe,"phase error: %llu",phase_error);
+  sprintf(pe,"phase error: %Lu",phase_error);
   compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
 
 
