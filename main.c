@@ -117,11 +117,11 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
     
         
   sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
-  compileString(time_string,255,144,MAIN_BUFFER,1,OVERWRITE); 
-  sprintf(pe,"phase error: %Lu",phase_error);
-  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
-  sprintf(pe,"minute err: %Lu",minute_error);
-  compileString(pe,255,128-32,MAIN_BUFFER,1,APPEND);
+  compileString(time_string,255,128,MAIN_BUFFER,1,OVERWRITE); 
+//  sprintf(pe,"phase error: %Lu",phase_error);
+//  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
+//  sprintf(pe,"minute err: %Lu",minute_error);
+//  compileString(pe,255,128-32,MAIN_BUFFER,1,APPEND);
 
 
 }
@@ -152,8 +152,10 @@ void drawClockHands(int h, int m, int s){
   float minute_angle = (m/60.0) * M_PI*2.0 + (s/60.0)*(M_PI/30.0);  // minute hand angle
   float second_angle = ((s/60.0))*M_PI*2.0;
 
-  float fractional_angle = 2*M_PI* (((cycle_count - minute_error)/(60*31250.0)));
-  second_angle = fractional_angle;
+  if(minute_error){
+    float smooth_angle = 2*M_PI* (((cycle_count - minute_error)/(60*31250.0)));
+    second_angle = smooth_angle;
+}
 
 
   // not doing the 2-d hands yet, just lines
