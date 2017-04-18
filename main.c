@@ -54,7 +54,7 @@ volatile int times_to_loop = 0;
 volatile uint64_t cycle_count=0;  // poor man's timer
 int frame_toggle = 0;   // performance measurement
 volatile uint64_t phase_error=0;            // difference between (cycle_count % 31250) and 1 pps edge
-volatile int seconds_adjustment=0;            // difference between (cycle_count % 60*31250) and 1 pps edge
+volatile uint64_t minute_error=0;            // difference between (cycle_count % 60*31250) and 1 minute boundary
 
 int last_refresh=0,loops_per_frame=0;   // for performance measurement
 
@@ -104,7 +104,7 @@ void wave_started(){
 
 void renderGPSDebug(RTC_1_TIME_DATE *now){
   RTC_1_TIME_DATE utc_time = *now;
-  char pe[64];
+  char pe[64],me[64];
 
   offset_time(&utc_time,-global_prefs.prefs_data.utc_offset);
   char time_string[32];
@@ -120,6 +120,8 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
   compileString(time_string,255,144,MAIN_BUFFER,1,OVERWRITE); 
   sprintf(pe,"phase error: %Lu",phase_error);
   compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
+  sprintf(pe,"minute err: %Lu",minute_error);
+  compileString(pe,255,128-32,MAIN_BUFFER,1,APPEND);
 
 
 }
@@ -150,8 +152,8 @@ void drawClockHands(int h, int m, int s){
   float minute_angle = (m/60.0) * M_PI*2.0 + (s/60.0)*(M_PI/30.0);  // minute hand angle
   float second_angle = ((s/60.0))*M_PI*2.0;
 
-//  float fractional_angle = 2*M_PI*(cycle_count-seconds_adjustment/60.0)/31250.0/60.0;
-//  second_angle = fractional_angle;
+  float fractional_angle = 2*M_PI* (((cycle_count - minute_error)/(60*31250.0)));
+  second_angle = fractional_angle;
 
 
   // not doing the 2-d hands yet, just lines
@@ -708,7 +710,7 @@ void initTime(){
   offset_time(the_time,-7);
 
   RTC_1_WriteTime(the_time);
-  RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
+  RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK | RTC_1_INTERVAL_MIN_MASK);
   RTC_1_EnableInt();
   RTC_1_Start(); //done in gps_init at the moment...  
 }

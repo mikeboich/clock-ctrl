@@ -57,11 +57,9 @@ static void RTC_1_EverySecondHandler(void)
   #include "LED_Pin.h"
   #include "LED_Reg.h"
   extern volatile uint64_t phase_error,cycle_count;
-  extern int seconds_adjustment;        // for sweep second hand.
   //extern int second_has_elapsed;
   
   phase_error = (cycle_count % 31250);
-  seconds_adjustment = cycle_count % (31250*60);
   //LED_Reg_Write(!LED_Pin_Read());
   LED_Reg_Write(0x1);
     /* `#END` */
@@ -92,10 +90,14 @@ static void RTC_1_EveryMinuteHandler(void)
     /* `#START EVERY_MINUTE_HANDLER_CODE` */
 
     /* `#END` */
-
+    extern uint64_t minute_error;
+    extern volatile uint64_t cycle_count;
+    #define TICKS_PER_MINUTE 60*31250
     #ifdef RTC_1_EVERY_MINUTE_HANDLER_CALLBACK
         RTC_1_EveryMinuteHandler_Callback();
     #endif /* RTC_1_EVERY_MINUTE_HANDLER_CALLBACK */    
+    minute_error = (cycle_count % (TICKS_PER_MINUTE));
+    
 }
 
 

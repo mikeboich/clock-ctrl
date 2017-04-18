@@ -71,7 +71,8 @@ void init_gps(){
      send_command("$PSRF103,06,00,00,01");
 //send_command("$PSRF103,00,01,00,01");
     //hard_command();
-    RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
+    //RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK);
+    RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK | RTC_1_INTERVAL_MIN_MASK);
     RTC_1_Start();
     RTC_1_Stop();
 }
