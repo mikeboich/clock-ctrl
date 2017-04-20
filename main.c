@@ -117,7 +117,16 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
     
         
   sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
-  compileString(time_string,255,128,MAIN_BUFFER,1,OVERWRITE); 
+  compileString(time_string,255,128-32,MAIN_BUFFER,1,OVERWRITE); 
+
+  int month = utc_time.Month;  
+  int day = utc_time.DayOfMonth;
+  int year = utc_time.Year;
+
+  sprintf(date_string,"%02i/%02i/%04i",month,day,year);
+  compileString(date_string,255,128+32,MAIN_BUFFER,1,APPEND); 
+
+  
 //  sprintf(pe,"phase error: %Lu",phase_error);
 //  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
 //  sprintf(pe,"minute err: %Lu",minute_error);
@@ -622,7 +631,7 @@ void display_buffer(uint8 which_buffer){
         current_phase = 0x2;
 	break;
       }
-#define SGI_TEACH   
+#undef SGI_TEACH   
 #ifdef SGI_TEACH    
       // trying SGITeach brightness algorithm, vs my stupid very simple one:
 #define SQR(a) a*a
