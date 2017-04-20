@@ -88,8 +88,6 @@ static void RTC_1_EveryMinuteHandler(void)
 {
     /*  Place your every minute handler code here. */
     /* `#START EVERY_MINUTE_HANDLER_CODE` */
-
-    /* `#END` */
     extern uint64_t minute_error;
     extern volatile uint64_t cycle_count;
     #define TICKS_PER_MINUTE 60*31250
@@ -97,7 +95,12 @@ static void RTC_1_EveryMinuteHandler(void)
         RTC_1_EveryMinuteHandler_Callback();
     #endif /* RTC_1_EVERY_MINUTE_HANDLER_CALLBACK */    
     minute_error = (cycle_count % (TICKS_PER_MINUTE));
-    
+
+    /* `#END` */
+
+    #ifdef RTC_1_EVERY_MINUTE_HANDLER_CALLBACK
+        RTC_1_EveryMinuteHandler_Callback();
+    #endif /* RTC_1_EVERY_MINUTE_HANDLER_CALLBACK */    
 }
 
 
