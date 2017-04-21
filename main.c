@@ -36,9 +36,9 @@ volatile int pps_available=0;
 
 
 typedef enum{textMode,flwMode,analogMode1, secondsOnly,pongMode,pendulumMode,trump_elapsed_mode, \
-    trumpMode,xmasMode,wordClockMode,analogMode0,analogMode2,gpsDebugMode,menuMode} clock_type;
-int nmodes = 13;
-int n_auto_modes=10;
+    trumpMode,xmasMode,wordClockMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
+int nmodes = 14;
+int n_auto_modes=11;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -282,6 +282,37 @@ void render_xmas_buffer(RTC_1_TIME_DATE *now){
     
     countdown_to_event(now,end_time,"Shopping Days","until Christmas!");
 }
+
+double mod_julian_date(RTC_1_TIME_DATE *now){
+    RTC_1_TIME_DATE local_now = *now;
+    offset_time(&local_now,-global_prefs.prefs_data.utc_offset);  // work un utc
+    int y,m,d;
+    y = local_now.Year;
+    m = local_now.Month;
+    d = local_now.DayOfMonth;
+    if(m < 3){
+        y = y-1;
+        m = m+12;
+        }
+    int a = trunc(y/100);
+    int b = 2 - a + trunc(a/4);
+    double julian_day = trunc(365.25 * (y + 4716)) +  trunc(30.6001 * (m + 1)) + d + b - 1524.5;
+    
+    int seconds_past_midnight = 3600*local_now.Hour + 60*local_now.Min + local_now.Sec;
+    double fraction = seconds_past_midnight / 86400.0;
+    return julian_day + fraction - 2400000.5;
+}
+// renders the modifed Julian date, which Julian date - 2400000.5:
+void render_julian_date(RTC_1_TIME_DATE *now){
+    double jd = mod_julian_date(now);
+    char jd_str[32];
+    
+    sprintf(jd_str,"Modified Julian Date:");
+    compileString(jd_str,255,128+32,MAIN_BUFFER,1,OVERWRITE);
+    sprintf(jd_str,"%.5f",jd);
+    compileString(jd_str,255,128-32,MAIN_BUFFER,1,APPEND);
+}
+
 void render_word_clock(RTC_1_TIME_DATE *now){
     char *strs[] = {"o'clock","b"};
     char *hour_strings[] = {"twelve","one","two","three","four","five","six","seven","eight","nine","ten","eleven"};
@@ -920,6 +951,10 @@ int main()
 
     case wordClockMode:
       render_word_clock(now);
+      break;
+
+    case julianDate:
+      render_julian_date(now);
       break;
 
     case menuMode:
