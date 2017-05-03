@@ -63,7 +63,7 @@ int last_refresh=0,loops_per_frame=0;   // for performance measurement
    and counts the number of drawing passes/segment.
 */
 
-CY_ISR_PROTO(wave_started);
+CY_ISR_PROTO(wave_started);  // test comment
 
 void wave_started(){
   isr_1_ClearPending();       // clear the interrupt
@@ -109,6 +109,7 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
   offset_time(&utc_time,-global_prefs.prefs_data.utc_offset);
   char time_string[32];
   char day_of_week_string[12];
+  char uptime_string[64];
   char date_string[15];
 
   int seconds = utc_time.Sec;
@@ -117,14 +118,17 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
     
         
   sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
-  compileString(time_string,255,128-32,MAIN_BUFFER,1,OVERWRITE); 
+  compileString(time_string,255,128,MAIN_BUFFER,1,OVERWRITE); 
 
   int month = utc_time.Month;  
   int day = utc_time.DayOfMonth;
   int year = utc_time.Year;
 
   sprintf(date_string,"%02i/%02i/%04i",month,day,year);
-  compileString(date_string,255,128+32,MAIN_BUFFER,1,APPEND); 
+  compileString(date_string,255,128+64,MAIN_BUFFER,1,APPEND); 
+
+  sprintf(uptime_string,"up %.5f days",cycle_count/(31250*86400.0));
+  compileString(uptime_string,255,128-64,MAIN_BUFFER,1,APPEND);
 
   
 //  sprintf(pe,"phase error: %Lu",phase_error);
@@ -138,7 +142,7 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
 // Show a four letter word:
 void render_flw(){
   char *rw;
-  static int lastUpdate=0;
+  static uint64_t lastUpdate=0;
     
   if(cycle_count-lastUpdate > 31250){  // one second update interval..
     rw = random_word();
@@ -887,7 +891,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test2();
+  //hw_test2();
 
   // The main loop:
   for(;;){

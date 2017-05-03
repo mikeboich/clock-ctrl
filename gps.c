@@ -16,6 +16,7 @@
 #include "UART_1.h"
 #include "RTC_1.h"
 #include "prefs.h"
+#include "time.h"
 
 #define NEWLINE 0x0A
 #define CR 0x0D
@@ -234,6 +235,8 @@ void increment_date(RTC_1_TIME_DATE *t,int incr){
     
     
 }
-
-
+// testing to see if fields are present in tm struct:
+void test(){
+    struct tm tm_test={.tm_mon=11, .tm_isdst=1};
+}
 /* [] END OF FILE */
