@@ -891,7 +891,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  //hw_test2();
+  hw_test2();
 
   // The main loop:
   for(;;){
@@ -908,17 +908,14 @@ int main()
 
     case gpsDebugMode:
       renderGPSDebug(now);
-      display_buffer(MAIN_BUFFER);
       break;
     
     case flwMode:
       render_flw();
-      display_buffer(MAIN_BUFFER);
       break;
     
     case textMode:
       render_text_clock(now);
-      display_buffer(0);
       break;
     
     case analogMode0:
