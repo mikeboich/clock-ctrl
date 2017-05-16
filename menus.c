@@ -31,7 +31,7 @@ extern int verbose_mode;
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
-menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Test","Test Pattern","Sync to 60Hz","Cancel"},
+menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Set","Test Pattern","Sync to 60Hz","Cancel"},
 		  .n_items = 6,
 		  .highlighted_item_index = -1,
 		  .menu_number = 0};
@@ -175,7 +175,6 @@ void set_the_time(){
 void char_test(){
   compileString("abcdefghijklm",255,230,0,1,OVERWRITE);
   compileString("nopqrstuvwxyz",255,180,0,1,APPEND);
-  //clear_buffer(MAIN_BUFFER);
   compileString("~`!@#$%^&*()_-+={}",255,130,0,1,APPEND);
   char str4[] = {128,129,130,131,132,0};  //Japanese extended characters
   compileString(str4,255,60,0,2,APPEND);

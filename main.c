@@ -817,8 +817,8 @@ void hw_test2(){
 // Small circle test:
   while(radius < 64){
     clear_buffer(MAIN_BUFFER);
-    for(x=radius;x<256-radius;x+=2*radius)
-      for(y=radius;y<256-radius;y+=2*radius){
+    for(x=radius;x<256-radius+1;x+=2*radius)
+      for(y=radius;y<256-radius+1;y+=2*radius){
         circle(x,y,radius,MAIN_BUFFER);
       }
     while(!button_clicked){
