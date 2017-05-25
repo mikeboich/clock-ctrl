@@ -18,14 +18,15 @@
 *******************************************************************************/
 
 #include <device.h>
+#include <stdio.h>
 #include "prefs.h"
 
 /* prefs variables are stored in eeprom when power is off: */
 pref_object global_prefs;
 
 void load_prefs(){
-    int offset = 0;
-    while(offset <N_PREFS){
+    uint offset = 0;
+    while(offset <sizeof(pref_object)){
         global_prefs.prefs_bytes[offset] = EEPROM_1_ReadByte(offset);
         CyDelay(1);
         offset +=1;
@@ -39,6 +40,9 @@ int init_prefs(){
     flag = EEPROM_1_ReadByte(PREFS_FLAGS_OFFSET);
     if(flag == PREFS_INITIALIZED){
         load_prefs();       // copy prefs into the prefs struct
+//  uncomment the 2 lines below for one-time initialization of ESN:
+//        sprintf(global_prefs.prefs_data.esn,"P000");
+//        flush_prefs();
         return(1);
     }
     else{
@@ -53,9 +57,9 @@ int init_prefs(){
 
 
 void flush_prefs(){
-    int offset=0;
+    uint offset=0;
     EEPROM_1_UpdateTemperature();
-    while(offset < N_PREFS){
+    while(offset < sizeof(pref_object)){
       EEPROM_1_WriteByte(global_prefs.prefs_bytes[offset],offset);
       offset += 1;
     }

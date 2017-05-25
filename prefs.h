@@ -23,13 +23,14 @@
 #define SWITCH_INTERVAL_OFFSET 2
 #define PREFS_INITIALIZED 0xaa
 
-#define N_PREFS 3  
+#define N_PREFS 20  
 
 typedef struct prefsStruct {
     uint8 prefs_initialized;
     int8 utc_offset;
     uint8 switch_interval;
     uint8 sync_to_60Hz;     // 0 = no sync, non-zero = sync to edges of 60Hz clock
+    char  esn[16];
 } prefs;
 
 typedef union {prefs prefs_data;

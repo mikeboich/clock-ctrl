@@ -111,24 +111,27 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
   char day_of_week_string[12];
   char uptime_string[64];
   char date_string[15];
+  char esn_string[32];
 
   int seconds = utc_time.Sec;
   int minutes = utc_time.Min;
   int hours = utc_time.Hour;
-    
-        
+         
   sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
-  compileString(time_string,255,128,MAIN_BUFFER,1,OVERWRITE); 
+  compileString(time_string,255,96+64,MAIN_BUFFER,1,OVERWRITE); 
 
   int month = utc_time.Month;  
   int day = utc_time.DayOfMonth;
   int year = utc_time.Year;
 
   sprintf(date_string,"%02i/%02i/%04i",month,day,year);
-  compileString(date_string,255,128+64,MAIN_BUFFER,1,APPEND); 
+  compileString(date_string,255,96+128,MAIN_BUFFER,1,APPEND); 
 
   sprintf(uptime_string,"up %.5f days",cycle_count/(31250*86400.0));
-  compileString(uptime_string,255,128-64,MAIN_BUFFER,1,APPEND);
+  compileString(uptime_string,255,96,MAIN_BUFFER,1,APPEND);
+
+  sprintf(esn_string,"ESN: %s",global_prefs.prefs_data.esn);
+  compileString(esn_string,255,32,MAIN_BUFFER,1,APPEND);
 
   
 //  sprintf(pe,"phase error: %Lu",phase_error);
