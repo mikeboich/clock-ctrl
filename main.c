@@ -25,6 +25,7 @@
 #include "max509.h"
 #include "fourletter.h"
 #include "gps.h"
+#include "ds3231.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -112,13 +113,14 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
   char uptime_string[64];
   char date_string[15];
   char esn_string[32];
+  char ds3231_string[32];
 
   int seconds = utc_time.Sec;
   int minutes = utc_time.Min;
   int hours = utc_time.Hour;
          
   sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
-  compileString(time_string,255,96+64,MAIN_BUFFER,1,OVERWRITE); 
+  //compileString(time_string,255,96+64,MAIN_BUFFER,1,OVERWRITE); 
 
   int month = utc_time.Month;  
   int day = utc_time.DayOfMonth;
@@ -132,6 +134,10 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
 
   sprintf(esn_string,"ESN: %s",global_prefs.prefs_data.esn);
   compileString(esn_string,255,32,MAIN_BUFFER,1,APPEND);
+
+  sprintf(ds3231_string,"DS3231: %ld",get_DS3231_time());
+  compileString(ds3231_string,255,160,MAIN_BUFFER,1,APPEND);
+
 
   
 //  sprintf(pe,"phase error: %Lu",phase_error);
@@ -848,6 +854,9 @@ int main()
   /* Start up the SPI interface: */
   SPIM_1_Start();
   CyDelay(10);
+
+  /* Start up i2c for DS3231 clock */
+  I2C_1_Start();
     
   /* Start VDACs */
   VDAC8_1_Start();
