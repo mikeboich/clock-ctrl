@@ -25,8 +25,6 @@
 uint8 days_in_month[2][12] = {{31,28,31,30,31,30,31,31,30,31,30,31},\
                             {31,29,31,30,31,30,31,31,30,31,30,31}};
 
-int8 utc_offset = -7;
-
 char *field_n(uint8 n, char *sentence){
     char *c = sentence;
     while(n && *c){
