@@ -22,6 +22,9 @@
 #include "prefs.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
+
+#include "DS3231.h"
 
 extern int cycle_count;
 extern int verbose_mode;
@@ -158,11 +161,16 @@ void set_the_time(){
     if(button_clicked){
       button_clicked=0;  // consume the click..
       if(selected_field==6){
-	RTC_1_TIME_DATE *the_time = RTC_1_ReadTime();
-	RTC_1_DisableInt();
-	pack_time(the_time,time_params);
-	RTC_1_WriteTime(the_time);
-	RTC_1_EnableInt();
+        struct tm utime;
+        utime.tm_hour = time_params[3];
+        utime.tm_min = time_params[4];
+        utime.tm_sec = time_params[5];
+        utime.tm_mon = time_params[0]-1;
+        utime.tm_mday = time_params[1];
+        utime.tm_year = time_params[2]-1900;
+        utime.tm_isdst = 0;
+        time_t t = mktime(&utime);
+        setDS3231(t);
 	done=1;
       }
       else {

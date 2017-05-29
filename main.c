@@ -69,6 +69,7 @@ CY_ISR_PROTO(wave_started);  // test comment
 void wave_started(){
   isr_1_ClearPending();       // clear the interrupt
   cycle_count++;
+
   switch(current_state){
 
   case hw_testing:
@@ -121,7 +122,7 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
          
   sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
   //compileString(time_string,255,96+64,MAIN_BUFFER,1,OVERWRITE); 
-
+  clear_buffer(MAIN_BUFFER);
   int month = utc_time.Month;  
   int day = utc_time.DayOfMonth;
   int year = utc_time.Year;
@@ -135,7 +136,7 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
   sprintf(esn_string,"ESN: %s",global_prefs.prefs_data.esn);
   compileString(esn_string,255,32,MAIN_BUFFER,1,APPEND);
 
-  sprintf(ds3231_string,"DS3231: %ld",get_DS3231_time());
+  sprintf(ds3231_string,"RTC: %ld",get_DS3231_time());
   compileString(ds3231_string,255,160,MAIN_BUFFER,1,APPEND);
 
 
