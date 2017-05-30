@@ -18,6 +18,8 @@
 #include "prefs.h"
 #include "time.h"
 
+#include "ds3231.h"
+
 #define NEWLINE 0x0A
 #define CR 0x0D
 
@@ -95,34 +97,35 @@ void set_rtc_to_gps(){
     static int seed = 0;
     static int time_set=0;
 
-    RTC_1_TIME_DATE *rtc_time = RTC_1_ReadTime();
-    RTC_1_TIME_DATE gps_time;
+    //RTC_1_TIME_DATE *rtc_time = RTC_1_ReadTime();
+    time_t rtc_time = get_DS3231_time();
+    //RTC_1_TIME_DATE gps_time;
+    
+    struct tm tm_gps,tm_rtc;
+    tm_rtc = *gmtime(&rtc_time);
 
-    gps_time.Hour = a_to_uint8(field_n(1,sentence));
-    gps_time.Min = a_to_uint8(field_n(1,sentence)+2);
-    gps_time.Sec = a_to_uint8(field_n(1,sentence)+4); 
-    offset_time(&gps_time,global_prefs.prefs_data.utc_offset);  // so we can compare to RTC, which is already offset
+    tm_gps.tm_hour = a_to_uint8(field_n(1,sentence));
+    tm_gps.tm_min = a_to_uint8(field_n(1,sentence)+2);
+    tm_gps.tm_sec = a_to_uint8(field_n(1,sentence)+4); 
+    //offset_time(&gps_time,global_prefs.prefs_data.utc_offset);  // so we can compare to RTC, which is already offset
    
-    if(time_set && gps_time.Sec!=0){
-        if(gps_time.Sec-1 == rtc_time->Sec && gps_time.Min==rtc_time->Min && gps_time.Hour==rtc_time->Hour)
+    if(time_set && tm_gps.tm_sec!=0){
+        if(tm_gps.tm_sec-1 == tm_rtc.tm_sec && tm_gps.tm_min==tm_rtc.tm_min && tm_gps.tm_hour==tm_rtc.tm_hour)
           return;  // do nothing in this case
     }
     // if we reach this point, we need to set the time:
+    tm_gps.tm_mday = a_to_uint8(field_n(9,sentence));
+    tm_gps.tm_mon = a_to_uint8(field_n(9,sentence+2))-1;  //  map 1..12 to 0..11
+    tm_gps.tm_year = 2000 + a_to_uint8(field_n(9,sentence+4));
+    time_t gps_time = mktime(&tm_gps);
+    setDS3231(gps_time);
+    //offset_time(rtc_time,global_prefs.prefs_data.utc_offset);
     
-    rtc_time->Hour = a_to_uint8(field_n(1,sentence));
-    rtc_time->Min = a_to_uint8(field_n(1,sentence)+2);
-    rtc_time->Sec = a_to_uint8(field_n(1,sentence)+4); 
-    
-    rtc_time->DayOfMonth = a_to_uint8(field_n(9,sentence));
-    rtc_time->Month = a_to_uint8(field_n(9,sentence)+2);
-    rtc_time->Year = 2000+ a_to_uint8(field_n(9,sentence)+4);
-    
-    offset_time(rtc_time,global_prefs.prefs_data.utc_offset);
-    RTC_1_Init();
+    // INTERIM code to set DS3231 to GPS
     
     // create a seed for the random number generator based on time and date:
     if(seed==0){
-        seed = rtc_time->Sec+60*rtc_time->Min+3600*rtc_time->Hour+86400*rtc_time->DayOfYear;
+        seed = tm_gps.tm_sec+60*tm_gps.tm_min+3600*tm_gps.tm_hour+86400*tm_gps.tm_yday;
         srand(seed);
     }
     time_set=1;

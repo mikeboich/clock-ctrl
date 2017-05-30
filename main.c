@@ -104,11 +104,9 @@ void wave_started(){
   }
 }
 
-void renderGPSDebug(RTC_1_TIME_DATE *now){
-  RTC_1_TIME_DATE utc_time = *now;
-  char pe[64],me[64];
+void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
+   char pe[64],me[64];
 
-  offset_time(&utc_time,-global_prefs.prefs_data.utc_offset);
   char time_string[32];
   char day_of_week_string[12];
   char uptime_string[64];
@@ -116,16 +114,16 @@ void renderGPSDebug(RTC_1_TIME_DATE *now){
   char esn_string[32];
   char ds3231_string[32];
 
-  int seconds = utc_time.Sec;
-  int minutes = utc_time.Min;
-  int hours = utc_time.Hour;
+  int seconds = utc_bdt->tm_sec;
+  int minutes = utc_bdt->tm_min;
+  int hours = utc_bdt->tm_hour;
          
   sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
   //compileString(time_string,255,96+64,MAIN_BUFFER,1,OVERWRITE); 
   clear_buffer(MAIN_BUFFER);
-  int month = utc_time.Month;  
-  int day = utc_time.DayOfMonth;
-  int year = utc_time.Year;
+  int month = utc_bdt->tm_mon+1;   // map 0..11 to 1..12
+  int day = utc_bdt->tm_mday;
+  int year = utc_bdt->tm_year+1900;
 
   sprintf(date_string,"%02i/%02i/%04i",month,day,year);
   compileString(date_string,255,96+128,MAIN_BUFFER,1,APPEND); 
@@ -190,7 +188,7 @@ void drawClockHands(int h, int m, int s){
 
 }
 
-void renderAnalogClockBuffer(RTC_1_TIME_DATE *now){
+void renderAnalogClockBuffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   int i;
   float angle=0.0;
   static char *nums[12] = {"12","1","2","3","4","5","6","7","8","9","10","11"};
@@ -203,7 +201,7 @@ void renderAnalogClockBuffer(RTC_1_TIME_DATE *now){
   compileString("3",220,120,MAIN_BUFFER,1,APPEND);
   compileString("9",20,120,MAIN_BUFFER,1,APPEND);
     
-  drawClockHands(now->Hour,now->Min,now->Sec);
+  drawClockHands(local_bdt->tm_hour,local_bdt->tm_min,local_bdt->tm_sec);
 
   if(display_mode == analogMode0){
     // experimental one revoultion/second widget:
@@ -216,24 +214,16 @@ void renderAnalogClockBuffer(RTC_1_TIME_DATE *now){
 asm (".global _scanf_float");       // forces floating point formatting code to load
 // for displaying things like "400 days of Trump to go!" or "332 shopping days till Christmas!":
 // the 
-void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0, char *caption1){
+void countdown_to_event(time_t now, time_t  event_time,char *caption0, char *caption1){
     time_t current_time;
     struct tm tm_now;
     double seconds_remaining;
     double days_remaining;
     char seconds_string[64] = "";
     
-    tm_now.tm_year = now->Year-1900;
-    tm_now.tm_mon = now->Month-1;       // months are 0..11 rather than 1..12!
-    tm_now.tm_mday = now->DayOfMonth;
-    tm_now.tm_hour = now->Hour;
-    tm_now.tm_min = now->Min;
-    tm_now.tm_sec = now->Sec;
-    tm_now.tm_isdst=0;
-    current_time = mktime(&tm_now);
     
     
-    seconds_remaining = difftime(event_time,current_time);
+    seconds_remaining = difftime(event_time,now);
     days_remaining = fabs(seconds_remaining/86400.0);  
     
     
@@ -245,7 +235,7 @@ void countdown_to_event(RTC_1_TIME_DATE *now, time_t  event_time,char *caption0,
     
     
 }
-void render_trump_elapsed_buffer(RTC_1_TIME_DATE *now){
+void render_trump_elapsed_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     time_t end_time,start_time;
     struct tm end_of_trump,start_of_trump;
     end_of_trump.tm_year = 2021-1900;
@@ -263,7 +253,7 @@ void render_trump_elapsed_buffer(RTC_1_TIME_DATE *now){
     countdown_to_event(now,start_time,"Days of Trump","elapsed");
 }
 
-void render_trump_buffer(RTC_1_TIME_DATE *now){
+void render_trump_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     time_t end_time,start_time;
     struct tm end_of_trump,start_of_trump;
     start_of_trump.tm_year = end_of_trump.tm_year = 2021-1900;
@@ -279,17 +269,17 @@ void render_trump_buffer(RTC_1_TIME_DATE *now){
     
     countdown_to_event(now,end_time,"Days of Trump","remaining");
 }
-void render_xmas_buffer(RTC_1_TIME_DATE *now){
+void render_xmas_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     time_t end_time;
     struct tm xmas_time;
     
-    xmas_time.tm_year = now->Year-1900;
+    xmas_time.tm_year = local_bdt->tm_year;
     xmas_time.tm_mon = 12-1;   // months are 0..11 rather than 1..12!
     xmas_time.tm_mday = 25;
     xmas_time.tm_hour = 0;  //  midnight local time
     xmas_time.tm_min = 0;
     xmas_time.tm_sec = 0;
-    if(now->Month == 12 && now->DayOfMonth>25){
+    if(local_bdt->tm_mon == 11 && local_bdt->tm_mday > 25){
         xmas_time.tm_year += 1;
     }
     end_time = mktime(&xmas_time);
@@ -297,13 +287,11 @@ void render_xmas_buffer(RTC_1_TIME_DATE *now){
     countdown_to_event(now,end_time,"Shopping Days","until Christmas!");
 }
 
-double mod_julian_date(RTC_1_TIME_DATE *now){
-    RTC_1_TIME_DATE local_now = *now;
-    offset_time(&local_now,-global_prefs.prefs_data.utc_offset);  // work un utc
+double mod_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     int y,m,d;
-    y = local_now.Year;
-    m = local_now.Month;
-    d = local_now.DayOfMonth;
+    y = local_bdt->tm_year;
+    m = local_bdt->tm_mon;
+    d = local_bdt->tm_mday;
     if(m < 3){
         y = y-1;
         m = m+12;
@@ -312,13 +300,13 @@ double mod_julian_date(RTC_1_TIME_DATE *now){
     int b = 2 - a + trunc(a/4);
     double julian_day = trunc(365.25 * (y + 4716)) +  trunc(30.6001 * (m + 1)) + d + b - 1524.5;
     
-    int seconds_past_midnight = 3600*local_now.Hour + 60*local_now.Min + local_now.Sec;
+    int seconds_past_midnight = 3600*local_bdt->tm_hour + 60*local_bdt->tm_min + local_bdt->tm_sec;
     double fraction = seconds_past_midnight / 86400.0;
     return julian_day + fraction - 2400000.5;
 }
 // renders the modifed Julian date, which Julian date - 2400000.5:
-void render_julian_date(RTC_1_TIME_DATE *now){
-    double jd = mod_julian_date(now);
+void render_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
+    double jd = mod_julian_date(now,local_bdt,utc_bdt);
     char jd_str[32];
     
     sprintf(jd_str,"Modified Julian Date:");
@@ -327,7 +315,7 @@ void render_julian_date(RTC_1_TIME_DATE *now){
     compileString(jd_str,255,128-32,MAIN_BUFFER,1,APPEND);
 }
 
-void render_word_clock(RTC_1_TIME_DATE *now){
+void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     char *strs[] = {"o'clock","b"};
     char *hour_strings[] = {"twelve","one","two","three","four","five","six","seven","eight","nine","ten","eleven"};
     char *minute_strings[] = {"not-used","five","ten","a quarter","twenty","twenty-five"};
@@ -336,13 +324,13 @@ void render_word_clock(RTC_1_TIME_DATE *now){
     
     char time_string[3][64];
     
-    if(now->Min > 57 || now->Min<3){
-        if(now->Min==0)
+    if(local_bdt->tm_min > 57 || local_bdt->tm_min < 3){
+        if(local_bdt->tm_min==0)
             sprintf(time_string[0],"It's exactly");
         else
             sprintf(time_string[0],"It's about");
         compileString(time_string[0],255,160,MAIN_BUFFER,2,OVERWRITE);
-        int the_hour = now->Min > 56 ? now->Hour+1 : now->Hour;
+        int the_hour = local_bdt->tm_min > 56 ? local_bdt->tm_hour+1 : local_bdt->tm_hour;
         sprintf(time_string[0],"%s ",hour_strings[the_hour % 12]);
         compileString(time_string[0],255,108,MAIN_BUFFER,2,APPEND);
         sprintf(time_string[0],"O'clock");
@@ -350,49 +338,49 @@ void render_word_clock(RTC_1_TIME_DATE *now){
         return;
     }
     
-    if(now->Min >=3 && now->Min <=57){
-        if(now->Min > 27 && now->Min < 33){
-            if(now->Min==30)
+    if(local_bdt->tm_min >=3 && local_bdt->tm_min <=57){
+        if(local_bdt->tm_min > 27 && local_bdt->tm_min < 33){
+            if(local_bdt->tm_min ==30)
                 compileString("It's exactly",255,150,MAIN_BUFFER,2,OVERWRITE);
             else
                 compileString("It's about",255,150,MAIN_BUFFER,2,OVERWRITE);
                 
             compileString("half past",255,100,MAIN_BUFFER,2,APPEND);
-            sprintf(time_string[0],"%s",hour_strings[ now->Hour % 12]);
+            sprintf(time_string[0],"%s",hour_strings[ local_bdt->tm_hour % 12]);
             compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
             return;
         }
         else{
             // round to nearest 5 minutes:
-            int approx_minute = 5*(now->Min / 5);
+            int approx_minute = 5*(local_bdt->tm_min / 5);
             int past_until_index;
-            if((now->Min - approx_minute) > 2){
+            if((local_bdt->tm_min - approx_minute) > 2){
                 approx_minute += 5;
             }
-            exact = (approx_minute ==  now->Min);
+            exact = (approx_minute ==  local_bdt->tm_min);
             
             if(exact)
                 compileString("It's exactly",255,200,MAIN_BUFFER,2,OVERWRITE);
             else
                 compileString("It's about",255,200,MAIN_BUFFER,2,OVERWRITE);
-            if(now->Min <= 27){
+            if(local_bdt->tm_min <= 27){
                 past_until_index = approx_minute / 5;
                 sprintf(time_string[0],"%s",minute_strings[past_until_index]);
                 compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);
                 sprintf(time_string[0],"past");
                 compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);
-                sprintf(time_string[0],"%s",hour_strings[now->Hour % 12]);
+                sprintf(time_string[0],"%s",hour_strings[local_bdt->tm_hour % 12]);
                 compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
           
             }
-            if(now->Min >= 33){
+            if(local_bdt->tm_min >= 33){
                 approx_minute = 60-approx_minute;
                 past_until_index = approx_minute / 5;
                 sprintf(time_string[0],"%s",minute_strings[(approx_minute/5)]);
                 compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);                
                 sprintf(time_string[0],"'till");
                 compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);                
-                sprintf(time_string[0],"%s",hour_strings[((now->Hour+1)) % 12]);
+                sprintf(time_string[0],"%s",hour_strings[((local_bdt->tm_hour+1)) % 12]);
                 compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);                
             }
 /*           if(now->Min >= 28 && now->Min<=32){
@@ -539,7 +527,7 @@ void pong_update(){
     
 }
 
-void render_pong_buffer(pong_state the_state,RTC_1_TIME_DATE *the_time){
+void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, struct tm *utc_bdt){
   int x,y;
   
   clear_buffer(MAIN_BUFFER);
@@ -565,8 +553,8 @@ void render_pong_buffer(pong_state the_state,RTC_1_TIME_DATE *the_time){
     
   // draw the hours and minutes as two scores:
   char time_str[32];
-  int the_hour = the_time->Hour;
-  int the_minute = the_time->Min;
+  int the_hour = local_bdt->tm_hour;
+  int the_minute = local_bdt->tm_min;
   sprintf(time_str,"%02i",the_hour);
   compileString(time_str,36,200,MAIN_BUFFER,2,APPEND);
     
@@ -576,16 +564,16 @@ void render_pong_buffer(pong_state the_state,RTC_1_TIME_DATE *the_time){
 }
 
 /*  Pendulum Clock *** */
-void render_pendulum_buffer(RTC_1_TIME_DATE *the_time){
+void render_pendulum_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   char sec_str[32],hr_min_string[32];
   float x,y,i;
 
   // render the time in seconds
-  sprintf(sec_str,"%02i",the_time->Sec);
+  sprintf(sec_str,"%02i",local_bdt->tm_sec);
   compileString(sec_str,255,32,MAIN_BUFFER,2,OVERWRITE);
 
   // render the hour and minute:  
-  sprintf(hr_min_string,"%02i:%02i",the_time->Hour,the_time->Min);
+  sprintf(hr_min_string,"%02i:%02i",local_bdt->tm_hour,local_bdt->tm_min);
   compileString(hr_min_string,255,115,MAIN_BUFFER,3,APPEND);
 
   // render the pendulum shaft:  
@@ -601,19 +589,19 @@ void render_pendulum_buffer(RTC_1_TIME_DATE *the_time){
 
 }
 
-void render_text_clock(RTC_1_TIME_DATE *the_time){
+void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   char time_string[32];
   char day_of_week_string[12];
   char date_string[15];
 
-  int seconds = the_time->Sec;
-  int minutes = the_time->Min;
-  int hours = the_time->Hour;
+  int seconds = local_bdt->tm_sec;
+  int minutes = local_bdt->tm_min;
+  int hours = local_bdt->tm_hour;
     
-  int day_of_week = the_time->DayOfWeek;
-  int month = the_time->Month;
-  int day_of_month = the_time->DayOfMonth;
-  int year = the_time->Year;
+  int day_of_week = local_bdt->tm_wday;
+  int month = local_bdt->tm_mon;
+  int day_of_month = local_bdt->tm_mday;
+  int year = local_bdt->tm_year+1900;
         
   sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
   compileString(time_string,255,46,MAIN_BUFFER,3,OVERWRITE);
@@ -627,14 +615,14 @@ void render_text_clock(RTC_1_TIME_DATE *the_time){
   compileString(dw,255,202,MAIN_BUFFER,2,APPEND);
 }
 
-void renderSeconds(RTC_1_TIME_DATE *the_time){
+void renderSeconds(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     char sec_str[4];
     char hour_min_str[8];
     char day_of_week_str[16];
     
-    sprintf(hour_min_str,"%02i:%02i",the_time->Hour ,the_time->Min);
-    sprintf(sec_str,"%02i",the_time->Sec);
-    sprintf(day_of_week_str,"%s",day_names[the_time->DayOfWeek-1]);
+    sprintf(hour_min_str,"%02i:%02i",local_bdt->tm_hour ,local_bdt->tm_min);
+    sprintf(sec_str,"%02i",local_bdt->tm_sec);
+    sprintf(day_of_week_str,"%s",day_names[local_bdt->tm_wday]);
     compileString(sec_str,255,10,MAIN_BUFFER,2,OVERWRITE);
     compileString(hour_min_str,255,85,MAIN_BUFFER,4,APPEND);
     compileString(day_of_week_str,255,205,MAIN_BUFFER,2,APPEND);
@@ -911,7 +899,12 @@ int main()
     // test for now.  Turn off the LED part way into each 1 second period:
     if(((cycle_count-phase_error) % 31250) > 2000) LED_Reg_Write(0x0);
 
-    RTC_1_TIME_DATE *now = RTC_1_ReadTime();
+    //RTC_1_TIME_DATE *now = RTC_1_ReadTime();
+    time_t now = get_DS3231_time();
+    time_t to_local = now+global_prefs.prefs_data.utc_offset*3600;
+    struct tm local_bdt = *gmtime(&to_local);  // my way of getting local time
+    struct tm utc_bdt = *gmtime(&now);
+    
     /* Now render the appropriate contents into the display buffer, based upon 
        the current display_mode.  (Note that we're wasting lots of cpu cycles in some cases,
        since the display only changes when once/second for many of the display modes. 
@@ -920,7 +913,7 @@ int main()
     switch (display_mode){  
 
     case gpsDebugMode:
-      renderGPSDebug(now);
+      renderGPSDebug(now,&local_bdt,&utc_bdt);
       break;
     
     case flwMode:
@@ -928,47 +921,47 @@ int main()
       break;
     
     case textMode:
-      render_text_clock(now);
+      render_text_clock(now,&local_bdt,&utc_bdt);
       break;
     
     case analogMode0:
     case analogMode1:
     case analogMode2:
-      renderAnalogClockBuffer(now);
+      renderAnalogClockBuffer(now,&local_bdt,&utc_bdt);
       break;
     
     case secondsOnly:
-      renderSeconds(now);
+      renderSeconds(now,&local_bdt,&utc_bdt);
       break;
 
     case pongMode:
       pong_update();
-      render_pong_buffer(game_state,now);
+      render_pong_buffer(game_state, now,&local_bdt,&utc_bdt);
       break;
 
     case pendulumMode:
-      render_pendulum_buffer(now);
+      render_pendulum_buffer(now,&local_bdt,&utc_bdt);
       break;
 
     case trumpMode:
-      render_trump_buffer(now);
+      render_trump_buffer(now,&local_bdt,&utc_bdt);
       break;
 
 
     case trump_elapsed_mode:
-      render_trump_elapsed_buffer(now);
+      render_trump_elapsed_buffer(now,&local_bdt,&utc_bdt);
       break;
 
     case xmasMode:
-      render_xmas_buffer(now);
+      render_xmas_buffer(now,&local_bdt,&utc_bdt);
       break;
 
     case wordClockMode:
-      render_word_clock(now);
+      render_word_clock(now,&local_bdt,&utc_bdt);
       break;
 
     case julianDate:
-      render_julian_date(now);
+      render_julian_date(now,&local_bdt,&utc_bdt);
       break;
 
     case menuMode:
@@ -978,8 +971,8 @@ int main()
     display_buffer(MAIN_BUFFER);        // display whatever we put into the display buffer on the crt
 
     //update the  screen-saver offsets:
-    ss_x_offset = (now->Min) % 5;
-    ss_y_offset =(now->Min+2) % 5;
+    ss_x_offset = (local_bdt.tm_min) % 5;
+    ss_y_offset =(local_bdt.tm_min+2) % 5;
  
     if(verbose_mode){
       int elapsed = (cycle_count-last_refresh);

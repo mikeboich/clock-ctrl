@@ -21,6 +21,13 @@
 uint8_t bcd_to_bin(uint8_t in_byte){
     return(((in_byte & 0b11110000) >> 4) * 10 + (in_byte & 0b00001111));
 }
+
+uint8_t bin_to_BCD(uint8_t x){
+    uint8 hi_nybble = (x / 10);
+    uint lo_nybble = x % 10;
+    return((uint8_t) (hi_nybble << 4) | lo_nybble);
+}
+
 #define DS3231_Addr 0x68
 time_t get_DS3231_time(){
     time_t t;
@@ -50,30 +57,10 @@ time_t get_DS3231_time(){
     the_time.tm_mon = ((inbuf[5] & 0b00010000) >> 4) * 10 + (inbuf[5] & 0b00001111) - 1;  // months are 0..11 vs 1..12
     the_time.tm_year = bcd_to_bin(inbuf[6])+2000-1900;
     the_time.tm_isdst = 0;
-    
-   /* the_time.tm_sec = 00;
-    the_time.tm_min = 00;
-    the_time.tm_hour  = 00;
-    
-    the_time.tm_mday = 1;
-    the_time.tm_mon = 0;  // months are 0..11 vs 1..12
-    the_time.tm_year = 70;
-    the_time.tm_isdst = 0;
-    */
-    
-    //return(mktime(&the_time));
-    if(err==0){
-       return(mktime(&the_time)); 
-    }
-    else
-        {return((time_t) err);
-        }
+       
+    return(mktime(&the_time));
 }
-uint8_t bin_to_BCD(uint8_t x){
-    uint8 hi_nybble = (x / 10);
-    uint lo_nybble = x % 10;
-    return((uint8_t) (hi_nybble << 4) | lo_nybble);
-}
+
 
 void setDS3231(time_t time_now){
     struct tm time_components;
