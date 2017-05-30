@@ -606,7 +606,7 @@ void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   sprintf(time_string,"%i:%02i:%02i",hours,minutes,seconds);
   compileString(time_string,255,46,MAIN_BUFFER,3,OVERWRITE);
 
-  sprintf(date_string,"%s %i, %i",month_names[month-1],day_of_month,year);
+  sprintf(date_string,"%s %i, %i",month_names[month],day_of_month,year);
  
   compileString(date_string,255,142,MAIN_BUFFER,1,APPEND);
      

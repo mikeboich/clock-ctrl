@@ -83,7 +83,7 @@ int sentence_avail;
 char sentence[256] = "Hello World";
 
 // convert two successive decimal digits to an int:
-uint8 a_to_uint8(char *s){
+int a_to_int(char *s){
     return 10*(s[0] - 0x30) + (s[1] - 0x30);
 }
 
@@ -104,19 +104,20 @@ void set_rtc_to_gps(){
     struct tm tm_gps,tm_rtc;
     tm_rtc = *gmtime(&rtc_time);
 
-    tm_gps.tm_hour = a_to_uint8(field_n(1,sentence));
-    tm_gps.tm_min = a_to_uint8(field_n(1,sentence)+2);
-    tm_gps.tm_sec = a_to_uint8(field_n(1,sentence)+4); 
+    tm_gps.tm_hour = a_to_int(field_n(1,sentence));
+    tm_gps.tm_min = a_to_int(field_n(1,sentence)+2);
+    tm_gps.tm_sec = a_to_int(field_n(1,sentence)+4); 
     //offset_time(&gps_time,global_prefs.prefs_data.utc_offset);  // so we can compare to RTC, which is already offset
    
-    if(time_set && tm_gps.tm_sec!=0){
-        if(tm_gps.tm_sec-1 == tm_rtc.tm_sec && tm_gps.tm_min==tm_rtc.tm_min && tm_gps.tm_hour==tm_rtc.tm_hour)
-          return;  // do nothing in this case
-    }
+//    if(time_set && tm_gps.tm_sec!=0){
+//        if(tm_gps.tm_sec-1 == tm_rtc.tm_sec && tm_gps.tm_min==tm_rtc.tm_min && tm_gps.tm_hour==tm_rtc.tm_hour)
+//          return;  // do nothing in this case
+//    }
     // if we reach this point, we need to set the time:
-    tm_gps.tm_mday = a_to_uint8(field_n(9,sentence));
-    tm_gps.tm_mon = a_to_uint8(field_n(9,sentence+2))-1;  //  map 1..12 to 0..11
-    tm_gps.tm_year = 2000 + a_to_uint8(field_n(9,sentence+4));
+    tm_gps.tm_mday = a_to_int(field_n(9,sentence));
+    tm_gps.tm_mon = a_to_int(field_n(9,sentence+2))-1;  //  map 1..12 to 0..11
+    tm_gps.tm_year = 100 + a_to_int(field_n(9,sentence+4));
+    tm_gps.tm_isdst = 0;
     time_t gps_time = mktime(&tm_gps);
     setDS3231(gps_time);
     //offset_time(rtc_time,global_prefs.prefs_data.utc_offset);

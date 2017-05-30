@@ -38,7 +38,7 @@ time_t get_DS3231_time(){
     // Tell the DS3231 we want to read from byte 0:
     outbuf[0] = 0;      // sending just this 0 byte
     I2C_1_MasterWriteBuf(DS3231_Addr,outbuf,1,I2C_1_MODE_COMPLETE_XFER);
-    CyDelay(1);
+    CyDelay(2);
     
     err = I2C_1_MasterReadBuf(DS3231_Addr,inbuf,7,I2C_1_MODE_COMPLETE_XFER);
     
@@ -55,7 +55,7 @@ time_t get_DS3231_time(){
     
     the_time.tm_mday = ((inbuf[4] & 0b00110000) >> 4) *10 + (inbuf[4] & 0b00001111);
     the_time.tm_mon = ((inbuf[5] & 0b00010000) >> 4) * 10 + (inbuf[5] & 0b00001111) - 1;  // months are 0..11 vs 1..12
-    the_time.tm_year = bcd_to_bin(inbuf[6])+2000-1900;
+    the_time.tm_year = bcd_to_bin(inbuf[6])+ 100;  // DS3231 keeps only year mod 100. assume 2000-2100 range
     the_time.tm_isdst = 0;
        
     return(mktime(&the_time));
@@ -64,17 +64,13 @@ time_t get_DS3231_time(){
 
 void setDS3231(time_t time_now){
     struct tm time_components;
-    uint8_t out_buf[8];
+    uint8_t out_buf[16];
     uint8_t test_buf[8] = {0,33,34,35,36,37,38,39};
     
     time_components = *gmtime(&time_now);
-    // set the DS3231 internal pointer to 0:
-//    out_buf[0]=0;
-//    I2C_1_MasterWriteBuf(DS3231_Addr,out_buf,1,I2C_1_MODE_COMPLETE_XFER);
-//    CyDelay(2);
    
     // lay the components out in DS3231 format:
-    out_buf[0] = 0;  
+    out_buf[0] = 0; // internal pointer 
     out_buf[1] = bin_to_BCD(time_components.tm_sec);
     out_buf[2] = bin_to_BCD(time_components.tm_min);
     out_buf[3] = bin_to_BCD(time_components.tm_hour);   
@@ -83,6 +79,7 @@ void setDS3231(time_t time_now){
     out_buf[5] = bin_to_BCD(time_components.tm_mday);
     out_buf[6] = bin_to_BCD(time_components.tm_mon+1);     //map 0..11 to 1..12
     out_buf[7] = bin_to_BCD(time_components.tm_year % 100);   // year is modulo 100  Y2K madness!
+    out_buf[8] = 0;     // dummy sentinel for debug
     
     I2C_1_MasterWriteBuf(DS3231_Addr,out_buf,8,I2C_1_MODE_COMPLETE_XFER);
     CyDelay(5);
