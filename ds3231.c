@@ -38,12 +38,12 @@ time_t get_DS3231_time(){
     // Tell the DS3231 we want to read from byte 0:
     outbuf[0] = 0;      // sending just this 0 byte
     I2C_1_MasterWriteBuf(DS3231_Addr,outbuf,1,I2C_1_MODE_COMPLETE_XFER);
-    CyDelay(2);
+    CyDelay(1);
     
     err = I2C_1_MasterReadBuf(DS3231_Addr,inbuf,7,I2C_1_MODE_COMPLETE_XFER);
     
     int complete=0;
-    CyDelay(5);
+    CyDelay(1);
  /*   while(complete != I2C_1_MSTAT_RD_CMPLT){
         complete = I2C_1_MasterStatus();
     };  // spin until transfer complete
@@ -82,6 +82,15 @@ void setDS3231(time_t time_now){
     out_buf[8] = 0;     // dummy sentinel for debug
     
     I2C_1_MasterWriteBuf(DS3231_Addr,out_buf,8,I2C_1_MODE_COMPLETE_XFER);
-    CyDelay(5);
+    CyDelay(1);
+}
+
+void write_DS3231_status_reg(uint8_t bits){
+    uint8_t out_buf[2] = {0x0E,0};  // 0x0E is address of status reg
+    
+    out_buf[1] = bits;
+     I2C_1_MasterWriteBuf(DS3231_Addr,out_buf,2,I2C_1_MODE_COMPLETE_XFER);
+    CyDelay(1);
+   
 }
 /* [] END OF FILE */

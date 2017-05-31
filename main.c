@@ -53,6 +53,8 @@ volatile int current_phase=0;  // phase of sin lookup machinery
 
 volatile int times_to_loop = 0;
 volatile uint64_t cycle_count=0;  // poor man's timer
+volatile int pps_flag=0;
+
 int frame_toggle = 0;   // performance measurement
 volatile uint64_t phase_error=0;            // difference between (cycle_count % 31250) and 1 pps edge
 volatile uint64_t minute_error=0;            // difference between (cycle_count % 60*31250) and 1 minute boundary
@@ -893,7 +895,7 @@ int main()
   CyDelay(100);
   uint8 toggle_var=0;
   hw_test2();
-
+  write_DS3231_status_reg(0x00);  //default modes, including output of 1Hz square wave
   // The main loop:
   for(;;){
     // test for now.  Turn off the LED part way into each 1 second period:

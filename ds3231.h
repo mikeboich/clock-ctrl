@@ -24,5 +24,6 @@
 
 time_t get_DS3231_time();
 void setDS3231(time_t time_now);
+void write_DS3231_status_reg(uint8_t bits);
 
 /* [] END OF FILE */
