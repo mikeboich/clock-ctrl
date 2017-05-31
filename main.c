@@ -900,7 +900,12 @@ int main()
     if(((cycle_count-phase_error) % 31250) > 2000) LED_Reg_Write(0x0);
 
     //RTC_1_TIME_DATE *now = RTC_1_ReadTime();
-    time_t now = get_DS3231_time();
+    long last_read = 0;
+    time_t now;
+    if(cycle_count-last_read > 10000){
+        now = get_DS3231_time();
+        last_read = cycle_count;
+    }
     time_t to_local = now+global_prefs.prefs_data.utc_offset*3600;
     struct tm local_bdt = *gmtime(&to_local);  // my way of getting local time
     struct tm utc_bdt = *gmtime(&now);

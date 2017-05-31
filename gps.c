@@ -115,8 +115,8 @@ void set_rtc_to_gps(){
 //    }
     // if we reach this point, we need to set the time:
     tm_gps.tm_mday = a_to_int(field_n(9,sentence));
-    tm_gps.tm_mon = a_to_int(field_n(9,sentence+2))-1;  //  map 1..12 to 0..11
-    tm_gps.tm_year = 100 + a_to_int(field_n(9,sentence+4));
+    tm_gps.tm_mon = a_to_int(field_n(9,sentence)+2)-1;  //  map 1..12 to 0..11
+    tm_gps.tm_year = 100 + a_to_int(field_n(9,sentence)+4);
     tm_gps.tm_isdst = 0;
     time_t gps_time = mktime(&tm_gps);
     setDS3231(gps_time);
