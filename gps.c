@@ -133,7 +133,12 @@ void set_rtc_to_gps(){
     
     extern int pps_flag;
     RTC_1_TIME_DATE *psoc_time = RTC_1_ReadTime();
-    if(pps_flag && tm_gps.tm_sec == 0){
+    
+    // no need to set if the ds3231 is just one second behind the RMC sentence:
+    if(gps_time-rtc_time == 1){
+        return;
+    }
+    if(pps_flag){
         setDS3231(gps_time+1);
         unix_to_psoc(gps_time, psoc_time);
         pps_flag = 0;
@@ -193,7 +198,8 @@ void consume_char(char c){
                 state = awaiting_dollar;
                 
                // second_has_elapsed = 1;
-               set_rtc_to_gps();
+               if(global_prefs.prefs_data.use_gps)
+                  set_rtc_to_gps();
             }
             break;
     }

@@ -613,7 +613,7 @@ void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   compileString(date_string,255,142,MAIN_BUFFER,1,APPEND);
      
   char dw[12];
-  sprintf(dw,"%s",day_names[day_of_week-1]);
+  sprintf(dw,"%s",day_names[day_of_week]);
   compileString(dw,255,202,MAIN_BUFFER,2,APPEND);
 }
 
