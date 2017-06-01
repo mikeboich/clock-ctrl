@@ -388,6 +388,7 @@
       <Data key="1425177d-0d0e-4468-8bcc-e638e5509a9b" value="Rx_1" />
       <Data key="77715107-f8d5-47e5-a629-0fb83101ac6b" value="Sin_Pin" />
       <Data key="a7c372d5-b3e5-47ce-b4eb-15458737c97f" value="scl_pin" />
+      <Data key="b75a7882-443a-4458-9722-7c61eee88e20" value="DS3231_PPS_In_1" />
       <Data key="b7873fe0-c153-458d-8f53-3c9500a36ab8" value="LED_Pin" />
       <Data key="c7a9e200-bb6c-49c7-a997-b500012869be" value="MOSI_Pin" />
       <Data key="cfb40a26-5a28-4e7b-98db-d7540b1e48f5" value="One_PPS_In" />
@@ -418,7 +419,7 @@
     </Group>
     <Group key="5a0f4af6-d99d-481f-88f2-828fb244b4e7">
       <Group key="0">
-        <Data key="Port Format" value="12,6" />
+        <Data key="Port Format" value="0,2" />
       </Group>
     </Group>
     <Group key="5f62e9cb-e82c-4a2d-9321-68a0a590d1e0">
@@ -494,6 +495,11 @@
     <Group key="a7c372d5-b3e5-47ce-b4eb-15458737c97f">
       <Group key="0">
         <Data key="Port Format" value="12,0" />
+      </Group>
+    </Group>
+    <Group key="b75a7882-443a-4458-9722-7c61eee88e20">
+      <Group key="0">
+        <Data key="Port Format" value="12,6" />
       </Group>
     </Group>
     <Group key="b7873fe0-c153-458d-8f53-3c9500a36ab8">

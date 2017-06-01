@@ -22,6 +22,10 @@
 #include <stdio.h>
 #include <time.h>
 
+//utilities:
+void unix_to_psoc(time_t the_time, RTC_1_TIME_DATE *result);
+time_t psoc_to_unix(RTC_1_TIME_DATE *rtc_time);
+
 time_t get_DS3231_time();
 void setDS3231(time_t time_now);
 void write_DS3231_status_reg(uint8_t bits);

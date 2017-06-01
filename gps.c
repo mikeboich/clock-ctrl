@@ -38,6 +38,25 @@ char *field_n(uint8 n, char *sentence){
     else return(c);  // c just advanced past the nth comma
 }
 
+// convert two successive decimal digits to an int:
+int a_to_int(char *s){
+    return 10*(s[0] - 0x30) + (s[1] - 0x30);
+}
+
+time_t rmc_sentence_to_unix_time(char *sentence){
+    struct tm tm_gps;
+    tm_gps.tm_hour = a_to_int(field_n(1,sentence));
+    tm_gps.tm_min = a_to_int(field_n(1,sentence)+2);
+    tm_gps.tm_sec = a_to_int(field_n(1,sentence)+4); 
+   
+    // if we reach this point, we need to set the time:
+    tm_gps.tm_mday = a_to_int(field_n(9,sentence));
+    tm_gps.tm_mon = a_to_int(field_n(9,sentence)+2)-1;  //  map 1..12 to 0..11
+    tm_gps.tm_year = 100 + a_to_int(field_n(9,sentence)+4);
+    tm_gps.tm_isdst = 0;
+    time_t gps_time = mktime(&tm_gps);
+    return gps_time;
+}
 
 void send_command(char *s){
     uint8 checksum = 0;
@@ -82,10 +101,6 @@ extern int second_has_elapsed;
 int sentence_avail;
 char sentence[256] = "Hello World";
 
-// convert two successive decimal digits to an int:
-int a_to_int(char *s){
-    return 10*(s[0] - 0x30) + (s[1] - 0x30);
-}
 
 // Sets the RTC to equal the incoming GPS Time, EXCEPT, if the incoming time is just one second
 // greater than the current RTC time, we'll optimistically assume that the onePPS interrupt will arrive 
@@ -107,19 +122,20 @@ void set_rtc_to_gps(){
     tm_gps.tm_hour = a_to_int(field_n(1,sentence));
     tm_gps.tm_min = a_to_int(field_n(1,sentence)+2);
     tm_gps.tm_sec = a_to_int(field_n(1,sentence)+4); 
-    //offset_time(&gps_time,global_prefs.prefs_data.utc_offset);  // so we can compare to RTC, which is already offset
    
-    // if we reach this point, we need to set the time:
     tm_gps.tm_mday = a_to_int(field_n(9,sentence));
     tm_gps.tm_mon = a_to_int(field_n(9,sentence)+2)-1;  //  map 1..12 to 0..11
     tm_gps.tm_year = 100 + a_to_int(field_n(9,sentence)+4);
     tm_gps.tm_isdst = 0;
     time_t gps_time = mktime(&tm_gps);
     
-    //if(tm_gps.tm_sec == 0) setDS3231(gps_time);
+    if(tm_gps.tm_sec == 0) setDS3231(gps_time);
+    
     extern int pps_flag;
+    RTC_1_TIME_DATE *psoc_time = RTC_1_ReadTime();
     if(pps_flag && tm_gps.tm_sec == 0){
         setDS3231(gps_time+1);
+        unix_to_psoc(gps_time, psoc_time);
         pps_flag = 0;
     }
     //offset_time(rtc_time,global_prefs.prefs_data.utc_offset);

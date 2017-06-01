@@ -31,6 +31,8 @@ typedef struct prefsStruct {
     uint8 switch_interval;
     uint8 sync_to_60Hz;     // 0 = no sync, non-zero = sync to edges of 60Hz clock
     char  esn[16];
+    uint8 use_gps;
+
 } prefs;
 
 typedef union {prefs prefs_data;

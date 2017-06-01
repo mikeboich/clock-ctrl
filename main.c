@@ -742,7 +742,7 @@ void display_buffer(uint8 which_buffer){
 }
 
 void initTime(){
-  RTC_1_TIME_DATE *the_time = RTC_1_ReadTime();
+/*  RTC_1_TIME_DATE *the_time = RTC_1_ReadTime();
   RTC_1_DisableInt();
     
   the_time->Month = 3;
@@ -759,6 +759,7 @@ void initTime(){
   RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK | RTC_1_INTERVAL_MIN_MASK);
   RTC_1_EnableInt();
   RTC_1_Start(); //done in gps_init at the moment...  
+    */
 }
 
 
@@ -872,6 +873,7 @@ int main()
   CyDelay(50);
 
   one_pps_int_Start();
+//  DS3231_pps_int_Start();
   CyGlobalIntEnable;
 
   // start the UART for gps communications:
@@ -894,20 +896,22 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test2();
+  //hw_test2();
   write_DS3231_status_reg(0x00);  //default modes, including output of 1Hz square wave
+
+  time_t t = get_DS3231_time();
+  RTC_1_TIME_DATE *psoc_now = RTC_1_ReadTime();
+  unix_to_psoc(t,psoc_now);  // copy current DS3231 time to psoc RTC
+
   // The main loop:
   for(;;){
     // test for now.  Turn off the LED part way into each 1 second period:
     if(((cycle_count-phase_error) % 31250) > 2000) LED_Reg_Write(0x0);
 
-    //RTC_1_TIME_DATE *now = RTC_1_ReadTime();
+    RTC_1_TIME_DATE *psoc_now = RTC_1_ReadTime();
     long last_read = 0;
     time_t now;
-    if(cycle_count-last_read > 10000){
-        now = get_DS3231_time();
-        last_read = cycle_count;
-    }
+    now = psoc_to_unix(psoc_now);
     time_t to_local = now+global_prefs.prefs_data.utc_offset*3600;
     struct tm local_bdt = *gmtime(&to_local);  // my way of getting local time
     struct tm utc_bdt = *gmtime(&now);

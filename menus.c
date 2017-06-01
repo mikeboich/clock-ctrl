@@ -34,8 +34,8 @@ extern int verbose_mode;
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
-menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Set","Test Pattern","Sync to 60Hz","Cancel"},
-		  .n_items = 6,
+menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Set","Test Pattern","Sync to 60Hz","Use GPS","Cancel"},
+		  .n_items = 7,
 		  .highlighted_item_index = -1,
 		  .menu_number = 0};
 
@@ -170,7 +170,9 @@ void set_the_time(){
         utime.tm_year = time_params[2]-1900;
         utime.tm_isdst = 0;
         time_t t = mktime(&utime);
-        setDS3231(t);
+        setDS3231(t);  // set the DS3231
+        RTC_1_TIME_DATE *psoc_time = RTC_1_ReadTime();
+        unix_to_psoc(t,psoc_time);  //set the psoc clock
 	done=1;
       }
       else {
@@ -290,7 +292,7 @@ void set_locale(){
     QuadDec_1_SetCounter(saved_decoder);
 }
 void set_sync(){
-    char *strings[2] = {"don't sync","sync"};
+    char *strings[2] = {"Use GPS","Don-t Use GPS"};
     int sync = global_prefs.prefs_data.sync_to_60Hz;
     int saved_decoder = QuadDec_1_GetCounter();
     char *yes_or_no;
@@ -308,6 +310,39 @@ void set_sync(){
     }
     button_clicked = 0;
     global_prefs.prefs_data.sync_to_60Hz = new_sync;
+    flush_prefs();
+    QuadDec_1_SetCounter(saved_decoder);
+}
+
+void set_gps(){
+    char *strings[2] = {"Use GPS","Don-t Use GPS"};
+    int use_gps = global_prefs.prefs_data.use_gps;
+    int saved_decoder = QuadDec_1_GetCounter();
+    char *yes_or_no;
+    int new_sync;
+    int use = global_prefs.prefs_data.use_gps;
+    while(! button_clicked){
+        new_sync = (QuadDec_1_GetCounter() - saved_decoder)+use;
+        if(new_sync>1) new_sync =0;
+        if(new_sync<0) new_sync =1;
+        
+        yes_or_no = strings[new_sync];
+        clear_buffer(MAIN_BUFFER);
+        compileString(yes_or_no,255,128,MAIN_BUFFER,1,OVERWRITE);
+        display_buffer(MAIN_BUFFER);   
+    }
+    button_clicked = 0;
+    global_prefs.prefs_data.use_gps = new_sync;
+    // *** Temporary test code:
+    if(new_sync){  // use GPS
+        DS3231_pps_int_Stop();
+        one_pps_int_Start();
+    }
+    else {  // use DS3231
+        DS3231_pps_int_Stop();
+        one_pps_int_Stop();
+        
+    }
     flush_prefs();
     QuadDec_1_SetCounter(saved_decoder);
 }
@@ -364,6 +399,10 @@ void dispatch_menu(int menu_number, int item_number){
             
     case 5:
       set_sync();
+      break;
+    
+    case 6:
+      set_gps();
       break;
     
     }                 
