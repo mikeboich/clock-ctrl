@@ -137,15 +137,18 @@ void display_buffer(uint8 which_buffer);
 
 void set_the_time(){
   int time_params[7];
-  RTC_1_TIME_DATE *clock_time;
-  clock_time = RTC_1_ReadTime();
+  RTC_1_TIME_DATE psoc_time;
+  time_t clock_time;
+  clock_time = get_DS3231_time();
+
   int selected_field=0;
   int prev_counter = QuadDec_1_GetCounter();
   int field_min[7] = {0,0,2016,0,0,0,0};
   int field_max[7] = {12,31,2500,23,59,59,6};
   uint8 done=0;
-    
-  unpack_time(clock_time,time_params);
+  unix_to_psoc(clock_time,&psoc_time);
+
+  unpack_time(&psoc_time,time_params);
     
   while(!done){
     compile_time_screen(time_params,selected_field);
@@ -292,7 +295,7 @@ void set_locale(){
     QuadDec_1_SetCounter(saved_decoder);
 }
 void set_sync(){
-    char *strings[2] = {"Use GPS","Don-t Use GPS"};
+    char *strings[2] = {"Sync","Don-t Sync"};
     int sync = global_prefs.prefs_data.sync_to_60Hz;
     int saved_decoder = QuadDec_1_GetCounter();
     char *yes_or_no;
@@ -315,14 +318,14 @@ void set_sync(){
 }
 
 void set_gps(){
-    char *strings[2] = {"Use GPS","Don-t Use GPS"};
+    char *strings[2] = {"Don't Use GPS","Use GPS"};
     int use_gps = global_prefs.prefs_data.use_gps;
     int saved_decoder = QuadDec_1_GetCounter();
     char *yes_or_no;
     int new_sync;
     int use = global_prefs.prefs_data.use_gps;
     while(! button_clicked){
-        new_sync = (QuadDec_1_GetCounter() - saved_decoder)+use;
+        new_sync = ((QuadDec_1_GetCounter() - saved_decoder)+use) % 2;
         if(new_sync>1) new_sync =0;
         if(new_sync<0) new_sync =1;
         
@@ -339,7 +342,7 @@ void set_gps(){
         one_pps_int_Start();
     }
     else {  // use DS3231
-        DS3231_pps_int_Stop();
+        DS3231_pps_int_Start();
         one_pps_int_Stop();
         
     }

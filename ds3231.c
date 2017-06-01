@@ -24,9 +24,9 @@ void unix_to_psoc(time_t the_time, RTC_1_TIME_DATE *result){
     struct tm unix_time;
     
     unix_time = *gmtime(&the_time);
-    result->Month = unix_time.tm_mon;
+    result->Month = unix_time.tm_mon+1;
     result->DayOfMonth = unix_time.tm_mday;
-    result->Year = unix_time.tm_year;
+    result->Year = unix_time.tm_year+1900;
     
     result->Hour = unix_time.tm_hour;
     result->Min = unix_time.tm_min;
@@ -39,8 +39,8 @@ time_t psoc_to_unix(RTC_1_TIME_DATE *rtc_time){
     psoc_tm.tm_min = rtc_time->Min;
     psoc_tm.tm_sec = rtc_time->Sec;
     psoc_tm.tm_mday = rtc_time->DayOfMonth;
-    psoc_tm.tm_mon = rtc_time->Month;
-    psoc_tm.tm_year = rtc_time->Year;
+    psoc_tm.tm_mon = rtc_time->Month-1;
+    psoc_tm.tm_year = rtc_time->Year-1900;
     psoc_tm.tm_isdst = 0;
     return(mktime(&psoc_tm));
     

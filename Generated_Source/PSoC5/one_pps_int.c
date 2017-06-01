@@ -174,6 +174,7 @@ CY_ISR(one_pps_int_Interrupt)
     extern int pps_flag;
     pps_available=1;
     pps_flag = 1;
+    LED_Reg_Write(1);
     one_pps_int_ClearPending(); 
     One_PPS_In_ClearInterrupt(); 
     int_debug_reg_Write(!int_debug_reg_Read());

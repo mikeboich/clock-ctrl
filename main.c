@@ -872,8 +872,6 @@ int main()
   isr_1_StartEx(wave_started);
   CyDelay(50);
 
-  one_pps_int_Start();
-//  DS3231_pps_int_Start();
   CyGlobalIntEnable;
 
   // start the UART for gps communications:
@@ -893,6 +891,17 @@ int main()
 
   // initialize the EEPROM for saving prefs:
   init_prefs();
+
+  // with prefs initialized, we can select between gps or the internal ds3231 rtc:
+ // first delay one second to allow a pps pules to arrive:
+  CyDelay(1100);
+  if(global_prefs.prefs_data.use_gps && pps_available){
+    one_pps_int_Start();
+  }
+else{
+    DS3231_pps_int_Start();
+  }
+
     
   CyDelay(100);
   uint8 toggle_var=0;
