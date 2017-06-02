@@ -53,6 +53,8 @@ volatile int current_phase=0;  // phase of sin lookup machinery
 
 volatile int times_to_loop = 0;
 volatile uint64_t cycle_count=0;  // poor man's timer
+volatile uint64_t last_pulse=0;
+
 volatile int pps_flag=0;
 
 int frame_toggle = 0;   // performance measurement
@@ -895,13 +897,6 @@ int main()
   // with prefs initialized, we can select between gps or the internal ds3231 rtc:
  // first delay one second to allow a pps pules to arrive:
   CyDelay(1100);
-  if(global_prefs.prefs_data.use_gps && pps_available){
-    gps_pps_int_Start();
-  }
-else{
-    DS3231_pps_int_Start();
-  }
-
     
   CyDelay(100);
   uint8 toggle_var=0;
@@ -914,6 +909,18 @@ else{
 
   // The main loop:
   for(;;){
+    // start by deciding which pulse to use (GPS or DS3231):
+  if(cycle_count - last_pulse > 40000) pps_available = 0;
+  if(global_prefs.prefs_data.use_gps && pps_available){
+    gps_pps_int_Start();
+    DS3231_pps_int_Stop();
+  }
+else{
+    gps_pps_int_Stop();
+    DS3231_pps_int_Start();
+  }
+
+    
     // test for now.  Turn off the LED part way into each 1 second period:
     if(((cycle_count-phase_error) % 31250) > 2000) LED_Reg_Write(0x0);
 
