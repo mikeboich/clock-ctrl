@@ -129,7 +129,6 @@ void set_rtc_to_gps(){
     tm_gps.tm_isdst = 0;
     time_t gps_time = mktime(&tm_gps);
     
-    if(tm_gps.tm_sec == 0) setDS3231(gps_time);
     
     extern int pps_flag;
     RTC_1_TIME_DATE *psoc_time = RTC_1_ReadTime();
@@ -139,7 +138,7 @@ void set_rtc_to_gps(){
         return;
     }
     if(pps_flag){
-        setDS3231(gps_time+1);
+        setDS3231(gps_time);
         unix_to_psoc(gps_time, psoc_time);
         pps_flag = 0;
     }

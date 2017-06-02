@@ -896,7 +896,7 @@ int main()
  // first delay one second to allow a pps pules to arrive:
   CyDelay(1100);
   if(global_prefs.prefs_data.use_gps && pps_available){
-    one_pps_int_Start();
+    gps_pps_int_Start();
   }
 else{
     DS3231_pps_int_Start();

@@ -339,11 +339,11 @@ void set_gps(){
     // *** Temporary test code:
     if(new_sync){  // use GPS
         DS3231_pps_int_Stop();
-        one_pps_int_Start();
+        gps_pps_int_Start();
     }
     else {  // use DS3231
         DS3231_pps_int_Start();
-        one_pps_int_Stop();
+        gps_pps_int_Stop();
         
     }
     flush_prefs();
