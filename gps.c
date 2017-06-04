@@ -131,17 +131,15 @@ void set_rtc_to_gps(){
     time_t gps_time = mktime(&tm_gps);
     
     
-    extern int pps_flag;
     RTC_1_TIME_DATE *psoc_time = RTC_1_ReadTime();
     
     // no need to set if the ds3231 is just one second behind the RMC sentence:
-    if(gps_time-rtc_time == 1){
+    if(gps_time - rtc_time == 1){
         return;
     }
-    if(pps_flag){
-        setDS3231(gps_time);
-        unix_to_psoc(gps_time, psoc_time);
-        pps_flag = 0;
+    if(1){
+        setDS3231(gps_time-1);
+        unix_to_psoc(gps_time-1, psoc_time);
     }
     //offset_time(rtc_time,global_prefs.prefs_data.utc_offset);
     

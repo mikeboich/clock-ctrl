@@ -55,7 +55,6 @@ volatile int times_to_loop = 0;
 volatile uint64_t cycle_count=0;  // poor man's timer
 volatile uint64_t last_pulse=0;
 
-volatile int pps_flag=0;
 
 int frame_toggle = 0;   // performance measurement
 volatile uint64_t phase_error=0;            // difference between (cycle_count % 31250) and 1 pps edge
@@ -906,12 +905,13 @@ int main()
   time_t t = get_DS3231_time();
   RTC_1_TIME_DATE *psoc_now = RTC_1_ReadTime();
   unix_to_psoc(t,psoc_now);  // copy current DS3231 time to psoc RTC
+  gps_pps_int_Start();
+  DS3231_pps_int_Start();
 
   // The main loop:
   for(;;){
     // start by deciding which pulse to use (GPS or DS3231):
-  if(cycle_count - last_pulse > 40000) pps_available = 0;
-  if(global_prefs.prefs_data.use_gps && pps_available){
+/*  if(global_prefs.prefs_data.use_gps && pps_available){
     gps_pps_int_Start();
     DS3231_pps_int_Stop();
   }
@@ -919,7 +919,7 @@ else{
     gps_pps_int_Stop();
     DS3231_pps_int_Start();
   }
-
+*/
     
     // test for now.  Turn off the LED part way into each 1 second period:
     if(((cycle_count-phase_error) % 31250) > 2000) LED_Reg_Write(0x0);

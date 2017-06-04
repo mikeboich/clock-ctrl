@@ -171,9 +171,7 @@ CY_ISR(one_pps_int_Interrupt)
     #include "One_PPS_In.h"
     extern int pps_available;
     extern int second_has_elapsed;
-    extern int pps_flag;
     pps_available=1;
-    pps_flag = 1;
     LED_Reg_Write(1);
     one_pps_int_ClearPending(); 
     One_PPS_In_ClearInterrupt(); 

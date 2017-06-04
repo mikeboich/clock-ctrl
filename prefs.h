@@ -16,7 +16,7 @@
     and coded in C.
 
 *******************************************************************************/
-#include <device.h>
+//#include <device.h>
 
 #define PREFS_FLAGS_OFFSET 0
 #define GMT_OFFSET_OFFSET 1
