@@ -109,16 +109,10 @@ char sentence[256] = "Hello World";
 // because I'm lazy, I only check this when decrementing the incoming second count doesn't cause an underflow
 // 
 void set_rtc_to_gps(){
-    extern int pps_available;
     static int seed = 0;
     static int time_set=0;
-
-    //RTC_1_TIME_DATE *rtc_time = RTC_1_ReadTime();
-    time_t rtc_time = get_DS3231_time();
-    //RTC_1_TIME_DATE gps_time;
     
-    struct tm tm_gps,tm_rtc;
-    tm_rtc = *gmtime(&rtc_time);
+    struct tm tm_gps;
 
     tm_gps.tm_hour = a_to_int(field_n(1,sentence));
     tm_gps.tm_min = a_to_int(field_n(1,sentence)+2);
@@ -130,21 +124,19 @@ void set_rtc_to_gps(){
     tm_gps.tm_isdst = 0;
     time_t gps_time = mktime(&tm_gps);
     
+    RTC_1_TIME_DATE *psoc_rtc = RTC_1_ReadTime();
+    time_t psoc_time = psoc_to_unix(psoc_rtc);
     
-    RTC_1_TIME_DATE *psoc_time = RTC_1_ReadTime();
-    
-    // no need to set if the ds3231 is just one second behind the RMC sentence:
-    if(gps_time - rtc_time == 1){
-        return;
-    }
+    // no need to set if the ds3231 is just one second behind the gps RMC sentence:
+//    if(gps_time - psoc_time == 1){
+//        return;
+//    }
     if(1){
-        setDS3231(gps_time-1);
-        unix_to_psoc(gps_time-1, psoc_time);
+        setDS3231(gps_time);
+        unix_to_psoc(gps_time, psoc_rtc);
+        RTC_1_Init();
     }
-    //offset_time(rtc_time,global_prefs.prefs_data.utc_offset);
-    
-    // INTERIM code to set DS3231 to GPS
-    
+        
     // create a seed for the random number generator based on time and date:
     if(seed==0){
         seed = tm_gps.tm_sec+60*tm_gps.tm_min+3600*tm_gps.tm_hour+86400*tm_gps.tm_yday;

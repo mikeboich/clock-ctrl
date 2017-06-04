@@ -33,6 +33,7 @@ void unix_to_psoc(time_t the_time, RTC_1_TIME_DATE *result){
     result->Sec = unix_time.tm_sec;
     result->DayOfWeek = unix_time.tm_wday+1;
 }
+
 time_t psoc_to_unix(RTC_1_TIME_DATE *rtc_time){
     struct tm psoc_tm;
     psoc_tm.tm_hour = rtc_time->Hour;
