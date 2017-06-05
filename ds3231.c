@@ -71,12 +71,10 @@ time_t get_DS3231_time(){
     
     err = I2C_1_MasterReadBuf(DS3231_Addr,inbuf,7,I2C_1_MODE_COMPLETE_XFER);
     
-    int complete=0;
     CyDelay(1);
- /*   while(complete != I2C_1_MSTAT_RD_CMPLT){
-        complete = I2C_1_MasterStatus();
-    };  // spin until transfer complete
- */
+    //while(I2C_1_MasterStatus()== I2C_1_MSTAT_XFER_INP){
+    //};  // spin until transfer complete
+ 
     
     the_time.tm_sec = bcd_to_bin(inbuf[0]);
     the_time.tm_min = bcd_to_bin(inbuf[1]);

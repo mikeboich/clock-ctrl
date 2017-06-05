@@ -11,11 +11,19 @@
  * GPS and time-keeping routinesL
 */
 #include <RTC_1.h>
+#include "time.h"
 extern int sentence_avail;
 extern char sentence[256];
 
+// number of pps pulses required before we start using gps pss for timekeeping:
+#define REQUIRED_PULSES 4
+
 void init_gps();
 void send_command(char *s); // send a command with checksum and crlf
+
+time_t rmc_sentence_to_unix_time(char *sentence);
+
+void invalidate_gps_pps();
 
 // state machine that consumes characters and constructs sentence(s):
 void consume_char(char c);

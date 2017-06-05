@@ -143,7 +143,7 @@ void set_the_time(){
 
   int selected_field=0;
   int prev_counter = QuadDec_1_GetCounter();
-  int field_min[7] = {0,0,2016,0,0,0,0};
+  int field_min[7] = {1,1,2016,0,0,0,0};
   int field_max[7] = {12,31,2500,23,59,59,6};
   uint8 done=0;
   unix_to_psoc(clock_time,&psoc_time);

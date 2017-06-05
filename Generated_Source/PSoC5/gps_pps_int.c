@@ -169,7 +169,8 @@ CY_ISR(gps_pps_int_Interrupt)
     #include "GPS_PPS_In.h"
     #include  "RTC_1.h"
     #include  "prefs.h"
-    static uint8_t  pulse_count=0;
+    #include "gps.h"
+    extern uint8_t  pulse_count;
     
     extern uint64_t cycle_count;
     extern int pps_available;
@@ -182,17 +183,18 @@ CY_ISR(gps_pps_int_Interrupt)
     // overall scheme:  to transion pps_available from off to on, we receive 10 pulses
     // if a pulse arrives more than 1 second late, turn it off
     // detecting the cessation needs to be done elsewhere, since this interrup happens on pps.
-    last_pulse = cycle_count;
-    
+     
     if(cycle_count-last_pulse < 40000){
         pulse_count+=1;
-        if(pulse_count > 10){
+        if(pulse_count > REQUIRED_PULSES){
             pps_available = 1;
         }
     }
     if(pps_available && global_prefs.prefs_data.use_gps){
         RTC_1_ISR();
     }
+    last_pulse = cycle_count;
+
     /* `#END` */
 }
 

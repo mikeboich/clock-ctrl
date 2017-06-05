@@ -54,6 +54,7 @@ volatile int current_phase=0;  // phase of sin lookup machinery
 volatile int times_to_loop = 0;
 volatile uint64_t cycle_count=0;  // poor man's timer
 volatile uint64_t last_pulse=0;
+volatile uint8_t pulse_count=0;
 
 
 int frame_toggle = 0;   // performance measurement
@@ -116,6 +117,7 @@ void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   char date_string[15];
   char esn_string[32];
   char ds3231_string[32];
+  char gps_string[32];
 
   int seconds = utc_bdt->tm_sec;
   int minutes = utc_bdt->tm_min;
@@ -129,16 +131,28 @@ void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   int year = utc_bdt->tm_year+1900;
 
   sprintf(date_string,"%02i/%02i/%04i",month,day,year);
-  compileString(date_string,255,96+128,MAIN_BUFFER,1,APPEND); 
+  compileString(date_string,255,80+128,MAIN_BUFFER,1,APPEND); 
 
-  sprintf(uptime_string,"up %.5f days",cycle_count/(31250*86400.0));
-  compileString(uptime_string,255,96,MAIN_BUFFER,1,APPEND);
+//  sprintf(ds3231_string,"RTC: %ld",get_DS3231_time());
+//  compileString(ds3231_string,255,160,MAIN_BUFFER,1,APPEND);
+//
+  time_t ds_time = get_DS3231_time();
+  struct tm ds_tm = *gmtime(&ds_time);
+
+  strftime(ds3231_string,32,"DS3231: %H:%M:%S",&ds_tm);
+  compileString(ds3231_string,255,160,MAIN_BUFFER,1,APPEND);
+
+  time_t gps_time = rmc_sentence_to_unix_time(sentence);
+  struct tm gps_tm = *gmtime(&gps_time);
+  strftime(gps_string,32,"GPS: %H:%M:%S",&gps_tm);
+  compileString(gps_string,255,112,MAIN_BUFFER,1,APPEND);
+
+  sprintf(uptime_string,"up %f days",cycle_count / (31250*86400.0));
+  compileString(uptime_string,255,64,MAIN_BUFFER,1,APPEND);
 
   sprintf(esn_string,"ESN: %s",global_prefs.prefs_data.esn);
-  compileString(esn_string,255,32,MAIN_BUFFER,1,APPEND);
+  compileString(esn_string,255,16,MAIN_BUFFER,1,APPEND);
 
-  sprintf(ds3231_string,"RTC: %ld",get_DS3231_time());
-  compileString(ds3231_string,255,160,MAIN_BUFFER,1,APPEND);
 
 
   
@@ -910,22 +924,15 @@ int main()
 
   // The main loop:
   for(;;){
-    // start by deciding which pulse to use (GPS or DS3231):
-/*  if(global_prefs.prefs_data.use_gps && pps_available){
-    gps_pps_int_Start();
-    DS3231_pps_int_Stop();
-  }
-else{
-    gps_pps_int_Stop();
-    DS3231_pps_int_Start();
-  }
-*/
-    
     // test for now.  Turn off the LED part way into each 1 second period:
-    if(((cycle_count-phase_error) % 31250) > 2000) LED_Reg_Write(0x0);
+    if(((cycle_count-phase_error) % 31250) > 2000 && !global_prefs.prefs_data.use_gps){
+        LED_Reg_Write(0x0);
+    }
+    else if(((cycle_count-phase_error) % 31250) > 20000){
+        LED_Reg_Write(0x0);
+    }
 
     RTC_1_TIME_DATE *psoc_now = RTC_1_ReadTime();
-    long last_read = 0;
     time_t now;
     now = psoc_to_unix(psoc_now);
     time_t to_local = now+global_prefs.prefs_data.utc_offset*3600;

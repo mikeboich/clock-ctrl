@@ -150,6 +150,7 @@ void consume_char(char c){
     static gps_parse_state state = awaiting_char;
     char expected_char[] = "$GPRMC";
     //char expected_char[] = "$GPGGA";
+    extern int pps_available;
     
     static uint8 index=0;
     static uint8 buf_index=0;
@@ -188,7 +189,7 @@ void consume_char(char c){
                 state = awaiting_dollar;
                 
                // second_has_elapsed = 1;
-               if(global_prefs.prefs_data.use_gps)
+               if(global_prefs.prefs_data.use_gps && pps_available)
                   set_rtc_to_gps();
             }
             break;
@@ -251,6 +252,15 @@ void increment_date(RTC_1_TIME_DATE *t,int incr){
     
     
 }
+// since much of the pps logic is at the interrupt level, globals are used to share info.
+// We try to keep the manipulation of those globals contained in a couple of functions:
+void invalidate_gps_pps(){
+    extern int pps_available;
+    extern int pulse_count;
+    pps_available = 0;
+    pulse_count=0;
+}
+
 // testing to see if fields are present in tm struct:
 void test(){
     struct tm tm_test={.tm_mon=11, .tm_isdst=1};
