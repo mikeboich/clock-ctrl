@@ -305,21 +305,8 @@ void render_xmas_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 }
 
 double mod_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    int y,m,d;
-    y = local_bdt->tm_year;
-    m = local_bdt->tm_mon;
-    d = local_bdt->tm_mday;
-    if(m < 3){
-        y = y-1;
-        m = m+12;
-        }
-    int a = trunc(y/100);
-    int b = 2 - a + trunc(a/4);
-    double julian_day = trunc(365.25 * (y + 4716)) +  trunc(30.6001 * (m + 1)) + d + b - 1524.5;
-    
-    int seconds_past_midnight = 3600*local_bdt->tm_hour + 60*local_bdt->tm_min + local_bdt->tm_sec;
-    double fraction = seconds_past_midnight / 86400.0;
-    return julian_day + fraction - 2400000.5;
+    double julian_day = (now/86400.0) + 2440587.5;
+    return julian_day  - 2400000.5;
 }
 // renders the modifed Julian date, which Julian date - 2400000.5:
 void render_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -328,7 +315,7 @@ void render_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     
     sprintf(jd_str,"Modified Julian Date:");
     compileString(jd_str,255,128+32,MAIN_BUFFER,1,OVERWRITE);
-    sprintf(jd_str,"%.5f",jd);
+    sprintf(jd_str,"%.5lf",jd);
     compileString(jd_str,255,128-32,MAIN_BUFFER,1,APPEND);
 }
 
