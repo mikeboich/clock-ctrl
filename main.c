@@ -114,7 +114,7 @@ void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   char time_string[32];
   char day_of_week_string[12];
   char uptime_string[64];
-  char date_string[15];
+  char rtc_string[15];
   char esn_string[32];
   char ds3231_string[32];
   char gps_string[32];
@@ -123,15 +123,15 @@ void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   int minutes = utc_bdt->tm_min;
   int hours = utc_bdt->tm_hour;
          
-  sprintf(time_string,"%i:%02i:%02i UTC",hours,minutes,seconds);
-  //compileString(time_string,255,96+64,MAIN_BUFFER,1,OVERWRITE); 
-  clear_buffer(MAIN_BUFFER);
-  int month = utc_bdt->tm_mon+1;   // map 0..11 to 1..12
-  int day = utc_bdt->tm_mday;
-  int year = utc_bdt->tm_year+1900;
-
-  sprintf(date_string,"%02i/%02i/%04i",month,day,year);
-  compileString(date_string,255,80+128,MAIN_BUFFER,1,APPEND); 
+  sprintf(rtc_string,"RTC: %i:%02i:%02i",hours,minutes,seconds);
+  compileString(rtc_string,255,80+128,MAIN_BUFFER,1,OVERWRITE); 
+  
+//  int month = utc_bdt->tm_mon+1;   // map 0..11 to 1..12
+//  int day = utc_bdt->tm_mday;
+//  int year = utc_bdt->tm_year+1900;
+//
+//  sprintf(date_string,"%02i/%02i/%04i",month,day,year);
+//  compileString(date_string,255,80+128,MAIN_BUFFER,1,APPEND); 
 
 //  sprintf(ds3231_string,"RTC: %ld",get_DS3231_time());
 //  compileString(ds3231_string,255,160,MAIN_BUFFER,1,APPEND);

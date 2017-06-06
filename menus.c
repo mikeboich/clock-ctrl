@@ -295,7 +295,7 @@ void set_locale(){
     QuadDec_1_SetCounter(saved_decoder);
 }
 void set_sync(){
-    char *strings[2] = {"Sync","Don-t Sync"};
+    char *strings[2] = {"Don't Sync","Sync"};
     int sync = global_prefs.prefs_data.sync_to_60Hz;
     int saved_decoder = QuadDec_1_GetCounter();
     char *yes_or_no;

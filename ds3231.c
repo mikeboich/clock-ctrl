@@ -19,19 +19,19 @@
 #include "ds3231.h"
 
 
-// time conversion routines.  If I had a "utils" module, I'd have put these in there.
-void unix_to_psoc(time_t the_time, RTC_1_TIME_DATE *result){
+// time conversion routines.  If I had a "utils" module, I'd have put these there.
+void unix_to_psoc(time_t the_time, RTC_1_TIME_DATE *rtc_time){
     struct tm unix_time;
     
     unix_time = *gmtime(&the_time);
-    result->Month = unix_time.tm_mon+1;
-    result->DayOfMonth = unix_time.tm_mday;
-    result->Year = unix_time.tm_year+1900;
+    rtc_time->Month = unix_time.tm_mon+1;
+    rtc_time->DayOfMonth = unix_time.tm_mday;
+    rtc_time->Year = unix_time.tm_year+1900;
     
-    result->Hour = unix_time.tm_hour;
-    result->Min = unix_time.tm_min;
-    result->Sec = unix_time.tm_sec;
-    result->DayOfWeek = unix_time.tm_wday+1;
+    rtc_time->Hour = unix_time.tm_hour;
+    rtc_time->Min = unix_time.tm_min;
+    rtc_time->Sec = unix_time.tm_sec;
+    rtc_time->DayOfWeek = unix_time.tm_wday+1;
 }
 
 time_t psoc_to_unix(RTC_1_TIME_DATE *rtc_time){
