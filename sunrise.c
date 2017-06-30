@@ -15,12 +15,14 @@
 #define kSun 1
 #define kMoon 2
 
+/*
 void init_location(struct location *l){
   l->latitude = 34.04;		// Portola Valley, CA
   l->longitude = 118.52;
   l->viewing_date = time(NULL);
   l->gmt_offset = -7;
 }
+*/
 
 void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fullness, double *rightAscensionResult, double *declinationResult, time_t theDate,struct location theLocation){
 

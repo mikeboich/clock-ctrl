@@ -32,14 +32,18 @@
 #include <math.h>
 #include <time.h>
 
+//#include "ViewingLocation.h"
+#include "JulianDay.h"
+#include "sunrise.h"
+
 // Real time clock variables:
 volatile int pps_available=0;
 
 
-typedef enum{textMode,flwMode,analogMode1, secondsOnly,pongMode,pendulumMode,trump_elapsed_mode, \
+typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,pongMode,pendulumMode,trump_elapsed_mode, \
     trumpMode,xmasMode,wordClockMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
-int nmodes = 14;
-int n_auto_modes=11;
+int nmodes = 15;
+int n_auto_modes=12;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -631,6 +635,34 @@ void renderSeconds(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     compileString(hour_min_str,255,85,MAIN_BUFFER,4,APPEND);
     compileString(day_of_week_str,255,205,MAIN_BUFFER,2,APPEND);
 }
+
+void renderSunrise(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
+    time_t rise_time,set_time;
+    struct location my_location;  // this will move to prefs and/or we'll get it from GPS
+    char dateStr[64];
+    struct tm broken_down_tm;
+    static time_t last_calc=0;
+    
+    if(now != last_calc){
+        last_calc = now;
+        my_location.latitude = 34.04;
+        my_location.longitude = 118.52;  // temp test values
+        
+        rise_time = calcSunOrMoonRiseForDate(now,1, 1, my_location);
+        set_time = calcSunOrMoonRiseForDate(now,2, 1, my_location);
+        
+        rise_time += global_prefs.prefs_data.utc_offset*3600;  // adjust time to local time zone
+        broken_down_tm = *localtime(&rise_time);
+        strftime(dateStr,sizeof(dateStr),"Sunrise: %H:%M",&broken_down_tm);
+        compileString(dateStr,255,160,MAIN_BUFFER,1,OVERWRITE);
+        
+        set_time += global_prefs.prefs_data.utc_offset*3600;
+        broken_down_tm = *gmtime(&set_time);    
+        strftime(dateStr,sizeof(dateStr),"Sunset: %H:%M",&broken_down_tm);
+        compileString(dateStr,255,96,MAIN_BUFFER,1,APPEND);
+    }
+}
+
 uint8_t cordicSqrt(uint16_t value){
     uint8_t delta,loop,result;
     
@@ -953,6 +985,10 @@ int main()
     
     case secondsOnly:
       renderSeconds(now,&local_bdt,&utc_bdt);
+      break;
+
+    case sunriseMode:
+      renderSunrise(now,&local_bdt,&utc_bdt);
       break;
 
     case pongMode:

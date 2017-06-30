@@ -17,6 +17,6 @@ struct location {
 
 
 
-  void init_location(struct location *l);
+  //void init_location(struct location *l);
 // time_t calcSunOrMoonRiseForDate(time_t the_date, int riseOrSet, int sunOrMoon);
 
