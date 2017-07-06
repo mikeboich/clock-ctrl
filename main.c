@@ -653,12 +653,12 @@ void renderSunrise(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
         
         rise_time += global_prefs.prefs_data.utc_offset*3600;  // adjust time to local time zone
         broken_down_tm = *localtime(&rise_time);
-        strftime(dateStr,sizeof(dateStr),"Sunrise: %H:%M",&broken_down_tm);
+        strftime(dateStr,sizeof(dateStr),"Sunrise: %a %H:%M",&broken_down_tm);
         compileString(dateStr,255,160,MAIN_BUFFER,1,OVERWRITE);
         
         set_time += global_prefs.prefs_data.utc_offset*3600;
         broken_down_tm = *gmtime(&set_time);    
-        strftime(dateStr,sizeof(dateStr),"Sunset: %H:%M",&broken_down_tm);
+        strftime(dateStr,sizeof(dateStr),"Sunset:%a %H:%M",&broken_down_tm);
         compileString(dateStr,255,96,MAIN_BUFFER,1,APPEND);
     }
 }
@@ -932,7 +932,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  //hw_test2();
+  hw_test2();
   write_DS3231_status_reg(0x00);  //default modes, including output of 1Hz square wave
 
   time_t t = get_DS3231_time();

@@ -1,6 +1,7 @@
 //
 //  Sunrise.c
 //  Lunar Foundation
+
 //
 //  Created by Michael Boich on 10/1/09.
 //  Copyright 2009 Self. All rights reserved.

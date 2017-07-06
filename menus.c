@@ -245,31 +245,18 @@ void align_screen2(){
 void align_screen(){
   seg_or_flag test_pattern[] = {
     {128,128,128,128,cir,0x0ff},
-    {128,192,8,8,cir,0xff},
-    {128,64,8,8,cir,0xff},
-    {64,128,8,8,cir,0xff},
-    {192,128,8,8,cir,0xff},
-    {128-45,128-45,8,8,cir,0xff},
-    {128-45,128+45,8,8,cir,0xff},
-    {128+45,128-45,8,8,cir,0xff},
-    {128+45,128+45,8,8,cir,0xff},
-    {128,128,64,0,pos,0x99},
-    {128,128,0,64,pos,0x99},
     {255,255,0,0,cir,0x00},
   }; 
    uint8 masks[9] ={0,1,2,4,8,16,32,64,128};
    uint8 x,y,i;
    clear_buffer(MAIN_BUFFER);
   x=y=0;
-  for(i=0;i<9;i++){
-    test_pattern[0].seg_data.mask=masks[i]^0xff;
-    clear_buffer(MAIN_BUFFER);
-    compileSegments(test_pattern,MAIN_BUFFER,APPEND);
-    while(!button_clicked){
-      display_buffer(MAIN_BUFFER);
-    }
-    button_clicked = 0;  // consume the button_click
+  compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
+
+  button_clicked = 0;  // consume the button_click
       
+  while(!button_clicked){
+    display_buffer(MAIN_BUFFER);
   }
    
 }
