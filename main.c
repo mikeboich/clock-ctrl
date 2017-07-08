@@ -40,10 +40,10 @@
 volatile int pps_available=0;
 
 
-typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,pongMode,pendulumMode,trump_elapsed_mode, \
-    trumpMode,xmasMode,wordClockMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
-int nmodes = 15;
-int n_auto_modes=12;
+typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,sunsetMode,pongMode,pendulumMode,trump_elapsed_mode, \
+    trumpMode,wordClockMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
+int nmodes = 16;
+int n_auto_modes=11;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -215,6 +215,7 @@ void renderAnalogClockBuffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt
   static char *nums[12] = {"12","1","2","3","4","5","6","7","8","9","10","11"};
   seg_or_flag face[] = {{128,128,255,255,cir,0xff},
 			{128,128,8,8,cir,0xff},
+           // {0,0,255,0,pos,0xff},
 			{.flag=0xff}};
   compileSegments(face,MAIN_BUFFER,OVERWRITE);
   compileString("12",112,216,MAIN_BUFFER,1,APPEND);
@@ -248,9 +249,9 @@ void countdown_to_event(time_t now, time_t  event_time,char *caption0, char *cap
     days_remaining = fabs(seconds_remaining/86400.0);  
     
     
-    sprintf(seconds_string,"%.5f",days_remaining);
+    sprintf(seconds_string,"%.0f",days_remaining);
     
-    compileString(seconds_string,255,140,MAIN_BUFFER,2,OVERWRITE);
+    compileString(seconds_string,255,140,MAIN_BUFFER,3,OVERWRITE);
     compileString(caption0,255,90,MAIN_BUFFER,1,APPEND);
     compileString(caption1,255,40,MAIN_BUFFER,1,APPEND);
     
@@ -305,7 +306,7 @@ void render_xmas_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     }
     end_time = mktime(&xmas_time);
     
-    countdown_to_event(now,end_time,"Shopping Days","until Christmas!");
+    countdown_to_event(now,end_time,"Shopping Days","until Christmas");
 }
 
 double mod_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -635,33 +636,83 @@ void renderSeconds(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     compileString(hour_min_str,255,85,MAIN_BUFFER,4,APPEND);
     compileString(day_of_week_str,255,205,MAIN_BUFFER,2,APPEND);
 }
+int inBounds(float x, float lower, float upper){
+    if(x <= upper && x >= lower) return 1;
+    else return 0;
+}
+#define SUN_SIZE 64
 
-void renderSunrise(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    time_t rise_time,set_time;
-    struct location my_location;  // this will move to prefs and/or we'll get it from GPS
-    char dateStr[64];
-    struct tm broken_down_tm;
-    static time_t last_calc=0;
+void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt, int oneForRise){
+  static time_t date_for_calcs = 0;
+  static time_t sunrise_time, sunset_time;
+  char event_str[64];
+  struct tm bdt;
+  struct location my_location;  // this will move to prefs and/or we'll get it from GPS
+ 
+  static seg_or_flag sun[] = {
+    {128,0,SUN_SIZE,SUN_SIZE,cir,0x0ff},   
+    {255,255,0,0,cir,0x00},
+  };
+  static uint64_t next_animation_time=0; 
+  static int sun_y=0;
+  const int animation_period = 1024;
+
+  int animation_step = oneForRise==1 ? 1 : -1;
+  int animation_start = oneForRise==1 ? 0 : 64;
+  int animation_stop = oneForRise == 1 ? 64 : 0;
+  
+  if(cycle_count > next_animation_time){
+    offsetSegments(sun,0,animation_step);
+    next_animation_time = cycle_count + animation_period;
+    sun_y += animation_step;
+    if(sun_y == animation_stop){
+        offsetSegments(sun,0,animation_start-sun_y);
+        sun_y = animation_start;
+    }
+  }
+clear_buffer(MAIN_BUFFER);
+//insetSegments(sun,16,16);
+compileSegments(sun,MAIN_BUFFER,APPEND);
+// draw rays:
+float angle;
+float outset = 0.6*SUN_SIZE;
+float outset2 = 0.9*SUN_SIZE;
+for(angle = 0.0; angle < 2*M_PI-0.1; angle += 2*M_PI/12.0){
+    float origin_x = 128 + outset*cos(angle);
+    float origin_y = sun_y + outset*sin(angle);
+    float end_x = 128 + outset2 * cos(angle);
+    float end_y = sun_y + outset2 * sin(angle);
     
-    if(now != last_calc){
-        last_calc = now;
+    if(inBounds(origin_x,0.0,255.0) && \
+      inBounds(origin_y,0.0,255.0) && \
+      inBounds(end_x,0.0,255.0) && \
+      inBounds(end_y, 0.0, 255.0)){
+    line(origin_x,origin_y,end_x,end_y,MAIN_BUFFER);
+    }
+  }
+    time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
+    if(today != date_for_calcs){
+        date_for_calcs = today;
         my_location.latitude = 34.04;
         my_location.longitude = 118.52;  // temp test values
         
-        rise_time = calcSunOrMoonRiseForDate(now,1, 1, my_location);
-        set_time = calcSunOrMoonRiseForDate(now,2, 1, my_location);
-        
-        rise_time += global_prefs.prefs_data.utc_offset*3600;  // adjust time to local time zone
-        broken_down_tm = *localtime(&rise_time);
-        strftime(dateStr,sizeof(dateStr),"Sunrise: %a %H:%M",&broken_down_tm);
-        compileString(dateStr,255,160,MAIN_BUFFER,1,OVERWRITE);
-        
-        set_time += global_prefs.prefs_data.utc_offset*3600;
-        broken_down_tm = *gmtime(&set_time);    
-        strftime(dateStr,sizeof(dateStr),"Sunset:%a %H:%M",&broken_down_tm);
-        compileString(dateStr,255,96,MAIN_BUFFER,1,APPEND);
+        sunrise_time = calcSunOrMoonRiseForDate(now,1,1,my_location);
+        sunrise_time += global_prefs.prefs_data.utc_offset*3600;
+        sunset_time = calcSunOrMoonRiseForDate(now,0,1,my_location);
+        sunset_time += global_prefs.prefs_data.utc_offset*3600;
     }
+    
+    if(oneForRise == 1){
+        bdt = *localtime(&sunrise_time);
+        strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
+    }
+    else {
+        bdt = *localtime(&sunset_time);
+        strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
+    }
+    compileString(event_str,255,160,MAIN_BUFFER,2,APPEND);
 }
+
 
 uint8_t cordicSqrt(uint16_t value){
     uint8_t delta,loop,result;
@@ -700,7 +751,7 @@ void display_buffer(uint8 which_buffer){
         current_phase = 0x2;
 	break;
       }
-#undef SGI_TEACH   
+#define SGI_TEACH   
 #ifdef SGI_TEACH    
       // trying SGITeach brightness algorithm, vs my stupid very simple one:
 #define SQR(a) a*a
@@ -932,7 +983,7 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  hw_test2();
+  //hw_test2();
   write_DS3231_status_reg(0x00);  //default modes, including output of 1Hz square wave
 
   time_t t = get_DS3231_time();
@@ -940,7 +991,6 @@ int main()
   unix_to_psoc(t,psoc_now);  // copy current DS3231 time to psoc RTC
   gps_pps_int_Start();
   DS3231_pps_int_Start();
-
   // The main loop:
   for(;;){
     // test for now.  Turn off the LED part way into each 1 second period:
@@ -988,7 +1038,13 @@ int main()
       break;
 
     case sunriseMode:
-      renderSunrise(now,&local_bdt,&utc_bdt);
+      //renderSunrise(now,&local_bdt,&utc_bdt);
+      renderSR2(now,&local_bdt,&utc_bdt,1);
+      break;
+
+    case sunsetMode:
+      //renderSunrise(now,&local_bdt,&utc_bdt);
+      renderSR2(now,&local_bdt,&utc_bdt,0);
       break;
 
     case pongMode:

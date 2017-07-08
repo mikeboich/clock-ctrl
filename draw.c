@@ -94,7 +94,20 @@ void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append){
   dst_ptr->seg_data.x_offset = 0xff;       // sentinel value
   dst_ptr->seg_data.mask=0;
 }
-
+void offsetSegments(seg_or_flag *src_ptr, uint8_t x, uint8_t y){
+  while(src_ptr->flag != 255){
+    src_ptr->seg_data.x_offset += x;
+    src_ptr->seg_data.y_offset += y;  
+    src_ptr++;
+  }
+}
+void insetSegments(seg_or_flag *src_ptr, uint8_t x, uint8_t y){
+    while(src_ptr->flag != 255){
+        src_ptr->seg_data.x_size -= x;
+        src_ptr->seg_data.y_size -= y;  
+        src_ptr++;
+      }
+}
 void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer){
   seg_or_flag the_circle[] = {{0,0,0,0,cir,0xff},
 			      {.flag=0xff}};

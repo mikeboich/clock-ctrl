@@ -37,6 +37,8 @@ void clear_buffer(int which_buffer);
 void compileString(char *s, uint8 x_coord, uint8 y_coord,uint8 buffer_index,uint8 scale,int append);
 void compile_substring(char *s, uint8 count,uint8 x_coord, uint8 y_coord,uint8 which_buffer,uint8 scale,uint8 append);
 void compileSegments(seg_or_flag *src_ptr, uint8 buffer_index,int append);
+void offsetSegments(seg_or_flag *src_pre, uint8_t x, uint8_t y);
+void insetSegments(seg_or_flag *src_pre, uint8_t x, uint8_t y);
 void compileMenu(struct menu* the_menu, uint8 buffer_index,int append);
 void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer);
 void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer);

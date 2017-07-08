@@ -101,6 +101,7 @@ typedef enum {awaiting_dollar,awaiting_char, in_sentence} gps_parse_state;
 extern int second_has_elapsed;
 int sentence_avail;
 char sentence[256] = "Hello World";
+float gps_long,gps_lat;
 
 
 // Sets the RTC to equal the incoming GPS Time, EXCEPT, if the incoming time is just one second
@@ -189,8 +190,10 @@ void consume_char(char c){
                 state = awaiting_dollar;
                 
                // second_has_elapsed = 1;
-               if(global_prefs.prefs_data.use_gps && pps_available)
+               if(global_prefs.prefs_data.use_gps && pps_available){
                   set_rtc_to_gps();
+               }
+               //scrape_lat_long();
             }
             break;
     }
