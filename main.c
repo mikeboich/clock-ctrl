@@ -40,10 +40,10 @@
 volatile int pps_available=0;
 
 
-typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,sunsetMode,pongMode,pendulumMode,trump_elapsed_mode, \
+typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,pongMode,pendulumMode,trump_elapsed_mode, \
     trumpMode,wordClockMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
-int nmodes = 16;
-int n_auto_modes=11;
+int nmodes = 15;
+int n_auto_modes=10;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -642,7 +642,7 @@ int inBounds(float x, float lower, float upper){
 }
 #define SUN_SIZE 64
 
-void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt, int oneForRise){
+void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   static time_t date_for_calcs = 0;
   static time_t sunrise_time, sunset_time;
   char event_str[64];
@@ -657,18 +657,20 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt, int oneForRi
   static int sun_y=0;
   const int animation_period = 1024;
 
-  int animation_step = oneForRise==1 ? 1 : -1;
-  int animation_start = oneForRise==1 ? 0 : 64;
-  int animation_stop = oneForRise == 1 ? 64 : 0;
+  static int animation_step = 1;
+  int animation_start = 0;
+  int animation_stop = 80;
   
   if(cycle_count > next_animation_time){
     offsetSegments(sun,0,animation_step);
     next_animation_time = cycle_count + animation_period;
     sun_y += animation_step;
     if(sun_y == animation_stop){
-        offsetSegments(sun,0,animation_start-sun_y);
-        sun_y = animation_start;
-    }
+        animation_step = -1;
+      }
+    else if(sun_y == 0){
+        animation_step = 1;
+      }
   }
 clear_buffer(MAIN_BUFFER);
 //insetSegments(sun,16,16);
@@ -702,7 +704,7 @@ for(angle = 0.0; angle < 2*M_PI-0.1; angle += 2*M_PI/12.0){
         sunset_time += global_prefs.prefs_data.utc_offset*3600;
     }
     
-    if(oneForRise == 1){
+    if(animation_step == 1){
         bdt = *localtime(&sunrise_time);
         strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
     }
@@ -1039,12 +1041,7 @@ int main()
 
     case sunriseMode:
       //renderSunrise(now,&local_bdt,&utc_bdt);
-      renderSR2(now,&local_bdt,&utc_bdt,1);
-      break;
-
-    case sunsetMode:
-      //renderSunrise(now,&local_bdt,&utc_bdt);
-      renderSR2(now,&local_bdt,&utc_bdt,0);
+      renderSR2(now,&local_bdt,&utc_bdt);
       break;
 
     case pongMode:
