@@ -43,5 +43,10 @@ void compileMenu(struct menu* the_menu, uint8 buffer_index,int append);
 void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer);
 void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer);
 
+// adding a debug macro here for now.  Maybe we'll create a new place for it in the future:
+char msg_buf[255];
+
+#define debugMsg(fmt_str, ...)sprintf(msg_buf,fmt_str,##__VA_ARGS__); SW_Tx_UART_1_PutString(msg_buf); SW_Tx_UART_1_PutString("\n\r");
+
 #endif
 /* [] END OF FILE */

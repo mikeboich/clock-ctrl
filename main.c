@@ -40,10 +40,10 @@
 volatile int pps_available=0;
 
 
-typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,pongMode,pendulumMode,trump_elapsed_mode, \
+typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,moonriseMode,pongMode,pendulumMode,trump_elapsed_mode, \
     trumpMode,wordClockMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
-int nmodes = 15;
-int n_auto_modes=10;
+int nmodes = 16;
+int n_auto_modes=11;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -656,6 +656,7 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   static uint64_t next_animation_time=0; 
   static int sun_y=0;
   const int animation_period = 1024;
+  int oneForSun = (display_mode==sunriseMode) ? 1 : 2;
 
   static int animation_step = 1;
   int animation_start = 0;
@@ -698,18 +699,18 @@ for(angle = 0.0; angle < 2*M_PI-0.1; angle += 2*M_PI/12.0){
         my_location.latitude = 34.04;
         my_location.longitude = 118.52;  // temp test values
         
-        sunrise_time = calcSunOrMoonRiseForDate(now,1,1,my_location);
+        sunrise_time = calcSunOrMoonRiseForDate(now,1,2,my_location);
         sunrise_time += global_prefs.prefs_data.utc_offset*3600;
-        sunset_time = calcSunOrMoonRiseForDate(now,0,1,my_location);
+        sunset_time = calcSunOrMoonRiseForDate(now,0,2,my_location);
         sunset_time += global_prefs.prefs_data.utc_offset*3600;
     }
     
     if(animation_step == 1){
-        bdt = *localtime(&sunrise_time);
+        bdt = *gmtime(&sunrise_time);
         strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
     }
     else {
-        bdt = *localtime(&sunset_time);
+        bdt = *gmtime(&sunset_time);
         strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
     }
     compileString(event_str,255,160,MAIN_BUFFER,2,APPEND);
@@ -993,6 +994,9 @@ int main()
   unix_to_psoc(t,psoc_now);  // copy current DS3231 time to psoc RTC
   gps_pps_int_Start();
   DS3231_pps_int_Start();
+
+  SW_Tx_UART_1_StartEx(3,4);
+  SW_Tx_UART_1_PutString("Hello from PSOC-land!");
   // The main loop:
   for(;;){
     // test for now.  Turn off the LED part way into each 1 second period:
@@ -1040,6 +1044,11 @@ int main()
       break;
 
     case sunriseMode:
+      //renderSunrise(now,&local_bdt,&utc_bdt);
+      renderSR2(now,&local_bdt,&utc_bdt);
+      break;
+
+    case moonriseMode:
       //renderSunrise(now,&local_bdt,&utc_bdt);
       renderSR2(now,&local_bdt,&utc_bdt);
       break;
@@ -1100,6 +1109,8 @@ int main()
     else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
+    
+
     if(button_clicked){
       button_clicked=0;  // consume the click
       if(display_mode==menuMode){

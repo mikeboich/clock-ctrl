@@ -1,13 +1,14 @@
 //
 //  Sunrise.c
 //  Lunar Foundation
-
 //
 //  Created by Michael Boich on 10/1/09.
 //  Copyright 2009 Self. All rights reserved.
 //  Ported from Objective C to Gnu C June 2017
 //
-#undef debug
+#define debug
+#undef MAC_OS
+#include "time.h"
 #include "time.h"
 
 #include "JulianDay.h"
@@ -16,14 +17,12 @@
 #define kSun 1
 #define kMoon 2
 
-/*
 void init_location(struct location *l){
-  l->latitude = 34.04;		// Portola Valley, CA
-  l->longitude = 118.52;
+  l->latitude = 34.05;		// Portola Valley, CA
+  l->longitude =118.52;
   l->viewing_date = time(NULL);
   l->gmt_offset = -7;
 }
-*/
 
 void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fullness, double *rightAscensionResult, double *declinationResult, time_t theDate,struct location theLocation){
 
@@ -162,7 +161,7 @@ void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fu
 	
   double theJulianDay = julianDay(theDate);
   #ifdef debug
-  printf("%s -- %f\n",ctime(&theDate),theJulianDay);
+  debugMsg("%s -- %f\n",ctime(&theDate),theJulianDay);
   #endif
 	
   double T = (theJulianDay - 2451545)/36525;		//Julian centuries since Epoch J2000.0
@@ -221,7 +220,7 @@ void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fu
   double E = 1 - 0.002516*T - 0.0000074*T*T;
 	
   // calc sigmaL, sigmaR:
-   int row;
+  int row;
   for(row = 0; row < 60; row++){
     double coefficientForD = table47A[row][0];
     double coefficientForM = table47A[row][1];
@@ -240,7 +239,7 @@ void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fu
 		
     double sinAddend = coefficientForSin * sin(sinCosArg);
     double cosAddend = coefficientForCos * cos(sinCosArg);
-		
+ 		
     // if M is involved in the argument, multiply by E (or if 2M involved, by E^2):
     if (coefficientForM == 1.0 || coefficientForM == -1.0) {
       sinAddend = sinAddend * E;
@@ -749,7 +748,10 @@ time_t calcSunOrMoonRiseForDate(time_t the_date, int oneForRiseTwoForSet, int on
   jd[2] = jd[1]+1;			// day after (used for interpolation)
 	
   double bigThetaZeroForDayD = bigThetaZeroInDegrees(dateFromJulianDay(jd[1]));
-  
+
+  #ifdef debug
+  debugMsg("BigThetaZero = %f",bigThetaZeroForDayD);
+  #endif
 
   // debug var:
   time_t test_time;
@@ -757,9 +759,8 @@ time_t calcSunOrMoonRiseForDate(time_t the_date, int oneForRiseTwoForSet, int on
   char buf[64];
   strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", gmtime(&test_time));
   #ifdef debug
-  printf("confirming that midnight UT on day D = %s\n", buf);
+  debugMsg("confirming that midnight UT on day D = %s\n", buf);
   #endif
- 
   int i;
   for (i=0; i<3; i++) {
     time_t  dateOfCalculation = dateFromJulianDay(jd[i]);
@@ -771,10 +772,10 @@ time_t calcSunOrMoonRiseForDate(time_t the_date, int oneForRiseTwoForSet, int on
 		       &delta[i], dateOfCalculation,theLocation);
     }
     #ifdef debug
-    printf("date: %ld, RA (hours): %f, declination: %f", dateOfCalculation, alpha[i]/15.0,delta[i]);
+    debugMsg("date: %ld, RA (hours): %f, declination: %f", dateOfCalculation, alpha[i]/15.0,delta[i]);
     #endif
   }	
-
+	
   int iteration;
   for (iteration = 0; iteration<2; iteration++) {
     double cosH0 = (sin(degToRad(h0))-sin(degToRad(theLocation.latitude))*sin(degToRad(delta[1]))) / 
@@ -788,13 +789,13 @@ time_t calcSunOrMoonRiseForDate(time_t the_date, int oneForRiseTwoForSet, int on
 	h0 -= 360.0;
       }
       if (iteration==0) {  // otherwise use corrected m-values from previous pass:
-	//NSLog(@"iteration %i: H0 = %f",iteration,H0);
+	debugMsg("iteration %i: H0 = %f\n",iteration,H0);
 	m[0] = (alpha[1] + theLocation.longitude - bigThetaZeroForDayD)/360;  //transit as fraction of 24 hrs
-	//NSLog(@"iteration %i: Transit at %f hours UT",iteration, m[0]*24);
+	debugMsg("iteration %i: Transit at %f hours UT\n",iteration, m[0]*24);
 	m[1] = m[0] - H0/360; //moonrise as fraction of 24hrs
-	//NSLog(@"iteration %i: moonrise at %f hours UT",iteration, m[1]*24);
+	debugMsg("iteration %i: moonrise at %f hours UT\n",iteration, m[1]*24);
 	m[2] = m[0] + H0/360; //moonset as fraction of 24 hrs
-	//NSLog(@"iteration %i: moonset at %f hours UT",iteration, m[2]*24);
+	debugMsg("iteration %i: moonset at %f hours UT\n",iteration, m[2]*24);
 				
       }
 			
@@ -884,11 +885,12 @@ time_t calcSunOrMoonRiseForDate(time_t the_date, int oneForRiseTwoForSet, int on
 	
 	
 }
-/*
+
+#ifdef MAC_OS
 int main(){
   struct location myLocation;
   double myAzimuth,myElevation,myFullness,myRA,myDeclination;
-  time_t now,sunset,sunrise;
+  time_t now,event_time;
   char riseOrSet[2][16] = {"rise","set"};
   char sunOrMoon[2][16] = {"Sun","Moon"};
   char buf[64];
@@ -896,12 +898,12 @@ int main(){
   init_location(&myLocation);
   
   now = time(NULL);
-  // now = 1498401720;
   
   calcLunarAzimuth(&myAzimuth,&myElevation,&myFullness,&myRA,&myDeclination,now,myLocation);
   printf("\n");
   printf("%s\n",ctime(&now));
-  printf("%f long, %f lat\n",myLocation.longitude,myLocation.latitude);
+  printf("Julian Day %f\n",julianDay(now));
+  printf("%f lat, %f long\n",myLocation.latitude,myLocation.longitude);
   printf("Moon azimuth: %f elevation: %f\n",myAzimuth, myElevation);
   printf("\n");
 
@@ -910,15 +912,14 @@ int main(){
   printf("%s\n",ctime(&now));
   printf("Sun azimuth: %f elevation: %f\n",myAzimuth, myElevation);
   printf("\n");
-
-  int som;
+  int som,ros;
   for(som=1;som<3;som++)   
-    for(int ros=1;ros<3;ros++){
-      sunset = calcSunOrMoonRiseForDate(time(NULL)+86400, ros,som, myLocation);
-      //sunset = calcSunOrMoonRiseForDate(1513453227, ros,som, myLocation);
-      sunset += 3600*myLocation.gmt_offset;
-      strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S\n", localtime(&sunset));
+    for(ros=1;ros<3;ros++){
+      event_time = calcSunOrMoonRiseForDate(time(NULL), ros,som, myLocation);
+      event_time += 3600*myLocation.gmt_offset;
+      strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S\n", gmtime(&event_time));
       printf("%s%s: %s",sunOrMoon[som-1],riseOrSet[ros-1],buf);
+
     }
   printf("\n");
   printf("Moon is %f percent full\n\n",100*myFullness);
@@ -926,5 +927,11 @@ int main(){
   now = time(NULL);
   time_t mitz = midnightInTimeZone(now, myLocation.gmt_offset);
   printf("Midnight in time zone is %s", ctime(&mitz));
+
+  // Examples from Meeus:
+
+  // position of moon for JD 2448724.5
+  calcLunarAzimuth(&myAzimuth,&myElevation,&myFullness,&myRA,&myDeclination,dateFromJulianDay(2448724.5),myLocation);
+  printf("Az: %f  Elev: %f\n",myAzimuth, myElevation);
 }
-*/
+#endif

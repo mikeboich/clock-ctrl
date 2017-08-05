@@ -7,10 +7,17 @@
 //  Copyright 2009 Self. All rights reserved.
 // 
 
+
 #include "JulianDay.h"
 #include "math.h"
 
-int prefs_gmt_offset =-7;  // replace with actual prefs object in final implementation
+char msg_buf[255];
+
+
+
+#undef UNIT_TESTS
+
+int pref_gmt_offset =-7;  // replace with actual prefs object in final implementation
 
 double reduce360(double x){
 	double q = x/360;
@@ -55,6 +62,7 @@ time_t  midnightInTimeZone(time_t the_date, int gmt_offset){
   the_date -= 3600 * today.tm_hour;
   the_date -= 60 * today.tm_min;
   the_date -= today.tm_sec;
+  the_date -= gmt_offset*3600; // transform back to utc
   
   return(the_date);
 }
@@ -114,15 +122,15 @@ time_t dateFromJulianDay(double jd){
     year = C-4715;
   }
 
-  //printf("intermdiate vals mo: %d day: %d year %d F: %f\n",(int)month,(int)day,year,F);
+  debugMsg("intermdiate vals mo: %d day: %d year %d F: %f\n",(int)month,(int)day,year,F);
   result_date.tm_mon = unix_month(floor(month));
   result_date.tm_mday =(int) day;
   result_date.tm_year = year-1900;
   result_date.tm_hour = result_date.tm_min = result_date.tm_sec=0;
 
-  //printf("mktime args: %d, %d, %d\n",result_date.tm_mon,result_date.tm_mday,result_date.tm_year);
+  //debugMsg("mktime args: %d, %d, %d\n",result_date.tm_mon,result_date.tm_mday,result_date.tm_year);
   result_time = mktime(&result_date);
-  //printf("result of mktime = %ld\n",result_time);
+  //debugMsg("result of mktime = %ld\n",result_time);
 
  
 	
@@ -144,9 +152,9 @@ double julianDayAt0000UT(time_t the_date){
   the_date -= gmt_date.tm_min*60;
   the_date -= gmt_date.tm_sec;
 
-  double jd = julianDay(the_date);
+
 	
-  return jd;
+  return julianDay(the_date);
 }
 
 
@@ -155,35 +163,24 @@ double julianDayAt0000UT(time_t the_date){
 // calendarDateAt0000UT returns a unix time_t value corresponding to 0000 GMT for the given date
 
 time_t calendarDateAt0000UT (time_t the_date, int gmt_offset){
-  // we have to do the time zone logic ourselves, since ISO C doesn't
+  // we have to do the time zone logic ourselves, since ISO C doesn't (or at least the PSOC libraries don't..)
 
-  struct tm local_date,zulu_date;
+  struct tm utc_date;
   time_t result;
   
-  the_date += prefs_gmt_offset*3600;  //  convert to "local time"
-  local_date = *gmtime(&the_date);
-  zulu_date = local_date;
-  zulu_date.tm_hour=0;
-  zulu_date.tm_min=0;
-  zulu_date.tm_sec=0;
-  result = mktime(&zulu_date);  // mktime assumes local time
-  result -= prefs_gmt_offset*3600;  // so convert manually
+  utc_date = *gmtime(&the_date);
+  utc_date.tm_hour=0;
+  utc_date.tm_min=0;
+  utc_date.tm_sec=0;
+  result = mktime(&utc_date);  // mktime assumes local time, but we're on UTC tz
   
   return result;
 	
 }
 
-
-
-
-
 double  julianDay(time_t the_date){
   return (the_date / 86400.0 ) + 2440587.5;
   }
-
-
-
-
 
 double deltaTforDate(time_t the_date){
   return (75.0/86400);
@@ -197,7 +194,6 @@ double dynamicalTimeFromDate(time_t the_date){
 time_t dateFromDynamicalTime(double dt){
   return dateFromJulianDay(dt - (75.0/86400));
   }
-
 
 
 double bigThetaZeroInDegrees(time_t the_date){		// Sidereal time at Meridian of Greenwich at 0h UT on the given date:
@@ -226,23 +222,46 @@ double littleThetaZeroInDegrees(time_t the_date) {
   }
 
 
-/*int main(){
-  double jd = 2457893.3;
-  printf("Using Julian Day %lf",jd);
-  printf("%ld  --  %ld\n", time(NULL), dateFromJulianDay(2457893.0));
-  printf("JulianDayAt0000Z = %lf\n",julianDayAt0000UT(dateFromJulianDay(2457893.0)));
+#ifdef UNIT_TESTS
+int main(){
+  time_t now,mnitz;
+  int utc_offset = -7;
 
-  time_t now = time(NULL);
-  printf("now = %ld\n",now);
-  printf("calendarDateAt0000UT(%lx) = %ld\n",now, calendarDateAt0000UT(now,-7));
+  // reduce360:
+  debugMsg("reduce360(1081.234) = %f\n",reduce360(1081.234));
+  debugMsg("reduce360(-1081.234) = %f\n",reduce360(-1081.234));
 
-  printf("Julian date today = %lf\n",julianDay(time(NULL)));
-  printf("compare with %lf\n", ( time(NULL) / 86400.0 ) + 2440587.5); 
+  // midniteInTimeZone:
+  now = time(NULL);
+  debugMsg("Curent GMT time is %s\n", ctime(&now));
+  mnitz = midnightInTimeZone(now,utc_offset);
+  debugMsg("midnightInTimeZone(now) = %s\n",ctime(&mnitz));
 
-  time_t foo = dateFromJulianDay(julianDay(time(NULL)));
-  printf("%s\n",ctime(&foo));
+  // secondsSinceGMTMidnight
+  debugMsg("secondsSinceGMTMidnight = %d\n",secondsSinceGMTMidnight(now));
 
-  printf("Little Theta in deg(now) = %lf\n",littleThetaZeroInDegrees(time(NULL)));
-    printf("Big Theta in deg(now) = %lf\n",bigThetaZeroInDegrees(calendarDateAt0000UT(time(NULL),-7)));
+  //julianDay:
+  debugMsg("Julian Day now = %f\n", julianDay(now));
+
+  //julianDayAt0000UT:
+  debugMsg("julianDayAt0000UTC = %f\n",julianDayAt0000UT(now));
+
+  //dateFromJulianDay:
+  time_t tmp;
+  tmp = dateFromJulianDay(julianDay(now));
+  debugMsg("dateFromJulianDay(%f) = %s\n",julianDay(now),ctime(&tmp));
+  
+  // BigTheta/littleTheta:
+  debugMsg("Little Theta in deg(now) = %lf\n",littleThetaZeroInDegrees(time(NULL)));
+    debugMsg("Big Theta in deg(now) = %lf\n",bigThetaZeroInDegrees(calendarDateAt0000UT(time(NULL),-7)));
+
+
+    // examples from Meeus:
+  tmp = dateFromJulianDay(julianDay(1842713));
+  debugMsg("dateFromJulianDay(%f) = %s\n",1842713.0,ctime(&tmp));
+
+  debugMsg("Big Theta in deg(2446895.5) = %lf\n",bigThetaZeroInDegrees(dateFromJulianDay(2446895.5)));
+  
 }
-*/
+
+#endif

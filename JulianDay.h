@@ -16,6 +16,11 @@
 
 #include <time.h>
 #include <stdio.h>
+
+char msg_buf[255];
+
+#define debugMsg(fmt_str, ...) sprintf(msg_buf,fmt_str, __VA_ARGS__); printf("Debug: %s\n",msg_buf);
+
 time_t dateFromJulianDay(double jd);
 
 time_t  midnightInTimeZone(time_t the_date, int gmt_offset);
