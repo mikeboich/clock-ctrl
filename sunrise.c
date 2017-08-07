@@ -7,7 +7,7 @@
 //  Ported from Objective C to Gnu C June 2017
 //
 #define debug
-#define MAC_OS
+#undef MAC_OS
 #include "time.h"
 
 //#include "draw.h"  //  for debugMsg macro

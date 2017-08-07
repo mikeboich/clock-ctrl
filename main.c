@@ -642,9 +642,12 @@ int inBounds(float x, float lower, float upper){
 }
 #define SUN_SIZE 64
 
+// This (pretty ugly) routine serves for both sunset/sunrise and moonset/moonrise
 void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   static time_t date_for_calcs = 0;
-  static time_t sunrise_time, sunset_time;
+  static time_t sunrise_time, sunset_time,moonrise_time,moonset_time;
+  static double moon_fullness=0.0;
+  char fullness_str[255];
   char event_str[64];
   struct tm bdt;
   struct location my_location;  // this will move to prefs and/or we'll get it from GPS
@@ -653,7 +656,7 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     {128,0,SUN_SIZE,SUN_SIZE,cir,0x0ff},   
     {255,255,0,0,cir,0x00},
   };
-  static uint64_t next_animation_time=0; 
+  static uint64_t next_animation_time=0;  // allows us to keep tracj and calc rises and sets once/day
   static int sun_y=0;
   const int animation_period = 1024;
   int oneForSun = (display_mode==sunriseMode) ? 1 : 2;
@@ -662,6 +665,7 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   int animation_start = 0;
   int animation_stop = 80;
   
+  // advance the animation it it's time:
   if(cycle_count > next_animation_time){
     offsetSegments(sun,0,animation_step);
     next_animation_time = cycle_count + animation_period;
@@ -673,10 +677,12 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
         animation_step = 1;
       }
   }
+
 clear_buffer(MAIN_BUFFER);
 //insetSegments(sun,16,16);
 compileSegments(sun,MAIN_BUFFER,APPEND);
-// draw rays:
+// draw rays if it's the sun:
+if(oneForSun==1){
 float angle;
 float outset = 0.6*SUN_SIZE;
 float outset2 = 0.9*SUN_SIZE;
@@ -693,26 +699,44 @@ for(angle = 0.0; angle < 2*M_PI-0.1; angle += 2*M_PI/12.0){
     line(origin_x,origin_y,end_x,end_y,MAIN_BUFFER);
     }
   }
+}
+else{  // draw moon features here:
+    
+}
     time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
     if(today != date_for_calcs){
         date_for_calcs = today;
         init_location(&my_location);  // test values for now..
         
-        sunrise_time = calcSunOrMoonRiseForDate(now,1,2,my_location);
+        sunrise_time = calcSunOrMoonRiseForDate(now,1,1,my_location);
         sunrise_time += global_prefs.prefs_data.utc_offset*3600;
-        sunset_time = calcSunOrMoonRiseForDate(now,2,2,my_location);
+        sunset_time = calcSunOrMoonRiseForDate(now,2,1,my_location);
         sunset_time += global_prefs.prefs_data.utc_offset*3600;
-    }
+
+        moonrise_time = calcSunOrMoonRiseForDate(now,1,2,my_location);
+        moonrise_time += global_prefs.prefs_data.utc_offset*3600;
+        moonset_time = calcSunOrMoonRiseForDate(now,2,2,my_location);
+        moonset_time += global_prefs.prefs_data.utc_offset*3600;
+        
+        // calculate fullness of moon for good measure
+        calcLunarAzimuth(NULL, NULL, &moon_fullness, NULL, NULL, now,my_location);
+
+}
     
     if(animation_step == 1){
-        bdt = *gmtime(&sunrise_time);
+        bdt = oneForSun==1 ? *gmtime(&sunrise_time) : *gmtime(&moonrise_time);
         strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
     }
     else {
-        bdt = *gmtime(&sunset_time);
+        bdt = oneForSun==1 ? *gmtime(&sunset_time) : *gmtime(&moonset_time);
         strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
     }
     compileString(event_str,255,160,MAIN_BUFFER,2,APPEND);
+    
+    if(oneForSun==2){
+        sprintf(fullness_str,"%.0f%% full",100*moon_fullness);
+        compileString(fullness_str,255,230,MAIN_BUFFER,1,APPEND);
+    }
 }
 
 

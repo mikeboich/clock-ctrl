@@ -16,6 +16,7 @@
 
 #include <time.h>
 #include <stdio.h>
+#include <device.h>
 
 
 char msg_buf[255];
