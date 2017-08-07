@@ -7,9 +7,10 @@
 //  Ported from Objective C to Gnu C June 2017
 //
 #define debug
-#undef MAC_OS
+#define MAC_OS
 #include "time.h"
-#include "time.h"
+
+//#include "draw.h"  //  for debugMsg macro
 
 #include "JulianDay.h"
 #include "ViewingLocation.h"
@@ -161,7 +162,7 @@ void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fu
 	
   double theJulianDay = julianDay(theDate);
   #ifdef debug
-  debugMsg("%s -- %f\n",ctime(&theDate),theJulianDay);
+  debugMsg("%s -- %f\n\r",ctime(&theDate),theJulianDay);
   #endif
 	
   double T = (theJulianDay - 2451545)/36525;		//Julian centuries since Epoch J2000.0
@@ -173,7 +174,9 @@ void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fu
   LPrime = T*(LPrime + 481267.88123421);
   LPrime = LPrime + 218.3164477;
   LPrime = reduce360(LPrime);
-	
+  debugMsg("theDate = %ld\r\n",theDate);
+  debugMsg("jd = %f, lat = %f, long = %f\r\n",theJulianDay,theLocation.latitude, theLocation.longitude);
+  debugMsg("LPrime: %f\n\r",LPrime);	
   //D is the mean elongation of the Moon:
   // calculate D = 297.8501921 + 445267.1114034T -0.00018819*t^2 + T^3/545868 - t^4/113065000 with Hoerner's rule
   double D = -T/113065000;
@@ -182,6 +185,7 @@ void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fu
   D = T*(D + 445267.1114034);
   D = D + 297.8501921;
   D = reduce360(D);
+  debugMsg("D: %f\n\r",D);
 	
   //M s the mean anomaly of the Sun:
   double M = T/24490000;
@@ -189,6 +193,7 @@ void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fu
   M = T*(M+35999.0502909);
   M = M+357.5291092;
   M = reduce360(M);
+  debugMsg("M: %f\n\r",M);
 	
   // MPrime is Moon's mean anomaly:
   double MPrime = T/14712000.0;
@@ -197,6 +202,7 @@ void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fu
   MPrime = T*(MPrime + 477198.8675055);
   MPrime = MPrime + 134.9633964;
   MPrime = reduce360(MPrime);
+  debugMsg("MPrime: %f\r\n",MPrime);
 	
   //F is the Moon's argument of latitude:
   double F = T/863310000;
@@ -205,6 +211,7 @@ void calcLunarAzimuth(double *azimuthResult, double *elevationResult, double *fu
   F = T*(F + 483202.0175233);
   F = F + 93.2720950;
   F = reduce360(F);
+  debugMsg("F: %f\r\n",F);
 	
   //Three magical quantities having to do with Jupiter, Venus, and flattening of Earth (angles, in degrees:);
   double A1 = reduce360(119.75 + 131.849*T);
@@ -737,6 +744,7 @@ time_t calcSunOrMoonRiseForDate(time_t the_date, int oneForRiseTwoForSet, int on
   time_t riseDate, setDate, transitDate;
   double myElevation, myAzimuth, myIlluminatedFraction;
 	
+  debugMsg("entering CalcSunOrMoonrise for date %ld\r\n",the_date);
   if (oneForSunTwoForMoon == kSun) {
     h0 = -0.83333;		        // h0 - corrects for semidiameter of sun + refraction
   }
@@ -768,7 +776,8 @@ time_t calcSunOrMoonRiseForDate(time_t the_date, int oneForRiseTwoForSet, int on
       calcSolarAzimuth(&myAzimuth,  &myElevation, &alpha[i], &delta[i], dateOfCalculation,theLocation);
     }
     else{
-      calcLunarAzimuth(&myAzimuth,&myElevation,&myIlluminatedFraction, &alpha[i],\
+      debugMsg("Calling CalcLunarAzimuth date:%ld\r\n", dateOfCalculation);
+      calcLunarAzimuth(&myAzimuth,&myElevation,&myIlluminatedFraction, &alpha[i], \
 		       &delta[i], dateOfCalculation,theLocation);
     }
     #ifdef debug
@@ -789,13 +798,9 @@ time_t calcSunOrMoonRiseForDate(time_t the_date, int oneForRiseTwoForSet, int on
 	h0 -= 360.0;
       }
       if (iteration==0) {  // otherwise use corrected m-values from previous pass:
-	debugMsg("iteration %i: H0 = %f\n",iteration,H0);
 	m[0] = (alpha[1] + theLocation.longitude - bigThetaZeroForDayD)/360;  //transit as fraction of 24 hrs
-	debugMsg("iteration %i: Transit at %f hours UT\n",iteration, m[0]*24);
 	m[1] = m[0] - H0/360; //moonrise as fraction of 24hrs
-	debugMsg("iteration %i: moonrise at %f hours UT\n",iteration, m[1]*24);
 	m[2] = m[0] + H0/360; //moonset as fraction of 24 hrs
-	debugMsg("iteration %i: moonset at %f hours UT\n",iteration, m[2]*24);
 				
       }
 			
@@ -812,6 +817,8 @@ time_t calcSunOrMoonRiseForDate(time_t the_date, int oneForRiseTwoForSet, int on
 	if (m[i] > 1+lagRelativeToGMT) {
 	  m[i] -= 1.0;
 	}
+	debugMsg("iteration %i: H0 = %f\n",iteration,H0);
+
       }
 
       //approximate rise:
@@ -877,16 +884,18 @@ time_t calcSunOrMoonRiseForDate(time_t the_date, int oneForRiseTwoForSet, int on
 		
   }
   if (oneForRiseTwoForSet == 1) {
-    return riseDate;
+   debugMsg("returning rise date %ld\r\n\r\n",riseDate);
+   return riseDate;
   }
   else{
-    return setDate;
+   debugMsg("returning set date %ld\r\n\r\n",setDate);
+   return setDate;
   }
 	
 	
 }
 
-#ifdef MAC_OS
+#ifndef PSOC
 int main(){
   struct location myLocation;
   double myAzimuth,myElevation,myFullness,myRA,myDeclination;
@@ -913,6 +922,7 @@ int main(){
   printf("Sun azimuth: %f elevation: %f\n",myAzimuth, myElevation);
   printf("\n");
   int som,ros;
+  printf("******** Calculating sunrise, sunset, moonrise, moonset\r\n");
   for(som=1;som<3;som++)   
     for(ros=1;ros<3;ros++){
       event_time = calcSunOrMoonRiseForDate(time(NULL), ros,som, myLocation);

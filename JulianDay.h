@@ -17,9 +17,16 @@
 #include <time.h>
 #include <stdio.h>
 
+
 char msg_buf[255];
 
-#define debugMsg(fmt_str, ...) sprintf(msg_buf,fmt_str, __VA_ARGS__); printf("Debug: %s\n",msg_buf);
+#define PSOC
+
+#ifdef PSOC
+#define debugMsg(fmt_str, ...) sprintf(msg_buf,fmt_str, __VA_ARGS__); SW_Tx_UART_1_PutString(msg_buf); SW_Tx_UART_1_PutString("\n\r");
+#else
+#define debugMsg(fmt_str, ...)sprintf(msg_buf,fmt_str,##__VA_ARGS__); printf(msg_buf); 
+#endif
 
 time_t dateFromJulianDay(double jd);
 

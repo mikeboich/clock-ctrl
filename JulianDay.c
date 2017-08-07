@@ -122,7 +122,7 @@ time_t dateFromJulianDay(double jd){
     year = C-4715;
   }
 
-  debugMsg("intermdiate vals mo: %d day: %d year %d F: %f\n",(int)month,(int)day,year,F);
+  //debugMsg("intermdiate vals mo: %d day: %d year %d F: %f\n",(int)month,(int)day,year,F);
   result_date.tm_mon = unix_month(floor(month));
   result_date.tm_mday =(int) day;
   result_date.tm_year = year-1900;
@@ -253,7 +253,7 @@ int main(){
   
   // BigTheta/littleTheta:
   debugMsg("Little Theta in deg(now) = %lf\n",littleThetaZeroInDegrees(time(NULL)));
-    debugMsg("Big Theta in deg(now) = %lf\n",bigThetaZeroInDegrees(calendarDateAt0000UT(time(NULL),-7)));
+  debugMsg("Big Theta in deg(now) = %lf\n",bigThetaZeroInDegrees(calendarDateAt0000UT(time(NULL),-7)));
 
 
     // examples from Meeus:

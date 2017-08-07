@@ -696,12 +696,11 @@ for(angle = 0.0; angle < 2*M_PI-0.1; angle += 2*M_PI/12.0){
     time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
     if(today != date_for_calcs){
         date_for_calcs = today;
-        my_location.latitude = 34.04;
-        my_location.longitude = 118.52;  // temp test values
+        init_location(&my_location);  // test values for now..
         
         sunrise_time = calcSunOrMoonRiseForDate(now,1,2,my_location);
         sunrise_time += global_prefs.prefs_data.utc_offset*3600;
-        sunset_time = calcSunOrMoonRiseForDate(now,0,2,my_location);
+        sunset_time = calcSunOrMoonRiseForDate(now,2,2,my_location);
         sunset_time += global_prefs.prefs_data.utc_offset*3600;
     }
     
