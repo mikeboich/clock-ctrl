@@ -286,20 +286,20 @@ void set_sync(){
     int sync = global_prefs.prefs_data.sync_to_60Hz;
     int saved_decoder = QuadDec_1_GetCounter();
     char *yes_or_no;
-    int new_sync;
+    int sync_changed;
     
     while(! button_clicked){
-        new_sync = (QuadDec_1_GetCounter() - saved_decoder)+sync;
-        if(new_sync>1) new_sync =0;
-        if(new_sync<0) new_sync =1;
+        sync_changed = (QuadDec_1_GetCounter() - saved_decoder)+sync;
+        if(sync_changed>1) sync_changed =0;
+        if(sync_changed<0) sync_changed =1;
         
-        yes_or_no = strings[new_sync];
+        yes_or_no = strings[sync_changed];
         clear_buffer(MAIN_BUFFER);
         compileString(yes_or_no,255,128,MAIN_BUFFER,1,OVERWRITE);
         display_buffer(MAIN_BUFFER);   
     }
     button_clicked = 0;
-    global_prefs.prefs_data.sync_to_60Hz = new_sync;
+    global_prefs.prefs_data.sync_to_60Hz = sync_changed;
     flush_prefs();
     QuadDec_1_SetCounter(saved_decoder);
 }
@@ -309,28 +309,28 @@ void set_gps(){
     int use_gps = global_prefs.prefs_data.use_gps;
     int saved_decoder = QuadDec_1_GetCounter();
     char *yes_or_no;
-    int new_sync;
+    int sync_changed;
     int use = global_prefs.prefs_data.use_gps;
     while(! button_clicked){
-        new_sync = ((QuadDec_1_GetCounter() - saved_decoder)+use) % 2;
-        if(new_sync>1) new_sync =0;
-        if(new_sync<0) new_sync =1;
+        sync_changed = ((QuadDec_1_GetCounter() - saved_decoder)+use) % 2;
+        if(sync_changed>1) sync_changed =0;
+        if(sync_changed<0) sync_changed =1;
         
-        yes_or_no = strings[new_sync];
+        yes_or_no = strings[sync_changed];
         clear_buffer(MAIN_BUFFER);
         compileString(yes_or_no,255,128,MAIN_BUFFER,1,OVERWRITE);
         display_buffer(MAIN_BUFFER);   
     }
     button_clicked = 0;
-    global_prefs.prefs_data.use_gps = new_sync;
+    global_prefs.prefs_data.use_gps = sync_changed;
     // *** Temporary test code:
-    if(new_sync){  // use GPS
-        DS3231_pps_int_Stop();
-        gps_pps_int_Start();
+    if(sync_changed){  // use GPS
+       // DS3231_pps_int_Stop();
+        //gps_pps_int_Start();
     }
     else {  // use DS3231
-        DS3231_pps_int_Start();
-        gps_pps_int_Stop();
+        //DS3231_pps_int_Start();
+        //gps_pps_int_Stop();
         
     }
     flush_prefs();
