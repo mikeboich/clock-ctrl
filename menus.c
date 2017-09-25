@@ -344,8 +344,14 @@ void set_switch_interval(){
     
     while(! button_clicked){
         new_interval = (QuadDec_1_GetCounter() - saved_decoder)+switch_interval;
-        if(new_interval>60) new_interval -= 60;
-        if(new_interval<0) new_interval +=60;
+        if(new_interval>60){
+            new_interval = 60;
+            QuadDec_1_SetCounter(saved_decoder + 60 - switch_interval);
+        }
+        if(new_interval<0){
+            new_interval = 0;
+            QuadDec_1_SetCounter(saved_decoder - switch_interval);
+        }
         
         if(new_interval != 0){
             sprintf(interval_buf,"Switch every %i sec", new_interval);

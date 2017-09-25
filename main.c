@@ -1128,7 +1128,9 @@ int main()
     }
     int switch_interval = global_prefs.prefs_data.switch_interval;
     
-    if(display_mode != menuMode && switch_interval==0) display_mode = QuadDec_1_GetCounter() % nmodes;
+    if(display_mode != menuMode && switch_interval == 0) {
+        display_mode = QuadDec_1_GetCounter() % nmodes;
+    }
     else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
