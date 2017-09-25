@@ -268,9 +268,15 @@ void set_locale(){
     int new_offset;
     
     while(! button_clicked){
-        new_offset = (QuadDec_1_GetCounter() - saved_decoder)+utc_offset;
-        if(new_offset>23) new_offset -= 24;
-        if(new_offset<-23) new_offset += 24;
+        new_offset = (QuadDec_1_GetCounter() - saved_decoder) + utc_offset;
+        if(new_offset>14){
+            new_offset = 14;
+            QuadDec_1_SetCounter(saved_decoder + 14 - utc_offset);
+        }
+        if(new_offset < -12){
+            new_offset = -12;
+            QuadDec_1_SetCounter(saved_decoder - 12 - utc_offset);
+        }
         
         sprintf(offset_buf,"UTC Offset: %i", new_offset);
         compileString(offset_buf,16,128,MAIN_BUFFER,1,0);
