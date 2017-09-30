@@ -261,118 +261,80 @@ void align_screen(){
    
 }
 
-void set_locale(){
-    int utc_offset = global_prefs.prefs_data.utc_offset;
-    int saved_decoder = QuadDec_1_GetCounter();
-    char offset_buf[32];
-    int new_offset;
+// Routine for tracking decoder knob with feedback.  Used by several UI routines
+int trackKnob(int initial_value,int min_value,int max_value, void display_proc(int value)){
+    int result;
+    int saved_knob = QuadDec_1_GetCounter();
+    QuadDec_1_SetCounter(initial_value);
     
-    while(! button_clicked){
-        new_offset = (QuadDec_1_GetCounter() - saved_decoder) + utc_offset;
-        if(new_offset>14){
-            new_offset = 14;
-            QuadDec_1_SetCounter(saved_decoder + 14 - utc_offset);
+    while(!button_clicked){
+        result = QuadDec_1_GetCounter();
+        if (result < min_value || result > max_value){
+            result = result < min_value ? min_value : max_value;
+            QuadDec_1_SetCounter(result);
         }
-        if(new_offset < -12){
-            new_offset = -12;
-            QuadDec_1_SetCounter(saved_decoder - 12 - utc_offset);
-        }
-        
-        sprintf(offset_buf,"UTC Offset: %i", new_offset);
-        compileString(offset_buf,16,128,MAIN_BUFFER,1,0);
-        display_buffer(MAIN_BUFFER);   
+        display_proc(result);  
     }
-    button_clicked = 0;
-    global_prefs.prefs_data.utc_offset = new_offset;
-    flush_prefs();
-    QuadDec_1_SetCounter(saved_decoder);
+    button_clicked = 0;  // consume click
+    QuadDec_1_SetCounter(saved_knob);  // restore knob setting
+    return(result);
 }
-void set_sync(){
-    char *strings[2] = {"Don't Sync","Sync"};
-    int sync = global_prefs.prefs_data.sync_to_60Hz;
-    int saved_decoder = QuadDec_1_GetCounter();
-    char *yes_or_no;
-    int sync_changed;
-    
-    while(! button_clicked){
-        sync_changed = (QuadDec_1_GetCounter() - saved_decoder)+sync;
-        if(sync_changed>1) sync_changed =0;
-        if(sync_changed<0) sync_changed =1;
-        
-        yes_or_no = strings[sync_changed];
-        clear_buffer(MAIN_BUFFER);
-        compileString(yes_or_no,255,128,MAIN_BUFFER,1,OVERWRITE);
-        display_buffer(MAIN_BUFFER);   
-    }
-    button_clicked = 0;
-    global_prefs.prefs_data.sync_to_60Hz = sync_changed;
+// UI feedback routine for "Set Locale"
+void echo_locale(int x){
+    char offset_buf[32];
+
+    sprintf(offset_buf,"UTC Offset: %i", x);
+    compileString(offset_buf,16,128,MAIN_BUFFER,1,0);
+    display_buffer(MAIN_BUFFER);   
+
+}
+void set_locale(){
+    int result = trackKnob(global_prefs.prefs_data.utc_offset,-12,14,echo_locale);
+    global_prefs.prefs_data.utc_offset = result;
     flush_prefs();
-    QuadDec_1_SetCounter(saved_decoder);
 }
 
-void set_gps(){
+void show_sync(int s){
+    char *strings[2] = {"Don't Sync","Sync"};
+    clear_buffer(MAIN_BUFFER);
+    compileString(strings[s],255,128,MAIN_BUFFER,1,OVERWRITE);
+    display_buffer(MAIN_BUFFER);   
+
+}
+void set_sync(){
+    int sync = global_prefs.prefs_data.sync_to_60Hz;
+    global_prefs.prefs_data.sync_to_60Hz = trackKnob(sync,0,1,show_sync);
+    flush_prefs();
+}
+void show_gps(int use_gps){
     char *strings[2] = {"Don't Use GPS","Use GPS"};
-    int use_gps = global_prefs.prefs_data.use_gps;
-    int saved_decoder = QuadDec_1_GetCounter();
-    char *yes_or_no;
-    int sync_changed;
-    int use = global_prefs.prefs_data.use_gps;
-    while(! button_clicked){
-        sync_changed = ((QuadDec_1_GetCounter() - saved_decoder)+use) % 2;
-        if(sync_changed>1) sync_changed =0;
-        if(sync_changed<0) sync_changed =1;
-        
-        yes_or_no = strings[sync_changed];
-        clear_buffer(MAIN_BUFFER);
-        compileString(yes_or_no,255,128,MAIN_BUFFER,1,OVERWRITE);
-        display_buffer(MAIN_BUFFER);   
-    }
-    button_clicked = 0;
-    global_prefs.prefs_data.use_gps = sync_changed;
-    // *** Temporary test code:
-    if(sync_changed){  // use GPS
-       // DS3231_pps_int_Stop();
-        //gps_pps_int_Start();
-    }
-    else {  // use DS3231
-        //DS3231_pps_int_Start();
-        //gps_pps_int_Stop();
-        
-    }
-    flush_prefs();
-    QuadDec_1_SetCounter(saved_decoder);
+    clear_buffer(MAIN_BUFFER);
+    compileString(strings[use_gps],255,128,MAIN_BUFFER,1,OVERWRITE);
+    display_buffer(MAIN_BUFFER);   
 }
+void set_gps(){
+    global_prefs.prefs_data.use_gps = trackKnob(global_prefs.prefs_data.use_gps,0,1,show_gps);
+    flush_prefs();
+}
+
+void show_switch_interval(int i){
+    char interval_buf[64];
+    if(i != 0){
+        sprintf(interval_buf,"Switch every %i sec", i);
+    }
+    else{
+        sprintf(interval_buf,"Don't auto-switch");
+    }
+    compileString(interval_buf,16,128,MAIN_BUFFER,1,0);
+    display_buffer(MAIN_BUFFER);   
+}
+
 void set_switch_interval(){
-    int switch_interval = global_prefs.prefs_data.switch_interval;
-    int saved_decoder = QuadDec_1_GetCounter();
-    char interval_buf[32];
-    int new_interval;
-    
-    while(! button_clicked){
-        new_interval = (QuadDec_1_GetCounter() - saved_decoder)+switch_interval;
-        if(new_interval>60){
-            new_interval = 60;
-            QuadDec_1_SetCounter(saved_decoder + 60 - switch_interval);
-        }
-        if(new_interval<0){
-            new_interval = 0;
-            QuadDec_1_SetCounter(saved_decoder - switch_interval);
-        }
-        
-        if(new_interval != 0){
-            sprintf(interval_buf,"Switch every %i sec", new_interval);
-        }
-        else{
-            sprintf(interval_buf,"Don't auto-switch");
-        }
-        compileString(interval_buf,16,128,MAIN_BUFFER,1,0);
-        display_buffer(MAIN_BUFFER);   
-    }
-    button_clicked = 0;
-    global_prefs.prefs_data.switch_interval = new_interval;
+    int switch_interval = trackKnob(global_prefs.prefs_data.switch_interval,0,60,show_switch_interval);
+    global_prefs.prefs_data.switch_interval = switch_interval;
     flush_prefs();
-    QuadDec_1_SetCounter(saved_decoder);    
 }
+
 void dispatch_menu(int menu_number, int item_number){
   // save the decoder position, so that it makes sense upon returning:
   int prev_counter = QuadDec_1_GetCounter();

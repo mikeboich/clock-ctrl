@@ -656,6 +656,19 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     {128,0,SUN_SIZE,SUN_SIZE,cir,0x0ff},   
     {255,255,0,0,cir,0x00},
   };
+
+
+ static seg_or_flag moon[] = {
+    {128,0,127,127,cir,0xff},
+    //{108,108,32,32,cir,0xff},
+    {144,0,16,16,cir,0xff},
+    {160,16,28,24,cir,0xff},
+    {110,18,32,42,cir,0xff},
+    {140,38,12,16,cir,0xff},
+    {255,255,0,0,cir,0x00},
+};
+
+
   static uint64_t next_animation_time=0;  // allows us to keep tracj and calc rises and sets once/day
   static int sun_y=0;
   const int animation_period = 1024;
@@ -668,6 +681,7 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   // advance the animation it it's time:
   if(cycle_count > next_animation_time){
     offsetSegments(sun,0,animation_step);
+    offsetSegments(moon,0,animation_step);
     next_animation_time = cycle_count + animation_period;
     sun_y += animation_step;
     if(sun_y == animation_stop){
@@ -680,12 +694,13 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 
 clear_buffer(MAIN_BUFFER);
 //insetSegments(sun,16,16);
-compileSegments(sun,MAIN_BUFFER,APPEND);
-// draw rays if it's the sun:
 if(oneForSun==1){
 float angle;
 float outset = 0.6*SUN_SIZE;
 float outset2 = 0.9*SUN_SIZE;
+compileSegments(sun,MAIN_BUFFER,APPEND);
+// draw rays
+
 for(angle = 0.0; angle < 2*M_PI-0.1; angle += 2*M_PI/12.0){
     float origin_x = 128 + outset*cos(angle);
     float origin_y = sun_y + outset*sin(angle);
@@ -701,7 +716,7 @@ for(angle = 0.0; angle < 2*M_PI-0.1; angle += 2*M_PI/12.0){
   }
 }
 else{  // draw moon features here:
-    
+    compileSegments(moon,MAIN_BUFFER,APPEND);
 }
     time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
     if(today != date_for_calcs){
