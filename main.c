@@ -1142,11 +1142,15 @@ int main()
 
     }
     int switch_interval = global_prefs.prefs_data.switch_interval;
-    
+    int knob_position;
     if(display_mode != menuMode && switch_interval == 0) {
+        if((knob_position=QuadDec_1_GetCounter()) < 0) QuadDec_1_SetCounter(knob_position + nmodes);  // wrap around
         display_mode = QuadDec_1_GetCounter() % nmodes;
     }
-    else main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    else {
+        if((knob_position=QuadDec_1_GetCounter()) < 0) QuadDec_1_SetCounter(knob_position + main_menu.n_items);  // wrap around
+        main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    }
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
     

@@ -306,12 +306,14 @@ void set_sync(){
     global_prefs.prefs_data.sync_to_60Hz = trackKnob(sync,0,1,show_sync);
     flush_prefs();
 }
+
 void show_gps(int use_gps){
     char *strings[2] = {"Don't Use GPS","Use GPS"};
     clear_buffer(MAIN_BUFFER);
     compileString(strings[use_gps],255,128,MAIN_BUFFER,1,OVERWRITE);
     display_buffer(MAIN_BUFFER);   
 }
+
 void set_gps(){
     global_prefs.prefs_data.use_gps = trackKnob(global_prefs.prefs_data.use_gps,0,1,show_gps);
     flush_prefs();
