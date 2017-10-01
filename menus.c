@@ -124,7 +124,7 @@ void compile_time_screen(int a[],int selected_field){
   for(field=0; field<6; field++){
     num_buf[0] = 0;     // make string null string
     sprintf(num_buf, format_str[field],a[field]);
-    if(selected_field!=field || blink_time())
+   if(selected_field!=field || blink_time())
       compileString(num_buf,x_pos[field],y_pos[field],MAIN_BUFFER,1,APPEND);
   }
   if(selected_field!=field || blink_time())
@@ -144,23 +144,21 @@ void set_the_time(){
   int selected_field=0;
   int prev_counter = QuadDec_1_GetCounter();
   int field_min[7] = {1,1,2016,0,0,0,0};
-  int field_max[7] = {12,31,2500,23,59,59,6};
+  int field_max[7] = {12,31,2100,23,59,59,6};
   uint8 done=0;
   unix_to_psoc(clock_time,&psoc_time);
 
   unpack_time(&psoc_time,time_params);
-    
+  QuadDec_1_SetCounter(time_params[selected_field]);
+
   while(!done){
     compile_time_screen(time_params,selected_field);
     display_buffer(MAIN_BUFFER);
     int new_counter = QuadDec_1_GetCounter();
-    if(prev_counter != new_counter){
-      time_params[selected_field] += (new_counter-prev_counter); 
-      if(time_params[selected_field] > field_max[selected_field]){
-	time_params[selected_field] = time_params[selected_field] % (field_max[selected_field] + 1);   
-      }
-      prev_counter = new_counter;
+    if(new_counter < field_min[selected_field] || new_counter > field_max[selected_field]){
+        new_counter = (new_counter < field_min[selected_field]) ? field_min[selected_field] : field_max[selected_field];
     }
+    time_params[selected_field] = new_counter;
     if(button_clicked){
       button_clicked=0;  // consume the click..
       if(selected_field==6){
@@ -176,10 +174,11 @@ void set_the_time(){
         setDS3231(t);  // set the DS3231
         RTC_1_TIME_DATE *psoc_time = RTC_1_ReadTime();
         unix_to_psoc(t,psoc_time);  //set the psoc clock
-	done=1;
+	    done=1;
       }
       else {
-	selected_field = (selected_field + 1) % 7; 
+	    selected_field = (selected_field + 1) % 7; 
+        QuadDec_1_SetCounter(time_params[selected_field]);
       }    
     }
   }  
@@ -232,6 +231,7 @@ void align_screen2(){
     test_pattern[0].seg_data.mask=masks[i]^0xff;
     clear_buffer(MAIN_BUFFER);
     compileSegments(test_pattern,MAIN_BUFFER,APPEND);
+
     while(!button_clicked){
     ss_x_offset = 0;
     ss_y_offset =0;

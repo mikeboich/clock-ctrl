@@ -236,7 +236,7 @@ void renderAnalogClockBuffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt
 asm (".global _scanf_float");       // forces floating point formatting code to load
 // for displaying things like "400 days of Trump to go!" or "332 shopping days till Christmas!":
 // the 
-void countdown_to_event(time_t now, time_t  event_time,char *caption0, char *caption1){
+void countdown_to_event(time_t now, time_t  event_time, char *caption0, char *caption1){
     time_t current_time;
     struct tm tm_now;
     double seconds_remaining;
@@ -307,6 +307,20 @@ void render_xmas_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     end_time = mktime(&xmas_time);
     
     countdown_to_event(now,end_time,"Shopping Days","until Christmas");
+}
+void render_day_num_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
+    time_t start_time;
+    struct tm start_of_year;
+    
+    start_of_year.tm_year = local_bdt->tm_year;
+    start_of_year.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
+    start_of_year.tm_mday = 1;
+    start_of_year.tm_hour = 0;  //  midnight local time
+    start_of_year.tm_min = 0;
+    start_of_year.tm_sec = 0;
+    start_time = mktime(&start_of_year);
+    
+    countdown_to_event(start_time,now,"Day","Of The Year");
 }
 
 double mod_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -661,7 +675,7 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
  static seg_or_flag moon[] = {
     {128,0,127,127,cir,0xff},
     //{108,108,32,32,cir,0xff},
-    {144,0,16,16,cir,0xff},
+    {144,0,12,12,cir,0xff},
     {160,16,28,24,cir,0xff},
     {110,18,32,42,cir,0xff},
     {140,38,12,16,cir,0xff},
@@ -1110,7 +1124,8 @@ int main()
       break;
 
     case xmasMode:
-      render_xmas_buffer(now,&local_bdt,&utc_bdt);
+      //render_xmas_buffer(now,&local_bdt,&utc_bdt);
+      render_day_num_buffer(now,&local_bdt,&utc_bdt);
       break;
 
     case wordClockMode:
@@ -1158,8 +1173,8 @@ int main()
     if(button_clicked){
       button_clicked=0;  // consume the click
       if(display_mode==menuMode){
-	dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
-	display_mode = saved_mode;
+    	dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
+    	display_mode = saved_mode;
       }
       else {
 	saved_mode = display_mode;
