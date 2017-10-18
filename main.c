@@ -678,7 +678,10 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     {144,0,12,12,cir,0xff},
     {160,16,28,24,cir,0xff},
     {110,18,32,42,cir,0xff},
+    {106,10,12,14,cir,0xff},
+    {114,26,14,12,cir,0xff},
     {140,38,12,16,cir,0xff},
+    //{150,25,24,36,cir,0xff},
     {255,255,0,0,cir,0x00},
 };
 
@@ -1049,6 +1052,8 @@ int main()
 
   SW_Tx_UART_1_StartEx(3,4);
   SW_Tx_UART_1_PutString("Hello from PSOC-land!");
+
+  hw_test2();
   // The main loop:
   for(;;){
     // test for now.  Turn off the LED part way into each 1 second period:
