@@ -674,10 +674,10 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 
  static seg_or_flag moon[] = {
     {128,0,127,127,cir,0xff},
-    {144,0,24,24,cir,0xff},
+    {144,0,28,28,cir,0xff},
     {106,10,12,14,cir,0xff},
     {114,26,14,12,cir,0xff},
-    {140,38,18,20,cir,0xff},
+    {140,38,24,20,cir,0xff},
     {255,255,0,0,cir,0x00},
 };
 
