@@ -376,6 +376,7 @@
       <Data key="6b943e72-efd6-401a-9149-33b6a7ec28c8" value="CS_Pin" />
       <Data key="7ca6d2b6-ce3d-4cca-9644-5171e0614899" value="Cos_Pin" />
       <Data key="7ca59b6b-619d-48d6-8cd2-e7bea525249b" value="QuadB" />
+      <Data key="8a8c09e0-772d-46db-9a18-4ead6bd53a86" value="soft_off" />
       <Data key="8d318d8b-cf7b-4b6b-b02c-ab1c5c49d0ba" value="MISO_Pin" />
       <Data key="8f820e9e-e7cc-45a7-aa9b-8667c2c62ce3" value="QuadA" />
       <Data key="9aeb770a-6080-4509-bd46-6ffac1fa53fc" value="EncoderButton" />
@@ -440,7 +441,7 @@
     </Group>
     <Group key="7ca59b6b-619d-48d6-8cd2-e7bea525249b">
       <Group key="0">
-        <Data key="Port Format" value="12,3" />
+        <Data key="Port Format" value="12,4" />
       </Group>
     </Group>
     <Group key="8d318d8b-cf7b-4b6b-b02c-ab1c5c49d0ba">
@@ -450,7 +451,7 @@
     </Group>
     <Group key="8f820e9e-e7cc-45a7-aa9b-8667c2c62ce3">
       <Group key="0">
-        <Data key="Port Format" value="12,4" />
+        <Data key="Port Format" value="12,3" />
       </Group>
     </Group>
     <Group key="9aeb770a-6080-4509-bd46-6ffac1fa53fc">

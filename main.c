@@ -674,14 +674,10 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 
  static seg_or_flag moon[] = {
     {128,0,127,127,cir,0xff},
-    //{108,108,32,32,cir,0xff},
-    {144,0,12,12,cir,0xff},
-    {160,16,28,24,cir,0xff},
-    {110,18,32,42,cir,0xff},
+    {144,0,24,24,cir,0xff},
     {106,10,12,14,cir,0xff},
     {114,26,14,12,cir,0xff},
-    {140,38,12,16,cir,0xff},
-    //{150,25,24,36,cir,0xff},
+    {140,38,18,20,cir,0xff},
     {255,255,0,0,cir,0x00},
 };
 
@@ -914,30 +910,30 @@ void waitForClick(){
 #define LINELEN 128
 void hw_test(){
   seg_or_flag test_pattern[] = {
-    {128,128,128,128,cir,0xff},
+    {128,128,254,254,cir,0xff},
+    {128,128,244,244,cir,0xff},
+    {255,255,0,0,cir,0x00},
+  }; 
+  seg_or_flag test_pattern2[] = {
+    {128,128,64,64,cir,0xff},
+    {128,128,244,244,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
 
-  set_DACfor_seg(test_pattern,0,0);
-  strobe_LDAC();
-  ShiftReg_1_WriteData(0xff);
-  Phase_Register_Write(0x2);
-  current_state = hw_testing;
+    clear_buffer(MAIN_BUFFER);
+    compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
     while(!button_clicked){
-    display_buffer(MAIN_BUFFER);
-  }
-  button_clicked = 0;  // consume the button_click
-  current_state = blank_unprimed;
-
-  clear_buffer(MAIN_BUFFER);
-  compileSegments(test_pattern,MAIN_BUFFER,APPEND);
+      display_buffer(MAIN_BUFFER);
+    }
+    button_clicked=0;
     
-    
-  while(!button_clicked){
-    display_buffer(MAIN_BUFFER);
-  }
-  button_clicked = 0;  // consume the button_click
+    set_DACfor_seg(test_pattern2,0,0);
+    strobe_LDAC();
+    //current_state = hw_testing;
+    while(!button_clicked) {}
+    button_clicked = 0;
 }
+
 void hw_test2(){
   seg_or_flag test_pattern[] = {
     {128,128,LINELEN,LINELEN,pos,0xff},
@@ -1041,7 +1037,6 @@ int main()
     
   CyDelay(100);
   uint8 toggle_var=0;
-  //hw_test2();
   write_DS3231_status_reg(0x00);  //default modes, including output of 1Hz square wave
 
   time_t t = get_DS3231_time();
@@ -1053,6 +1048,7 @@ int main()
   SW_Tx_UART_1_StartEx(3,4);
   SW_Tx_UART_1_PutString("Hello from PSOC-land!");
 
+  //hw_test();
   hw_test2();
   // The main loop:
   for(;;){
