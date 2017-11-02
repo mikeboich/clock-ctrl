@@ -34,7 +34,7 @@ extern int verbose_mode;
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
-menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Set","Test Pattern","Sync to 60Hz","Use GPS","Cancel"},
+menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Set","Test Pattern","Use GPS","Power Off"},
 		  .n_items = 7,
 		  .highlighted_item_index = -1,
 		  .menu_number = 0};
@@ -293,6 +293,20 @@ void set_locale(){
     global_prefs.prefs_data.utc_offset = result;
     flush_prefs();
 }
+// UI feedback routine for "Set Locale"
+void echo_power_off(int x){
+    char offset_buf[32];
+
+    sprintf(offset_buf,"Power off in: %i minutes", x);
+    compileString(offset_buf,16,128,MAIN_BUFFER,1,0);
+    display_buffer(MAIN_BUFFER);   
+
+}
+void set_power_off(){
+    int result = trackKnob(global_prefs.prefs_data.utc_offset,0,180,echo_power_off);
+    
+    flush_prefs();
+}
 
 void show_sync(int s){
     char *strings[2] = {"Don't Sync","Sync"};
@@ -364,11 +378,11 @@ void dispatch_menu(int menu_number, int item_number){
       break;
             
     case 5:
-      set_sync();
+      set_gps();
       break;
     
     case 6:
-      set_gps();
+      power_off();
       break;
     
     }                 

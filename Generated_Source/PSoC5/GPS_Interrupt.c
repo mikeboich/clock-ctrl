@@ -169,7 +169,9 @@ CY_ISR(gps_interrupt_Interrupt)
 #include "LED_Reg.h"
 #include "GPS_Status.h"
     GPS_Status_ClearInterrupt();  // pin-based interrupt needs to be cleared
-    LED_Reg_Write(GPS_Status_Read());
+    int pwr_status = LED_Reg_Read() & 0x2;
+    
+    LED_Reg_Write(GPS_Status_Read()| pwr_status);
     /* `#END` */
 }
 

@@ -66,6 +66,38 @@ volatile uint64_t phase_error=0;            // difference between (cycle_count %
 volatile uint64_t minute_error=0;            // difference between (cycle_count % 60*31250) and 1 minute boundary
 
 int last_refresh=0,loops_per_frame=0;   // for performance measurement
+/* Some housekeeping/utility items that should probably be moved to another source file: */
+
+void led_on(){
+  int status = LED_Reg_Read();
+  status |= 0x1;  // low order but turns LED on
+  LED_Reg_Write(status);
+}
+void led_off(){
+  int status = LED_Reg_Read();
+  status &= 0x2;  // low order bit turns LED off.  Preserve bit 1, which is hi-voltage power
+  LED_Reg_Write(status);
+}
+void power_on(){
+  int status = LED_Reg_Read();
+  status |= 0x2;  // set power bit
+  LED_Reg_Write(status);
+}
+void power_off(){
+  int status = LED_Reg_Read();
+  status &= 0x1;  // turn power bit off
+  LED_Reg_Write(status);
+}
+
+int power_status(){
+    int status = LED_Reg_Read() & 0x2;
+    return status;
+}
+
+int power_off_hour = 22;
+int power_off_minute = 30;
+int power_on_hour = 7;
+int power_on_minute = 30;
 
 /* Define the start-of-segment interrupt routine 
    This routine loads the next 8 bit segment mask from the display list,
@@ -1050,14 +1082,16 @@ int main()
 
   //hw_test();
   hw_test2();
-  // The main loop:
+
+// The main loop:
   for(;;){
-    // test for now.  Turn off the LED part way into each 1 second period:
+    // if power is off and button is pressed, turn power on:
+    // Turn off the LED part way into each 1 second period:
     if(((cycle_count-phase_error) % 31250) > 2000 && !global_prefs.prefs_data.use_gps){
-        LED_Reg_Write(0x0);
+        led_off();
     }
     else if(((cycle_count-phase_error) % 31250) > 20000){
-        LED_Reg_Write(0x0);
+        led_off();
     }
 
     RTC_1_TIME_DATE *psoc_now = RTC_1_ReadTime();
@@ -1067,6 +1101,13 @@ int main()
     struct tm local_bdt = *gmtime(&to_local);  // my way of getting local time
     struct tm utc_bdt = *gmtime(&now);
     
+    /* *** test the power pin logic: */
+    if(local_bdt.tm_hour == power_off_hour && local_bdt.tm_min == power_off_minute && local_bdt.tm_sec < 5){
+        power_off();
+    }
+    else if(local_bdt.tm_hour == power_on_hour && local_bdt.tm_min == power_on_minute&& local_bdt.tm_sec < 5){
+        power_on();
+    }
     /* Now render the appropriate contents into the display buffer, based upon 
        the current display_mode.  (Note that we're wasting lots of cpu cycles in some cases,
        since the display only changes when once/second for many of the display modes. 
@@ -1173,14 +1214,22 @@ int main()
 
     if(button_clicked){
       button_clicked=0;  // consume the click
+        // if the power is off, take the button click as a command to turn it on:
+      if(power_status() == 0){
+        power_on();
+    }
+    else{
+      // else if we're in menu mode, perform the selected item and return to a display mode
       if(display_mode==menuMode){
     	dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
     	display_mode = saved_mode;
       }
       else {
+    // we were in a display mode.  enter menuMode:
 	saved_mode = display_mode;
 	display_mode = menuMode;
       }
+    }
     }
     else{
       if(display_mode != menuMode && switch_interval!=0 && cycle_count-last_switch > switch_interval*31250){

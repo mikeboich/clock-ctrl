@@ -174,8 +174,10 @@ CY_ISR(gps_pps_int_Interrupt)
     
     extern uint64_t cycle_count;
     extern int pps_available;
-    extern uint64_t last_pulse;   
-    LED_Reg_Write(1);       // turn on the LED
+    extern uint64_t last_pulse; 
+    int status = LED_Reg_Read();
+    status |= 1;
+    LED_Reg_Write(status);       // turn on the LED
     gps_pps_int_ClearPending();
     GPS_PPS_In_ClearInterrupt();
     
