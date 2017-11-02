@@ -93,11 +93,13 @@ int power_status(){
     int status = LED_Reg_Read() & 0x2;
     return status;
 }
-
+/*
 int power_off_hour = 22;
 int power_off_minute = 30;
 int power_on_hour = 7;
 int power_on_minute = 30;
+*/
+time_t power_off_t = 0;
 
 /* Define the start-of-segment interrupt routine 
    This routine loads the next 8 bit segment mask from the display list,
@@ -1101,13 +1103,18 @@ int main()
     struct tm local_bdt = *gmtime(&to_local);  // my way of getting local time
     struct tm utc_bdt = *gmtime(&now);
     
-    /* *** test the power pin logic: */
+    if(power_off_t && now > power_off_t){
+        power_off();
+        power_off_t = 0;
+    }
+    /* *** test the power pin logic: 
     if(local_bdt.tm_hour == power_off_hour && local_bdt.tm_min == power_off_minute && local_bdt.tm_sec < 5){
         power_off();
     }
     else if(local_bdt.tm_hour == power_on_hour && local_bdt.tm_min == power_on_minute&& local_bdt.tm_sec < 5){
         power_on();
     }
+    */
     /* Now render the appropriate contents into the display buffer, based upon 
        the current display_mode.  (Note that we're wasting lots of cpu cycles in some cases,
        since the display only changes when once/second for many of the display modes. 

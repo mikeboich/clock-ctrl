@@ -293,18 +293,25 @@ void set_locale(){
     global_prefs.prefs_data.utc_offset = result;
     flush_prefs();
 }
-// UI feedback routine for "Set Locale"
+// UI feedback routine for "Power Off"
 void echo_power_off(int x){
     char offset_buf[32];
 
-    sprintf(offset_buf,"Power off in: %i minutes", x);
+    sprintf(offset_buf,"Sleep in: %i minutes", x);
     compileString(offset_buf,16,128,MAIN_BUFFER,1,0);
     display_buffer(MAIN_BUFFER);   
 
 }
+
+extern time_t power_off_t;
 void set_power_off(){
-    int result = trackKnob(global_prefs.prefs_data.utc_offset,0,180,echo_power_off);
-    
+    RTC_1_TIME_DATE *psoc_now = RTC_1_ReadTime();
+    time_t now= psoc_to_unix(psoc_now);
+    int minutes_till_sleep = (power_off_t - now)/60;
+    int result = trackKnob(minutes_till_sleep,0,180,echo_power_off);
+    psoc_now = RTC_1_ReadTime();
+    now= psoc_to_unix(psoc_now);
+    power_off_t = now + result * 60;
     flush_prefs();
 }
 
@@ -382,7 +389,7 @@ void dispatch_menu(int menu_number, int item_number){
       break;
     
     case 6:
-      power_off();
+      set_power_off();
       break;
     
     }                 
