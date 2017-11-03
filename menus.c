@@ -295,13 +295,13 @@ void set_locale(){
 }
 // UI feedback routine for "Power Off"
 extern time_t power_off_t;
-
+#define MAX_TILL_SLEEP 60
 void echo_power_off(int x){
     char offset_buf[32];
     if(x==0){
         sprintf(offset_buf,"Sleep now");
     }
-    else if(x==19){
+    else if(x > (MAX_TILL_SLEEP/10)){
         sprintf(offset_buf,"Never sleep");
     }
     else{
@@ -316,7 +316,7 @@ void set_power_off(){
     RTC_1_TIME_DATE *psoc_now = RTC_1_ReadTime();
     time_t now= psoc_to_unix(psoc_now);
     int minutes_till_sleep = (power_off_t == 0) ? 60 : (power_off_t - now)/60;
-    int result = trackKnob(minutes_till_sleep/10,0,19,echo_power_off);
+    int result = trackKnob(minutes_till_sleep/10,0,MAX_TILL_SLEEP/10+1,echo_power_off);
     psoc_now = RTC_1_ReadTime();
     now= psoc_to_unix(psoc_now);
     if(result < 0){
