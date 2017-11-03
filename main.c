@@ -1083,7 +1083,7 @@ int main()
   SW_Tx_UART_1_PutString("Hello from PSOC-land!");
 
   //hw_test();
-  hw_test2();
+  //hw_test2();
 
 // The main loop:
   for(;;){
@@ -1107,14 +1107,6 @@ int main()
         power_off();
         power_off_t = 0;
     }
-    /* *** test the power pin logic: 
-    if(local_bdt.tm_hour == power_off_hour && local_bdt.tm_min == power_off_minute && local_bdt.tm_sec < 5){
-        power_off();
-    }
-    else if(local_bdt.tm_hour == power_on_hour && local_bdt.tm_min == power_on_minute&& local_bdt.tm_sec < 5){
-        power_on();
-    }
-    */
     /* Now render the appropriate contents into the display buffer, based upon 
        the current display_mode.  (Note that we're wasting lots of cpu cycles in some cases,
        since the display only changes when once/second for many of the display modes. 
@@ -1236,8 +1228,8 @@ int main()
 	saved_mode = display_mode;
 	display_mode = menuMode;
       }
-    }
-    }
+   }
+}
     else{
       if(display_mode != menuMode && switch_interval!=0 && cycle_count-last_switch > switch_interval*31250){
 	display_mode = (cycle_count / (switch_interval*31250)) % n_auto_modes;   // switch modes automatically
