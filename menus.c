@@ -34,7 +34,7 @@ extern int verbose_mode;
 char *day_names[7] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 char *month_names[12] = {"Jan", "Feb", "Mar", "April","May","June","July","Aug","Sep","Oct","Nov","Dec"};
 
-menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Set","Test Pattern","Use GPS","Power Off"},
+menu main_menu = {.items = {"Set Time/Date","Set Locale","Autoswitch","Character Set","Test Pattern","Time Source","Sleep"},
 		  .n_items = 7,
 		  .highlighted_item_index = -1,
 		  .menu_number = 0};
@@ -342,7 +342,7 @@ void set_sync(){
 }
 
 void show_gps(int use_gps){
-    char *strings[2] = {"Don't Use GPS","Use GPS"};
+    char *strings[2] = {"Internal Clock","GPS"};
     clear_buffer(MAIN_BUFFER);
     compileString(strings[use_gps],255,128,MAIN_BUFFER,1,OVERWRITE);
     display_buffer(MAIN_BUFFER);   

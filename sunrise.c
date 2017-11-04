@@ -13,14 +13,15 @@
 //#include "draw.h"  //  for debugMsg macro
 
 #include "JulianDay.h"
+#include "gps.h"
 #include "ViewingLocation.h"
 
 #define kSun 1
 #define kMoon 2
 
 void init_location(struct location *l){
-  l->latitude = 34.05;		// Portola Valley, CA
-  l->longitude =118.52;
+  l->latitude = get_lat_or_long(0);		
+  l->longitude =get_lat_or_long(1);
   l->viewing_date = time(NULL);
   l->gmt_offset = -7;
 }

@@ -43,6 +43,45 @@ char *field_n(uint8 n, char *sentence){
 int a_to_int(char *s){
     return 10*(s[0] - 0x30) + (s[1] - 0x30);
 }
+// utility routines, mostly for the sunrise/sunset calcs:
+  char test_str[] = "$GPRMC,123519,A,4807.038,S,01131.000,E,022.4,084.4,230394,003.1,E*6A";
+
+float get_lat_or_long(int select){
+    float result=0.0;
+    char lat_or_long_str[32];
+    char *src_ptr;
+    char *dst_ptr = lat_or_long_str;
+    if(!sentence_avail) return (0.0);
+    src_ptr = field_n(select==0 ? 3 : 5,sentence);
+    while(*src_ptr != ','){
+        *dst_ptr++ = *src_ptr++;
+    }
+    *dst_ptr++ = 0;  //terminate string
+    
+    // parse out the integer degree portion:
+    // there are always two integer minutes digits, then a decimal place, 
+    // so everything two or more chars before the decimal point is part of the integer degree representation
+    src_ptr = lat_or_long_str;
+    while(*(src_ptr+2) != '.'){
+        result = 10*result + (*src_ptr - '0');
+        src_ptr++;
+    }
+    // src_ptr+2 now points to the decimal place. src_ptr points to the first digit of minutes.
+    // The minutes string is zero-terminated, so we can just use sscanf to get the value of the minutes
+    float minutes;
+    sscanf(src_ptr,"%f",&minutes);
+    result += minutes/60.0;
+    
+    // now we have to look at the N/S designator (for latitude) or E/W for Longitude, and adjust accordingly:
+    if(select == 0 && (*(field_n(4,sentence)) == 'S')){  // latitude case
+        result = -result;
+    }
+    else if(select==1 && (*(field_n(6,sentence)) == 'E')){
+        result = -result;
+    }
+    
+    return result;
+}
 
 time_t rmc_sentence_to_unix_time(char *sentence){
     struct tm tm_gps;

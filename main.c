@@ -41,7 +41,7 @@ volatile int pps_available=0;
 
 
 typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,moonriseMode,pongMode,pendulumMode,trump_elapsed_mode, \
-    trumpMode,wordClockMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
+	     trumpMode,wordClockMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
 int nmodes = 16;
 int n_auto_modes=11;
 clock_type display_mode=pendulumMode;
@@ -90,14 +90,14 @@ void power_off(){
 }
 
 int power_status(){
-    int status = LED_Reg_Read() & 0x2;
-    return status;
+  int status = LED_Reg_Read() & 0x2;
+  return status;
 }
 /*
-int power_off_hour = 22;
-int power_off_minute = 30;
-int power_on_hour = 7;
-int power_on_minute = 30;
+  int power_off_hour = 22;
+  int power_off_minute = 30;
+  int power_on_hour = 7;
+  int power_on_minute = 30;
 */
 time_t power_off_t = 0;
 
@@ -147,7 +147,7 @@ void wave_started(){
 }
 
 void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-   char pe[64],me[64];
+  char pe[64],me[64];
 
   char time_string[32];
   char day_of_week_string[12];
@@ -162,42 +162,35 @@ void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   int hours = utc_bdt->tm_hour;
          
   sprintf(rtc_string,"RTC: %i:%02i:%02i",hours,minutes,seconds);
-  compileString(rtc_string,255,80+128,MAIN_BUFFER,1,OVERWRITE); 
+  compileString(rtc_string,255,220,MAIN_BUFFER,1,OVERWRITE); 
   
-//  int month = utc_bdt->tm_mon+1;   // map 0..11 to 1..12
-//  int day = utc_bdt->tm_mday;
-//  int year = utc_bdt->tm_year+1900;
-//
-//  sprintf(date_string,"%02i/%02i/%04i",month,day,year);
-//  compileString(date_string,255,80+128,MAIN_BUFFER,1,APPEND); 
-
-//  sprintf(ds3231_string,"RTC: %ld",get_DS3231_time());
-//  compileString(ds3231_string,255,160,MAIN_BUFFER,1,APPEND);
-//
   time_t ds_time = get_DS3231_time();
   struct tm ds_tm = *gmtime(&ds_time);
 
   strftime(ds3231_string,32,"DS3231: %H:%M:%S",&ds_tm);
-  compileString(ds3231_string,255,160,MAIN_BUFFER,1,APPEND);
+  compileString(ds3231_string,255,210-36,MAIN_BUFFER,1,APPEND);
 
   time_t gps_time = rmc_sentence_to_unix_time(sentence);
   struct tm gps_tm = *gmtime(&gps_time);
   strftime(gps_string,32,"GPS: %H:%M:%S",&gps_tm);
-  compileString(gps_string,255,112,MAIN_BUFFER,1,APPEND);
+  compileString(gps_string,255,210-72,MAIN_BUFFER,1,APPEND);
 
   sprintf(uptime_string,"up %f days",cycle_count / (31250*86400.0));
-  compileString(uptime_string,255,64,MAIN_BUFFER,1,APPEND);
+  compileString(uptime_string,255,210-108,MAIN_BUFFER,1,APPEND);
 
-  sprintf(esn_string,"ESN: %s",global_prefs.prefs_data.esn);
-  compileString(esn_string,255,16,MAIN_BUFFER,1,APPEND);
+
+  sprintf(esn_string,"Lat: %f",get_lat_or_long(0));
+  compileString(esn_string,255,210-146,MAIN_BUFFER,1,APPEND);
+  sprintf(esn_string,"Long: %f",get_lat_or_long(1));
+  compileString(esn_string,255,210-182,MAIN_BUFFER,1,APPEND);
 
 
 
   
-//  sprintf(pe,"phase error: %Lu",phase_error);
-//  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
-//  sprintf(pe,"minute err: %Lu",minute_error);
-//  compileString(pe,255,128-32,MAIN_BUFFER,1,APPEND);
+  //  sprintf(pe,"phase error: %Lu",phase_error);
+  //  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
+  //  sprintf(pe,"minute err: %Lu",minute_error);
+  //  compileString(pe,255,128-32,MAIN_BUFFER,1,APPEND);
 
 
 }
@@ -231,7 +224,7 @@ void drawClockHands(int h, int m, int s){
   if(minute_error){
     float smooth_angle = 2*M_PI* (((cycle_count - minute_error)/(60*31250.0)));
     second_angle = smooth_angle;
-}
+  }
 
 
   // not doing the 2-d hands yet, just lines
@@ -249,7 +242,7 @@ void renderAnalogClockBuffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt
   static char *nums[12] = {"12","1","2","3","4","5","6","7","8","9","10","11"};
   seg_or_flag face[] = {{128,128,255,255,cir,0xff},
 			{128,128,8,8,cir,0xff},
-           // {0,0,255,0,pos,0xff},
+			// {0,0,255,0,pos,0xff},
 			{.flag=0xff}};
   compileSegments(face,MAIN_BUFFER,OVERWRITE);
   compileString("12",112,216,MAIN_BUFFER,1,APPEND);
@@ -271,188 +264,188 @@ asm (".global _scanf_float");       // forces floating point formatting code to 
 // for displaying things like "400 days of Trump to go!" or "332 shopping days till Christmas!":
 // the 
 void countdown_to_event(time_t now, time_t  event_time, char *caption0, char *caption1){
-    time_t current_time;
-    struct tm tm_now;
-    double seconds_remaining;
-    double days_remaining;
-    char seconds_string[64] = "";
+  time_t current_time;
+  struct tm tm_now;
+  double seconds_remaining;
+  double days_remaining;
+  char seconds_string[64] = "";
     
     
     
-    seconds_remaining = difftime(event_time,now);
-    days_remaining = fabs(seconds_remaining/86400.0);  
+  seconds_remaining = difftime(event_time,now);
+  days_remaining = fabs(seconds_remaining/86400.0);  
     
     
-    sprintf(seconds_string,"%.0f",days_remaining);
+  sprintf(seconds_string,"%.0f",days_remaining);
     
-    compileString(seconds_string,255,140,MAIN_BUFFER,3,OVERWRITE);
-    compileString(caption0,255,90,MAIN_BUFFER,1,APPEND);
-    compileString(caption1,255,40,MAIN_BUFFER,1,APPEND);
+  compileString(seconds_string,255,140,MAIN_BUFFER,3,OVERWRITE);
+  compileString(caption0,255,90,MAIN_BUFFER,1,APPEND);
+  compileString(caption1,255,40,MAIN_BUFFER,1,APPEND);
     
     
 }
 void render_trump_elapsed_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    time_t end_time,start_time;
-    struct tm end_of_trump,start_of_trump;
-    end_of_trump.tm_year = 2021-1900;
-    start_of_trump.tm_year = 2017-1900;
-    start_of_trump.tm_mon = end_of_trump.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
-    start_of_trump.tm_mday = end_of_trump.tm_mday = 20;
-    start_of_trump.tm_hour = end_of_trump.tm_hour = 17 + global_prefs.prefs_data.utc_offset;  // local time corresponding to 1700UTC
-    start_of_trump.tm_min = end_of_trump.tm_min = 0;
-    start_of_trump.tm_sec = end_of_trump.tm_sec = 0;
+  time_t end_time,start_time;
+  struct tm end_of_trump,start_of_trump;
+  end_of_trump.tm_year = 2021-1900;
+  start_of_trump.tm_year = 2017-1900;
+  start_of_trump.tm_mon = end_of_trump.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
+  start_of_trump.tm_mday = end_of_trump.tm_mday = 20;
+  start_of_trump.tm_hour = end_of_trump.tm_hour = 17 + global_prefs.prefs_data.utc_offset;  // local time corresponding to 1700UTC
+  start_of_trump.tm_min = end_of_trump.tm_min = 0;
+  start_of_trump.tm_sec = end_of_trump.tm_sec = 0;
     
-    end_time = mktime(&end_of_trump);
-    start_time = mktime(&start_of_trump);
+  end_time = mktime(&end_of_trump);
+  start_time = mktime(&start_of_trump);
     
     
-    countdown_to_event(now,start_time,"Days of Trump","elapsed");
+  countdown_to_event(now,start_time,"Days of Trump","elapsed");
 }
 
 void render_trump_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    time_t end_time,start_time;
-    struct tm end_of_trump,start_of_trump;
-    start_of_trump.tm_year = end_of_trump.tm_year = 2021-1900;
-    start_of_trump.tm_mon = end_of_trump.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
-    start_of_trump.tm_mday = end_of_trump.tm_mday = 20;
-    start_of_trump.tm_hour = end_of_trump.tm_hour = 17 + global_prefs.prefs_data.utc_offset;  // local time corresponding to 1700UTC
-    start_of_trump.tm_min = end_of_trump.tm_min = 0;
-    start_of_trump.tm_sec = end_of_trump.tm_sec = 0;
+  time_t end_time,start_time;
+  struct tm end_of_trump,start_of_trump;
+  start_of_trump.tm_year = end_of_trump.tm_year = 2021-1900;
+  start_of_trump.tm_mon = end_of_trump.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
+  start_of_trump.tm_mday = end_of_trump.tm_mday = 20;
+  start_of_trump.tm_hour = end_of_trump.tm_hour = 17 + global_prefs.prefs_data.utc_offset;  // local time corresponding to 1700UTC
+  start_of_trump.tm_min = end_of_trump.tm_min = 0;
+  start_of_trump.tm_sec = end_of_trump.tm_sec = 0;
     
-    end_time = mktime(&end_of_trump);
-    start_time = mktime(&start_of_trump);
+  end_time = mktime(&end_of_trump);
+  start_time = mktime(&start_of_trump);
     
     
-    countdown_to_event(now,end_time,"Days of Trump","remaining");
+  countdown_to_event(now,end_time,"Days of Trump","remaining");
 }
 void render_xmas_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    time_t end_time;
-    struct tm xmas_time;
+  time_t end_time;
+  struct tm xmas_time;
     
-    xmas_time.tm_year = local_bdt->tm_year;
-    xmas_time.tm_mon = 12-1;   // months are 0..11 rather than 1..12!
-    xmas_time.tm_mday = 25;
-    xmas_time.tm_hour = 0;  //  midnight local time
-    xmas_time.tm_min = 0;
-    xmas_time.tm_sec = 0;
-    if(local_bdt->tm_mon == 11 && local_bdt->tm_mday > 25){
-        xmas_time.tm_year += 1;
-    }
-    end_time = mktime(&xmas_time);
+  xmas_time.tm_year = local_bdt->tm_year;
+  xmas_time.tm_mon = 12-1;   // months are 0..11 rather than 1..12!
+  xmas_time.tm_mday = 25;
+  xmas_time.tm_hour = 0;  //  midnight local time
+  xmas_time.tm_min = 0;
+  xmas_time.tm_sec = 0;
+  if(local_bdt->tm_mon == 11 && local_bdt->tm_mday > 25){
+    xmas_time.tm_year += 1;
+  }
+  end_time = mktime(&xmas_time);
     
-    countdown_to_event(now,end_time,"Shopping Days","until Christmas");
+  countdown_to_event(now,end_time,"Shopping Days","until Christmas");
 }
 void render_day_num_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    time_t start_time;
-    struct tm start_of_year;
+  time_t start_time;
+  struct tm start_of_year;
     
-    start_of_year.tm_year = local_bdt->tm_year;
-    start_of_year.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
-    start_of_year.tm_mday = 1;
-    start_of_year.tm_hour = 0;  //  midnight local time
-    start_of_year.tm_min = 0;
-    start_of_year.tm_sec = 0;
-    start_time = mktime(&start_of_year);
+  start_of_year.tm_year = local_bdt->tm_year;
+  start_of_year.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
+  start_of_year.tm_mday = 1;
+  start_of_year.tm_hour = 0;  //  midnight local time
+  start_of_year.tm_min = 0;
+  start_of_year.tm_sec = 0;
+  start_time = mktime(&start_of_year);
     
-    countdown_to_event(start_time,now,"Day","Of The Year");
+  countdown_to_event(start_time,now,"Day","Of The Year");
 }
 
 double mod_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    double julian_day = (now/86400.0) + 2440587.5;
-    return julian_day  - 2400000.5;
+  double julian_day = (now/86400.0) + 2440587.5;
+  return julian_day  - 2400000.5;
 }
 // renders the modifed Julian date, which Julian date - 2400000.5:
 void render_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    double jd = mod_julian_date(now,local_bdt,utc_bdt);
-    char jd_str[32];
+  double jd = mod_julian_date(now,local_bdt,utc_bdt);
+  char jd_str[32];
     
-    sprintf(jd_str,"Modified Julian Date:");
-    compileString(jd_str,255,128+32,MAIN_BUFFER,1,OVERWRITE);
-    sprintf(jd_str,"%.5lf",jd);
-    compileString(jd_str,255,128-32,MAIN_BUFFER,1,APPEND);
+  sprintf(jd_str,"Modified Julian Date:");
+  compileString(jd_str,255,128+32,MAIN_BUFFER,1,OVERWRITE);
+  sprintf(jd_str,"%.5lf",jd);
+  compileString(jd_str,255,128-32,MAIN_BUFFER,1,APPEND);
 }
 
 void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    char *strs[] = {"o'clock","b"};
-    char *hour_strings[] = {"twelve","one","two","three","four","five","six","seven","eight","nine","ten","eleven"};
-    char *minute_strings[] = {"not-used","five","ten","a quarter","twenty","twenty-five"};
-    char past_or_until[8];
-    int exact=0;
+  char *strs[] = {"o'clock","b"};
+  char *hour_strings[] = {"twelve","one","two","three","four","five","six","seven","eight","nine","ten","eleven"};
+  char *minute_strings[] = {"not-used","five","ten","a quarter","twenty","twenty-five"};
+  char past_or_until[8];
+  int exact=0;
     
-    char time_string[3][64];
+  char time_string[3][64];
     
-    if(local_bdt->tm_min > 57 || local_bdt->tm_min < 3){
-        if(local_bdt->tm_min==0)
-            sprintf(time_string[0],"It's exactly");
-        else
-            sprintf(time_string[0],"It's about");
-        compileString(time_string[0],255,160,MAIN_BUFFER,2,OVERWRITE);
-        int the_hour = local_bdt->tm_min > 56 ? local_bdt->tm_hour+1 : local_bdt->tm_hour;
-        sprintf(time_string[0],"%s ",hour_strings[the_hour % 12]);
-        compileString(time_string[0],255,108,MAIN_BUFFER,2,APPEND);
-        sprintf(time_string[0],"O'clock");
-        compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
-        return;
-    }
+  if(local_bdt->tm_min > 57 || local_bdt->tm_min < 3){
+    if(local_bdt->tm_min==0)
+      sprintf(time_string[0],"It's exactly");
+    else
+      sprintf(time_string[0],"It's about");
+    compileString(time_string[0],255,160,MAIN_BUFFER,2,OVERWRITE);
+    int the_hour = local_bdt->tm_min > 56 ? local_bdt->tm_hour+1 : local_bdt->tm_hour;
+    sprintf(time_string[0],"%s ",hour_strings[the_hour % 12]);
+    compileString(time_string[0],255,108,MAIN_BUFFER,2,APPEND);
+    sprintf(time_string[0],"O'clock");
+    compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
+    return;
+  }
     
-    if(local_bdt->tm_min >=3 && local_bdt->tm_min <=57){
-        if(local_bdt->tm_min > 27 && local_bdt->tm_min < 33){
-            if(local_bdt->tm_min ==30)
-                compileString("It's exactly",255,150,MAIN_BUFFER,2,OVERWRITE);
-            else
-                compileString("It's about",255,150,MAIN_BUFFER,2,OVERWRITE);
+  if(local_bdt->tm_min >=3 && local_bdt->tm_min <=57){
+    if(local_bdt->tm_min > 27 && local_bdt->tm_min < 33){
+      if(local_bdt->tm_min ==30)
+	compileString("It's exactly",255,150,MAIN_BUFFER,2,OVERWRITE);
+      else
+	compileString("It's about",255,150,MAIN_BUFFER,2,OVERWRITE);
                 
-            compileString("half past",255,100,MAIN_BUFFER,2,APPEND);
-            sprintf(time_string[0],"%s",hour_strings[ local_bdt->tm_hour % 12]);
-            compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
-            return;
-        }
-        else{
-            // round to nearest 5 minutes:
-            int approx_minute = 5*(local_bdt->tm_min / 5);
-            int past_until_index;
-            if((local_bdt->tm_min - approx_minute) > 2){
-                approx_minute += 5;
-            }
-            exact = (approx_minute ==  local_bdt->tm_min);
-            
-            if(exact)
-                compileString("It's exactly",255,200,MAIN_BUFFER,2,OVERWRITE);
-            else
-                compileString("It's about",255,200,MAIN_BUFFER,2,OVERWRITE);
-            if(local_bdt->tm_min <= 27){
-                past_until_index = approx_minute / 5;
-                sprintf(time_string[0],"%s",minute_strings[past_until_index]);
-                compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);
-                sprintf(time_string[0],"past");
-                compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);
-                sprintf(time_string[0],"%s",hour_strings[local_bdt->tm_hour % 12]);
-                compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
-          
-            }
-            if(local_bdt->tm_min >= 33){
-                approx_minute = 60-approx_minute;
-                past_until_index = approx_minute / 5;
-                sprintf(time_string[0],"%s",minute_strings[(approx_minute/5)]);
-                compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);                
-                sprintf(time_string[0],"'till");
-                compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);                
-                sprintf(time_string[0],"%s",hour_strings[((local_bdt->tm_hour+1)) % 12]);
-                compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);                
-            }
-/*           if(now->Min >= 28 && now->Min<=32){
-                compileString("It's about",255,200,MAIN_BUFFER,2,OVERWRITE);
-                past_until_index = approx_minute / 5;
-                sprintf(time_string[0],"half");
-                compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);
-                sprintf(time_string[0],"past");
-                compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);
-                sprintf(time_string[0],"%s",hour_strings[now->Hour % 12]);
-                compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
-            }
-*/
-        }
+      compileString("half past",255,100,MAIN_BUFFER,2,APPEND);
+      sprintf(time_string[0],"%s",hour_strings[ local_bdt->tm_hour % 12]);
+      compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
+      return;
     }
+    else{
+      // round to nearest 5 minutes:
+      int approx_minute = 5*(local_bdt->tm_min / 5);
+      int past_until_index;
+      if((local_bdt->tm_min - approx_minute) > 2){
+	approx_minute += 5;
+      }
+      exact = (approx_minute ==  local_bdt->tm_min);
+            
+      if(exact)
+	compileString("It's exactly",255,200,MAIN_BUFFER,2,OVERWRITE);
+      else
+	compileString("It's about",255,200,MAIN_BUFFER,2,OVERWRITE);
+      if(local_bdt->tm_min <= 27){
+	past_until_index = approx_minute / 5;
+	sprintf(time_string[0],"%s",minute_strings[past_until_index]);
+	compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);
+	sprintf(time_string[0],"past");
+	compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);
+	sprintf(time_string[0],"%s",hour_strings[local_bdt->tm_hour % 12]);
+	compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
+          
+      }
+      if(local_bdt->tm_min >= 33){
+	approx_minute = 60-approx_minute;
+	past_until_index = approx_minute / 5;
+	sprintf(time_string[0],"%s",minute_strings[(approx_minute/5)]);
+	compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);                
+	sprintf(time_string[0],"'till");
+	compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);                
+	sprintf(time_string[0],"%s",hour_strings[((local_bdt->tm_hour+1)) % 12]);
+	compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);                
+      }
+      /*           if(now->Min >= 28 && now->Min<=32){
+		   compileString("It's about",255,200,MAIN_BUFFER,2,OVERWRITE);
+		   past_until_index = approx_minute / 5;
+		   sprintf(time_string[0],"half");
+		   compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);
+		   sprintf(time_string[0],"past");
+		   compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);
+		   sprintf(time_string[0],"%s",hour_strings[now->Hour % 12]);
+		   compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
+		   }
+      */
+    }
+  }
     
 }
 
@@ -518,17 +511,17 @@ void update_paddles(){
     	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
     	    game_state.paddle_position[player] < PADDLE_MAX) game_state.paddle_position[player] += 4;
 
-          }
-    else{
+      }
+      else{
     	if(game_state.paddle_position[player] > game_state.puck_position[1]) 
           if(game_state.paddle_position[player] < PADDLE_MIN){
     	    game_state.paddle_position[player] += 4;
-        }
+	  }
         
              
     	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
     	    game_state.paddle_position[player] > PADDLE_MAX) game_state.paddle_position[player] -= 4;
-    }
+      }
     }
   }
 
@@ -673,20 +666,20 @@ void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 }
 
 void renderSeconds(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    char sec_str[4];
-    char hour_min_str[8];
-    char day_of_week_str[16];
+  char sec_str[4];
+  char hour_min_str[8];
+  char day_of_week_str[16];
     
-    sprintf(hour_min_str,"%02i:%02i",local_bdt->tm_hour ,local_bdt->tm_min);
-    sprintf(sec_str,"%02i",local_bdt->tm_sec);
-    sprintf(day_of_week_str,"%s",day_names[local_bdt->tm_wday]);
-    compileString(sec_str,255,10,MAIN_BUFFER,2,OVERWRITE);
-    compileString(hour_min_str,255,85,MAIN_BUFFER,4,APPEND);
-    compileString(day_of_week_str,255,205,MAIN_BUFFER,2,APPEND);
+  sprintf(hour_min_str,"%02i:%02i",local_bdt->tm_hour ,local_bdt->tm_min);
+  sprintf(sec_str,"%02i",local_bdt->tm_sec);
+  sprintf(day_of_week_str,"%s",day_names[local_bdt->tm_wday]);
+  compileString(sec_str,255,10,MAIN_BUFFER,2,OVERWRITE);
+  compileString(hour_min_str,255,85,MAIN_BUFFER,4,APPEND);
+  compileString(day_of_week_str,255,205,MAIN_BUFFER,2,APPEND);
 }
 int inBounds(float x, float lower, float upper){
-    if(x <= upper && x >= lower) return 1;
-    else return 0;
+  if(x <= upper && x >= lower) return 1;
+  else return 0;
 }
 #define SUN_SIZE 64
 
@@ -706,14 +699,14 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   };
 
 
- static seg_or_flag moon[] = {
+  static seg_or_flag moon[] = {
     {128,0,127,127,cir,0xff},
     {144,0,28,28,cir,0xff},
     {106,10,12,14,cir,0xff},
     {114,26,14,12,cir,0xff},
     {140,38,24,20,cir,0xff},
     {255,255,0,0,cir,0x00},
-};
+  };
 
 
   static uint64_t next_animation_time=0;  // allows us to keep tracj and calc rises and sets once/day
@@ -732,86 +725,86 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     next_animation_time = cycle_count + animation_period;
     sun_y += animation_step;
     if(sun_y == animation_stop){
-        animation_step = -1;
-      }
+      animation_step = -1;
+    }
     else if(sun_y == 0){
-        animation_step = 1;
+      animation_step = 1;
+    }
+  }
+
+  clear_buffer(MAIN_BUFFER);
+  //insetSegments(sun,16,16);
+  if(oneForSun==1){
+    float angle;
+    float outset = 0.6*SUN_SIZE;
+    float outset2 = 0.9*SUN_SIZE;
+    compileSegments(sun,MAIN_BUFFER,APPEND);
+    // draw rays
+
+    for(angle = 0.0; angle < 2*M_PI-0.1; angle += 2*M_PI/12.0){
+      float origin_x = 128 + outset*cos(angle);
+      float origin_y = sun_y + outset*sin(angle);
+      float end_x = 128 + outset2 * cos(angle);
+      float end_y = sun_y + outset2 * sin(angle);
+    
+      if(inBounds(origin_x,0.0,255.0) && \
+	 inBounds(origin_y,0.0,255.0) && \
+	 inBounds(end_x,0.0,255.0) && \
+	 inBounds(end_y, 0.0, 255.0)){
+	line(origin_x,origin_y,end_x,end_y,MAIN_BUFFER);
       }
-  }
-
-clear_buffer(MAIN_BUFFER);
-//insetSegments(sun,16,16);
-if(oneForSun==1){
-float angle;
-float outset = 0.6*SUN_SIZE;
-float outset2 = 0.9*SUN_SIZE;
-compileSegments(sun,MAIN_BUFFER,APPEND);
-// draw rays
-
-for(angle = 0.0; angle < 2*M_PI-0.1; angle += 2*M_PI/12.0){
-    float origin_x = 128 + outset*cos(angle);
-    float origin_y = sun_y + outset*sin(angle);
-    float end_x = 128 + outset2 * cos(angle);
-    float end_y = sun_y + outset2 * sin(angle);
-    
-    if(inBounds(origin_x,0.0,255.0) && \
-      inBounds(origin_y,0.0,255.0) && \
-      inBounds(end_x,0.0,255.0) && \
-      inBounds(end_y, 0.0, 255.0)){
-    line(origin_x,origin_y,end_x,end_y,MAIN_BUFFER);
     }
   }
-}
-else{  // draw moon features here:
+  else{  // draw moon features here:
     compileSegments(moon,MAIN_BUFFER,APPEND);
-}
-    time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
-    if(today != date_for_calcs){
-        date_for_calcs = today;
-        init_location(&my_location);  // test values for now..
+  }
+  time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
+  if(today != date_for_calcs){
+    date_for_calcs = today;
+    init_location(&my_location);  // test values for now..
         
-        sunrise_time = calcSunOrMoonRiseForDate(now,1,1,my_location);
-        sunrise_time += global_prefs.prefs_data.utc_offset*3600;
-        sunset_time = calcSunOrMoonRiseForDate(now,2,1,my_location);
-        sunset_time += global_prefs.prefs_data.utc_offset*3600;
+    sunrise_time = calcSunOrMoonRiseForDate(now,1,1,my_location);
+    sunrise_time += global_prefs.prefs_data.utc_offset*3600;
+    sunset_time = calcSunOrMoonRiseForDate(now,2,1,my_location);
+    sunset_time += global_prefs.prefs_data.utc_offset*3600;
 
-        moonrise_time = calcSunOrMoonRiseForDate(now,1,2,my_location);
-        moonrise_time += global_prefs.prefs_data.utc_offset*3600;
-        moonset_time = calcSunOrMoonRiseForDate(now,2,2,my_location);
-        moonset_time += global_prefs.prefs_data.utc_offset*3600;
+    moonrise_time = calcSunOrMoonRiseForDate(now,1,2,my_location);
+    moonrise_time += global_prefs.prefs_data.utc_offset*3600;
+    moonset_time = calcSunOrMoonRiseForDate(now,2,2,my_location);
+    moonset_time += global_prefs.prefs_data.utc_offset*3600;
         
-        // calculate fullness of moon for good measure
-        calcLunarAzimuth(NULL, NULL, &moon_fullness, NULL, NULL, now,my_location);
+    // calculate fullness of moon for good measure
+    calcLunarAzimuth(NULL, NULL, &moon_fullness, NULL, NULL, now,my_location);
 
-}
+  }
     
-    if(animation_step == 1){
-        bdt = oneForSun==1 ? *gmtime(&sunrise_time) : *gmtime(&moonrise_time);
-        strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
-    }
-    else {
-        bdt = oneForSun==1 ? *gmtime(&sunset_time) : *gmtime(&moonset_time);
-        strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
-    }
-    compileString(event_str,255,160,MAIN_BUFFER,2,APPEND);
+  if(animation_step == 1){
+    bdt = oneForSun==1 ? *gmtime(&sunrise_time) : *gmtime(&moonrise_time);
+    strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
+  }
+  else {
+    bdt = oneForSun==1 ? *gmtime(&sunset_time) : *gmtime(&moonset_time);
+    strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
+  }
+  compileString(event_str,255,160,MAIN_BUFFER,2,APPEND);
     
-    if(oneForSun==2){
-        sprintf(fullness_str,"%.0f%% full",100*moon_fullness);
-        compileString(fullness_str,255,230,MAIN_BUFFER,1,APPEND);
-    }
+  if(oneForSun==2){
+    sprintf(fullness_str,"%.0f%% full",100*moon_fullness);
+    compileString(fullness_str,255,230,MAIN_BUFFER,1,APPEND);
+  }
 }
 
 
 uint8_t cordicSqrt(uint16_t value){
-    uint8_t delta,loop,result;
+  uint8_t delta,loop,result;
     
-    for(delta=0b10000000,result=0,loop=1;loop<=8; loop++){
-        result |= delta;
-        if(((uint16_t)result * ((uint16_t)result)) > value)
-          result &= ~delta;
-        delta >>= 1;
-    }
-    return result;
+  for(delta=0b10000000,result=0,loop=1;loop<=8; loop++){
+    result |= delta;
+    if(((uint16_t)result * ((uint16_t)result)) > value)
+      result &= ~delta;
+    delta >>= 1;
+  }
+  return result;
 }
 void display_buffer(uint8 which_buffer){
 #define PI 3
@@ -832,7 +825,7 @@ void display_buffer(uint8 which_buffer){
 	break;
         
       case pos:
-	  current_phase = 0x0;
+	current_phase = 0x0;
 	break;
         
       case neg:
@@ -849,7 +842,7 @@ void display_buffer(uint8 which_buffer){
 #define CIRCLE_VERY_VERY_DIM_OCTANT  0x1
 
 
-  if(seg_ptr->seg_data.arc_type == cir){
+      if(seg_ptr->seg_data.arc_type == cir){
 	if(seg_ptr->seg_data.x_size == seg_ptr->seg_data.y_size)
 	  times_to_loop = PI*seg_ptr->seg_data.x_size;  // circle case
 	else{
@@ -859,10 +852,10 @@ void display_buffer(uint8 which_buffer){
 	}
     
 	if(times_to_loop < 10){
-	seg_ptr->seg_data.mask = CIRCLE_VERY_DIM_OCTANT;
+	  seg_ptr->seg_data.mask = CIRCLE_VERY_DIM_OCTANT;
 	}
 	if(times_to_loop < 5){
-	seg_ptr->seg_data.mask = CIRCLE_VERY_VERY_DIM_OCTANT;
+	  seg_ptr->seg_data.mask = CIRCLE_VERY_VERY_DIM_OCTANT;
 	}
       }
       else{  // line of some sort..
@@ -873,9 +866,9 @@ void display_buffer(uint8 which_buffer){
 	    times_to_loop = seg_ptr->seg_data.y_size;
 	  else times_to_loop = sqrt(SQR((uint16_t)seg_ptr->seg_data.x_size) + SQR((uint16_t)seg_ptr->seg_data.y_size));
 	times_to_loop = PI * times_to_loop/2;  // lines are drawn twice
-    if(times_to_loop < 20)
-      seg_ptr->seg_data.mask = LINE_DIM_OCTANT;
-  }
+	if(times_to_loop < 20)
+	  seg_ptr->seg_data.mask = LINE_DIM_OCTANT;
+      }
 
       if(times_to_loop < 20)
 	times_to_loop = 2;
@@ -886,7 +879,7 @@ void display_buffer(uint8 which_buffer){
 
       // old brightness routine:
       times_to_loop = (seg_ptr->seg_data.x_size>seg_ptr->seg_data.y_size) ? \
-      seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
+	seg_ptr->seg_data.x_size/6 : seg_ptr->seg_data.y_size/6;
       if(times_to_loop==0) times_to_loop = 1;
       if(seg_ptr->seg_data.arc_type == cir) times_to_loop *= 2;  // circles don't double up like lines
     
@@ -915,24 +908,24 @@ void display_buffer(uint8 which_buffer){
 }
 
 void initTime(){
-/*  RTC_1_TIME_DATE *the_time = RTC_1_ReadTime();
-  RTC_1_DisableInt();
+  /*  RTC_1_TIME_DATE *the_time = RTC_1_ReadTime();
+      RTC_1_DisableInt();
     
-  the_time->Month = 3;
-  the_time->DayOfMonth = 1;
-  the_time->DayOfWeek=0;
-  the_time->Year = 2016;
-  the_time->Hour = 05;
-  the_time->Min = 59;
-  the_time->Sec = 50;
+      the_time->Month = 3;
+      the_time->DayOfMonth = 1;
+      the_time->DayOfWeek=0;
+      the_time->Year = 2016;
+      the_time->Hour = 05;
+      the_time->Min = 59;
+      the_time->Sec = 50;
 
-  offset_time(the_time,-7);
+      offset_time(the_time,-7);
 
-  RTC_1_WriteTime(the_time);
-  RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK | RTC_1_INTERVAL_MIN_MASK);
-  RTC_1_EnableInt();
-  RTC_1_Start(); //done in gps_init at the moment...  
-    */
+      RTC_1_WriteTime(the_time);
+      RTC_1_WriteIntervalMask(RTC_1_INTERVAL_SEC_MASK | RTC_1_INTERVAL_MIN_MASK);
+      RTC_1_EnableInt();
+      RTC_1_Start(); //done in gps_init at the moment...  
+  */
 }
 
 
@@ -954,18 +947,18 @@ void hw_test(){
     {255,255,0,0,cir,0x00},
   }; 
 
-    clear_buffer(MAIN_BUFFER);
-    compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
-    while(!button_clicked){
-      display_buffer(MAIN_BUFFER);
-    }
-    button_clicked=0;
+  clear_buffer(MAIN_BUFFER);
+  compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
+  while(!button_clicked){
+    display_buffer(MAIN_BUFFER);
+  }
+  button_clicked=0;
     
-    set_DACfor_seg(test_pattern2,0,0);
-    strobe_LDAC();
-    //current_state = hw_testing;
-    while(!button_clicked) {}
-    button_clicked = 0;
+  set_DACfor_seg(test_pattern2,0,0);
+  strobe_LDAC();
+  //current_state = hw_testing;
+  while(!button_clicked) {}
+  button_clicked = 0;
 }
 
 void hw_test2(){
@@ -988,7 +981,7 @@ void hw_test2(){
   int x,y;
   int radius = 8;
 
-// Small circle test:
+  // Small circle test:
   while(radius < 64){
     clear_buffer(MAIN_BUFFER);
     for(x=radius;x<256-radius+1;x+=2*radius)
@@ -1066,7 +1059,7 @@ int main()
   init_prefs();
 
   // with prefs initialized, we can select between gps or the internal ds3231 rtc:
- // first delay one second to allow a pps pules to arrive:
+  // first delay one second to allow a pps pules to arrive:
   CyDelay(1100);
     
   CyDelay(100);
@@ -1085,15 +1078,15 @@ int main()
   //hw_test();
   //hw_test2();
 
-// The main loop:
+  // The main loop:
   for(;;){
     // if power is off and button is pressed, turn power on:
     // Turn off the LED part way into each 1 second period:
     if(((cycle_count-phase_error) % 31250) > 2000 && !global_prefs.prefs_data.use_gps){
-        led_off();
+      led_off();
     }
     else if(((cycle_count-phase_error) % 31250) > 20000){
-        led_off();
+      led_off();
     }
 
     RTC_1_TIME_DATE *psoc_now = RTC_1_ReadTime();
@@ -1104,8 +1097,8 @@ int main()
     struct tm utc_bdt = *gmtime(&now);
     
     if(power_off_t && now > power_off_t){
-        power_off();
-        power_off_t = 0;
+      power_off();
+      power_off_t = 0;
     }
     /* Now render the appropriate contents into the display buffer, based upon 
        the current display_mode.  (Note that we're wasting lots of cpu cycles in some cases,
@@ -1200,12 +1193,12 @@ int main()
     int switch_interval = global_prefs.prefs_data.switch_interval;
     int knob_position;
     if(display_mode != menuMode && switch_interval == 0) {
-        if((knob_position=QuadDec_1_GetCounter()) < 0) QuadDec_1_SetCounter(knob_position + nmodes);  // wrap around
-        display_mode = QuadDec_1_GetCounter() % nmodes;
+      if((knob_position=QuadDec_1_GetCounter()) < 0) QuadDec_1_SetCounter(knob_position + nmodes);  // wrap around
+      display_mode = QuadDec_1_GetCounter() % nmodes;
     }
     else {
-        if((knob_position=QuadDec_1_GetCounter()) < 0) QuadDec_1_SetCounter(knob_position + main_menu.n_items);  // wrap around
-        main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+      if((knob_position=QuadDec_1_GetCounter()) < 0) QuadDec_1_SetCounter(knob_position + main_menu.n_items);  // wrap around
+      main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     }
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
@@ -1213,23 +1206,23 @@ int main()
 
     if(button_clicked){
       button_clicked=0;  // consume the click
-        // if the power is off, take the button click as a command to turn it on:
+      // if the power is off, take the button click as a command to turn it on:
       if(power_status() == 0){
         power_on();
+      }
+      else{
+	// else if we're in menu mode, perform the selected item and return to a display mode
+	if(display_mode==menuMode){
+	  dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
+	  display_mode = saved_mode;
+	}
+	else {
+	  // we were in a display mode.  enter menuMode:
+	  saved_mode = display_mode;
+	  display_mode = menuMode;
+	}
+      }
     }
-    else{
-      // else if we're in menu mode, perform the selected item and return to a display mode
-      if(display_mode==menuMode){
-    	dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
-    	display_mode = saved_mode;
-      }
-      else {
-    // we were in a display mode.  enter menuMode:
-	saved_mode = display_mode;
-	display_mode = menuMode;
-      }
-   }
-}
     else{
       if(display_mode != menuMode && switch_interval!=0 && cycle_count-last_switch > switch_interval*31250){
 	display_mode = (cycle_count / (switch_interval*31250)) % n_auto_modes;   // switch modes automatically
@@ -1241,3 +1234,4 @@ int main()
 
 /* [] END OF FILE */
 	
+       

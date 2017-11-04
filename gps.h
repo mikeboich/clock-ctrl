@@ -25,6 +25,8 @@ time_t rmc_sentence_to_unix_time(char *sentence);
 
 void invalidate_gps_pps();
 
+float get_lat_or_long(int select);
+
 // state machine that consumes characters and constructs sentence(s):
 void consume_char(char c);
 void set_rtc_to_gps();
