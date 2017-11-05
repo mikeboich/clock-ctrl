@@ -460,6 +460,7 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 #define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)-1
 
 typedef struct{
+  uint64_t celebrating;    //  zero for normal mode, end-of-celebration time if nonzero
   int paddle_position[2]; 
   int puck_velocity[2];
   int puck_position[2];
@@ -467,16 +468,34 @@ typedef struct{
 } pong_state;
 
 pong_state game_state = {
+  .celebrating = 0,
   .paddle_position = {96,140},
   .puck_velocity = {6,3},
   .puck_position = {128,200},
   .score = {0,0}};
 
+// try a two second celebration period for now:
+#define CELEB_DURATION 31250
+
+void start_celebration(){
+    game_state.celebrating = cycle_count + CELEB_DURATION;
+}
+
+void end_celebration(){
+    game_state.celebrating = 0;
+}
+
 //returns which edge puck has struck, or zero otherwise:
 // left = 1, right = 2, top = 3, bottom = 4
 int puck_at_edge(){
-  if(game_state.puck_position[0] < PONG_LEFT) return(1);
-  if(game_state.puck_position[0]> PONG_RIGHT) return(2);
+  if(game_state.puck_position[0] < PONG_LEFT){
+    return(1);
+    start_celebration();
+}
+  if(game_state.puck_position[0]> PONG_RIGHT){
+    return(2);
+    start_celebration();
+}
   if(game_state.puck_position[1] < PONG_BOTTOM) return(3);
   if(game_state.puck_position[1 ]> PONG_TOP) return(4);
 
@@ -505,12 +524,12 @@ void update_paddles(){
 
     for(player=0;player<2;player++){
       if(!should_miss[player]){
-    	if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] > PADDLE_MIN){
+    	if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] >= PADDLE_MIN + 4){
     	  game_state.paddle_position[player] -= 4;
         }
         else{
           	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
-        	    game_state.paddle_position[player] < PADDLE_MAX) game_state.paddle_position[player] += 4;         
+        	    game_state.paddle_position[player] <= PADDLE_MAX - 4) game_state.paddle_position[player] += 4;         
         }
              
 
@@ -522,8 +541,9 @@ void update_paddles(){
 	  }
         
              
-    	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
+    	else {if (game_state.paddle_position[player] < game_state.puck_position[1] && \
     	    game_state.paddle_position[player] > PADDLE_MAX) game_state.paddle_position[player] -= 4;
+        }
       }
     }
   }
@@ -531,80 +551,97 @@ void update_paddles(){
 }
 
 // returns the new y velocity for the puck if it hit a paddle, and 0 otherwise
-int puck_hit_paddle(){
+int puck_hit_paddle(int *new_velocity){
   int which_paddle;
-  int result=0;
+  int did_hit=0;
+    int offset;
+    
   if(game_state.puck_velocity[0]<0 && abs(game_state.puck_position[0]-PADDLE_WIDTH) <= abs(game_state.puck_velocity[0]))
     which_paddle = 0;
   else if(game_state.puck_velocity[0]>0 && abs(game_state.puck_position[0]-(PONG_RIGHT-PADDLE_WIDTH)) <= abs(game_state.puck_velocity[0]))
     which_paddle=1;
   else return 0;
   
-  result = game_state.puck_position[1]-game_state.paddle_position[which_paddle];
+  offset = game_state.puck_position[1]-game_state.paddle_position[which_paddle];
         
-  if(abs(result) > PADDLE_HEIGHT/2) result=0;  // we missed
+  if(abs(offset) > PADDLE_HEIGHT/2) return 0;  // we missed
 
-  return (result / 8) + (rand() % 3)-1;  
+  *new_velocity = (offset / 8) + (rand() % 3)-1;
+  return 1;
 }
 
 void pong_update(){
   int dim;
+  if(!game_state.celebrating){
+      for(dim=0;dim<2;dim++){
+        game_state.puck_position[dim] += game_state.puck_velocity[dim];  // move the puck
+      }
+      //constrain(&game_state.puck_position[0],PONG_LEFT,PONG_RIGHT);
+      //constrain(&game_state.puck_position[1],PONG_BOTTOM,PONG_TOP);
     
-  for(dim=0;dim<2;dim++){
-    game_state.puck_position[dim] += game_state.puck_velocity[dim];  // move the puck
-  }
-    
-  // if puck has been off screen, and is beyond some imaginary boundary, recenter it:
-  if(game_state.puck_position[0] < -128 || game_state.puck_position[0]>384){
-    game_state.puck_position[0] = 128;   
-  }
-  update_paddles();
-  int new_y_velocity = puck_hit_paddle();
-    
-  if(new_y_velocity){
-    game_state.puck_velocity[1] = new_y_velocity;
-    game_state.puck_velocity[0] = -game_state.puck_velocity[0];
-  }
-  int which_edge = puck_at_edge();
-  if(which_edge  && !new_y_velocity){
-    if(which_edge==1 || which_edge==2){
-      // puck is exiting the playing area
-      // just reverse for now:
-      game_state.puck_velocity[0] = -game_state.puck_velocity[0];
+      update_paddles();
+      int new_y_velocity;
+      int hit_paddle = puck_hit_paddle(&new_y_velocity);
         
-    }
-    if(which_edge == 3 || which_edge==4){  // hit top or bottom edge. reverse y velocity:
-      game_state.puck_velocity[1] = -game_state.puck_velocity[1]; 
-    }
+      if(hit_paddle){
+        game_state.puck_velocity[1] = new_y_velocity;
+        game_state.puck_velocity[0] = -game_state.puck_velocity[0];
+      }
+      int which_edge = puck_at_edge();
+      if(which_edge  && !hit_paddle){
+        if((which_edge==1 || which_edge==2) && !hit_paddle ){
+          // puck is  exiting the playing area 
+            start_celebration();
+            game_state.puck_velocity[0] = -game_state.puck_velocity[0];
+            
+        }
+        if(which_edge == 3 || which_edge==4){  // hit top or bottom edge. reverse y velocity:
+          game_state.puck_velocity[1] = -game_state.puck_velocity[1]; 
+        }
+      } 
+   }    
+  else{
+    if(cycle_count > game_state.celebrating)
+      end_celebration();
   }
-    
 }
 
-void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, struct tm *utc_bdt){
-  int x,y;
-  
-  clear_buffer(MAIN_BUFFER);
+void draw_paddles(pong_state the_state){
+  int y;
   // draw the left paddle
   for(y=the_state.paddle_position[0]-(PADDLE_HEIGHT/2);y<the_state.paddle_position[0]+(PADDLE_HEIGHT/2)+1;y++) \
     line(0,y,PADDLE_WIDTH,y,MAIN_BUFFER);
   // draw the right paddle:
   for(y=the_state.paddle_position[1]-(PADDLE_HEIGHT/2);y<the_state.paddle_position[1]+(PADDLE_HEIGHT/2)+1;y++) \
     line(254-PADDLE_WIDTH,y,254,y,MAIN_BUFFER);
-    
-  // draw puck:
+}
+
+void draw_puck(pong_state the_state){
+    int x,y;
   x = the_state.puck_position[0];
   if(puck_visible()){
     for(y=the_state.puck_position[1]-2;y<the_state.puck_position[1]+3;y++)
       line(x-2,y,x+2,y,MAIN_BUFFER);
   }
-    
-  // draw the centerline:
+}
+void draw_celeb(pong_state the_state){
+    int x,y,r;
+  x = the_state.puck_position[0];
+  y = the_state.puck_position[1];
+  for(r=2; r<32; r+=8){
+    circle(x,y,r,MAIN_BUFFER);
+}
+}
+
+void draw_center_line(pong_state the_state){
+  int x,y;
   x=128;
   for(y=240;y>0;y-=32){
     line(128,y,128,y-16,MAIN_BUFFER);   
-  }
-    
-  // draw the hours and minutes as two scores:
+  }  
+}
+
+void draw_scores(pong_state the_state, struct tm *local_bdt){  // draw the hours and minutes as two scores:
   char time_str[32];
   int the_hour = local_bdt->tm_hour;
   int the_minute = local_bdt->tm_min;
@@ -612,8 +649,20 @@ void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, 
   compileString(time_str,36,200,MAIN_BUFFER,2,APPEND);
     
   sprintf(time_str,"%02i",the_minute);
-  compileString(time_str,160,200,MAIN_BUFFER,2,APPEND);
-    
+  compileString(time_str,160,200,MAIN_BUFFER,2,APPEND); 
+}
+
+void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, struct tm *utc_bdt){
+  int x,y;
+  
+  clear_buffer(MAIN_BUFFER);
+  draw_paddles(the_state);
+  if(!the_state.celebrating) draw_puck(the_state);
+  draw_center_line(the_state);
+  draw_scores(the_state,local_bdt);
+
+  if(the_state.celebrating && cycle_count % 6000 > 3000)
+    draw_celeb(the_state);
 }
 
 /*  Pendulum Clock *** */
