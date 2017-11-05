@@ -453,7 +453,7 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 #define PADDLE_HEIGHT 24
 #define PADDLE_WIDTH   8
 #define PONG_TOP 240
-#define PONG_BOTTOM 0
+#define PONG_BOTTOM 4
 #define PONG_LEFT PADDLE_WIDTH
 #define PONG_RIGHT 255-PADDLE_WIDTH
 #define PADDLE_MIN PONG_BOTTOM+(PADDLE_HEIGHT/2)+1
@@ -505,11 +505,14 @@ void update_paddles(){
 
     for(player=0;player<2;player++){
       if(!should_miss[player]){
-    	if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] > PADDLE_MIN)
+    	if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] > PADDLE_MIN){
     	  game_state.paddle_position[player] -= 4;
+        }
+        else{
+          	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
+        	    game_state.paddle_position[player] < PADDLE_MAX) game_state.paddle_position[player] += 4;         
+        }
              
-    	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
-    	    game_state.paddle_position[player] < PADDLE_MAX) game_state.paddle_position[player] += 4;
 
       }
       else{
