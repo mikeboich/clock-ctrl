@@ -458,6 +458,7 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 #define PONG_RIGHT 255-PADDLE_WIDTH
 #define PADDLE_MIN PONG_BOTTOM+(PADDLE_HEIGHT/2)+1
 #define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)-1
+#define PADDLE_STEP 3
 
 typedef struct{
   uint64_t celebrating;    //  zero for normal mode, end-of-celebration time if nonzero
@@ -525,12 +526,12 @@ void update_paddles(){
     for(player=0;player<2;player++){
       if(!should_miss[player]){
     	if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] >= PADDLE_MIN){
-    	  game_state.paddle_position[player] -= 4;
+    	  game_state.paddle_position[player] -= PADDLE_STEP;
           constrain(&game_state.paddle_position[player],PONG_BOTTOM + PADDLE_HEIGHT/2,PONG_TOP-PADDLE_HEIGHT/2);
         }
         else{
           	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
-        	    game_state.paddle_position[player] <= PADDLE_MAX) game_state.paddle_position[player] += 4; 
+        	    game_state.paddle_position[player] <= PADDLE_MAX) game_state.paddle_position[player] += PADDLE_STEP; 
                 constrain(&game_state.paddle_position[player],PONG_BOTTOM + PADDLE_HEIGHT/2,PONG_TOP-PADDLE_HEIGHT/2);
         }
              
@@ -539,12 +540,12 @@ void update_paddles(){
       else{
     	if(game_state.paddle_position[player] > game_state.puck_position[1]) 
           if(game_state.paddle_position[player] < PADDLE_MIN){
-    	    game_state.paddle_position[player] += 4;
+    	    game_state.paddle_position[player] += PADDLE_STEP;
 	  }
         
              
     	else {if (game_state.paddle_position[player] < game_state.puck_position[1] && \
-    	    game_state.paddle_position[player] > PADDLE_MAX) game_state.paddle_position[player] -= 4;
+    	    game_state.paddle_position[player] > PADDLE_MAX) game_state.paddle_position[player] -= PADDLE_STEP;
         }
       }
     }
