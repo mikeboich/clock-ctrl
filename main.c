@@ -488,16 +488,16 @@ void end_celebration(){
 //returns which edge puck has struck, or zero otherwise:
 // left = 1, right = 2, top = 3, bottom = 4
 int puck_at_edge(){
-  if(game_state.puck_position[0] < PONG_LEFT){
+  if(game_state.puck_position[0] <= PONG_LEFT){
     return(1);
     start_celebration();
 }
-  if(game_state.puck_position[0]> PONG_RIGHT){
+  if(game_state.puck_position[0] >= PONG_RIGHT){
     return(2);
     start_celebration();
 }
-  if(game_state.puck_position[1] < PONG_BOTTOM) return(3);
-  if(game_state.puck_position[1 ]> PONG_TOP) return(4);
+  if(game_state.puck_position[1] <= PONG_BOTTOM) return(3);
+  if(game_state.puck_position[1 ] >= PONG_TOP) return(4);
 
   return(0);
        
@@ -524,12 +524,14 @@ void update_paddles(){
 
     for(player=0;player<2;player++){
       if(!should_miss[player]){
-    	if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] >= PADDLE_MIN + 4){
+    	if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] >= PADDLE_MIN){
     	  game_state.paddle_position[player] -= 4;
+          constrain(&game_state.paddle_position[player],PONG_BOTTOM + PADDLE_HEIGHT/2,PONG_TOP-PADDLE_HEIGHT/2);
         }
         else{
           	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
-        	    game_state.paddle_position[player] <= PADDLE_MAX - 4) game_state.paddle_position[player] += 4;         
+        	    game_state.paddle_position[player] <= PADDLE_MAX) game_state.paddle_position[player] += 4; 
+                constrain(&game_state.paddle_position[player],PONG_BOTTOM + PADDLE_HEIGHT/2,PONG_TOP-PADDLE_HEIGHT/2);
         }
              
 
@@ -576,8 +578,8 @@ void pong_update(){
       for(dim=0;dim<2;dim++){
         game_state.puck_position[dim] += game_state.puck_velocity[dim];  // move the puck
       }
-      //constrain(&game_state.puck_position[0],PONG_LEFT,PONG_RIGHT);
-      //constrain(&game_state.puck_position[1],PONG_BOTTOM,PONG_TOP);
+      constrain(&game_state.puck_position[0],PONG_LEFT,PONG_RIGHT);
+      constrain(&game_state.puck_position[1],PONG_BOTTOM,PONG_TOP);
     
       update_paddles();
       int new_y_velocity;
