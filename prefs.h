@@ -23,7 +23,7 @@
 #define SWITCH_INTERVAL_OFFSET 2
 #define PREFS_INITIALIZED 0xaa
 
-#define N_PREFS 20  
+#define N_PREFS sizeof(prefs) 
 
 typedef struct prefsStruct {
     uint8 prefs_initialized;
@@ -32,11 +32,12 @@ typedef struct prefsStruct {
     uint8 sync_to_60Hz;     // 0 = no sync, non-zero = sync to edges of 60Hz clock
     char  esn[16];
     uint8 use_gps;
+    int8 minutes_till_sleep;  // gives us 0 to 2 hours, 7 minutes (plus never when < 0)
 
 } prefs;
 
 typedef union {prefs prefs_data;
-       uint8 prefs_bytes[N_PREFS];
+       uint8 prefs_bytes[sizeof(prefs)];
 } pref_object;
 
 extern pref_object global_prefs;

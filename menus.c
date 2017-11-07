@@ -315,7 +315,7 @@ void echo_power_off(int x){
 void set_power_off(){
     RTC_1_TIME_DATE *psoc_now = RTC_1_ReadTime();
     time_t now= psoc_to_unix(psoc_now);
-    int minutes_till_sleep = (power_off_t == 0) ? 60 : (power_off_t - now)/60;
+    int minutes_till_sleep = global_prefs.prefs_data.minutes_till_sleep;
     int result = trackKnob(minutes_till_sleep/10,0,MAX_TILL_SLEEP/10+1,echo_power_off);
     psoc_now = RTC_1_ReadTime();
     now= psoc_to_unix(psoc_now);
@@ -325,7 +325,12 @@ void set_power_off(){
     else {
         power_off_t = now + result * 10* 60;
     }
-    flush_prefs();
+    
+    // store the new value into prefs, unless it was immediate power off:
+    if(result != 0){
+      global_prefs.prefs_data.minutes_till_sleep = result < 0 ? -1 : 10* result;
+      flush_prefs();
+    }
 }
 
 void show_sync(int s){

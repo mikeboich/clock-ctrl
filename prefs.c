@@ -51,6 +51,7 @@ int init_prefs(){
         global_prefs.prefs_data.switch_interval = 10;
         global_prefs.prefs_data.sync_to_60Hz = 0;
         global_prefs.prefs_data.use_gps = 1;
+        global_prefs.prefs_data.minutes_till_sleep = 60;
         flush_prefs();
         return(2);
         CyDelay(1);

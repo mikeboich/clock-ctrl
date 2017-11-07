@@ -1136,6 +1136,12 @@ int main()
   gps_pps_int_Start();
   DS3231_pps_int_Start();
 
+// set the power off time from the prefs value:
+  if (power_off < 0)
+    power_off_t = 0;
+  else
+    power_off_t = t + 60*global_prefs.prefs_data.minutes_till_sleep;
+
   SW_Tx_UART_1_StartEx(3,4);
   SW_Tx_UART_1_PutString("Hello from PSOC-land!");
 
