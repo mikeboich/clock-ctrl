@@ -503,6 +503,15 @@ int puck_at_edge(){
   return(0);
        
 }
+
+int puck_dest(){
+    float delta_x = game_state.puck_velocity[0] < 0 ? game_state.puck_position[0]-PONG_LEFT : \
+                      PONG_RIGHT - game_state.puck_position[0];
+    float delta_t = fabs(delta_x/game_state.puck_velocity[0]);  //this many ticks to reach  edge
+    float y_intercept = game_state.puck_position[1] + delta_t * game_state.puck_velocity[1];
+    return (int) y_intercept;
+}
+
 int puck_visible(){
   if(game_state.puck_position[0] > 0 || game_state.puck_position[0]<255)
     return 1;
