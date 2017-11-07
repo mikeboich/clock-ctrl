@@ -534,18 +534,14 @@ void update_paddles(){
 
     for(player=0;player<2;player++){
       if(!should_miss[player]){
-    	if(game_state.paddle_position[player] > game_state.puck_position[1] && game_state.paddle_position[player] >= PADDLE_MIN){
-    	  game_state.paddle_position[player] -= PADDLE_STEP;
-          constrain(&game_state.paddle_position[player],PONG_BOTTOM + PADDLE_HEIGHT/2,PONG_TOP-PADDLE_HEIGHT/2);
+        if(game_state.puck_velocity[0] < 0){
+            game_state.paddle_position[0] = puck_dest();
         }
         else{
-          	if (game_state.paddle_position[player] < game_state.puck_position[1] && \
-        	    game_state.paddle_position[player] <= PADDLE_MAX) game_state.paddle_position[player] += PADDLE_STEP; 
-                constrain(&game_state.paddle_position[player],PONG_BOTTOM + PADDLE_HEIGHT/2,PONG_TOP-PADDLE_HEIGHT/2);
+            game_state.paddle_position[1] = puck_dest();
         }
-             
-
-      }
+        constrain(&game_state.paddle_position[player],PADDLE_MIN,PADDLE_MAX);
+    }
       else{
     	if(game_state.paddle_position[player] > game_state.puck_position[1]) 
           if(game_state.paddle_position[player] < PADDLE_MIN){
