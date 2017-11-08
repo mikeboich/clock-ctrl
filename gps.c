@@ -51,7 +51,7 @@ float get_lat_or_long(int select){
     char lat_or_long_str[32];
     char *src_ptr;
     char *dst_ptr = lat_or_long_str; 
-    if(!sentence_avail) return select == 0 ? 34 : 118;
+    if(!sentence_avail) return select == 0 ? 37.368832 : 122.036346;
     src_ptr = field_n(select==0 ? 3 : 5,sentence);
     while(*src_ptr != ','){
         *dst_ptr++ = *src_ptr++;

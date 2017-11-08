@@ -65,6 +65,8 @@ int frame_toggle = 0;   // performance measurement
 volatile uint64_t phase_error=0;            // difference between (cycle_count % 31250) and 1 pps edge
 volatile uint64_t minute_error=0;            // difference between (cycle_count % 60*31250) and 1 minute boundary
 
+int previous_knob=0;  // for checking to see if knob has been turned
+
 int last_refresh=0,loops_per_frame=0;   // for performance measurement
 /* Some housekeeping/utility items that should probably be moved to another source file: */
 
@@ -1168,7 +1170,7 @@ int main()
 
   //hw_test();
   //hw_test2();
-
+  previous_knob = QuadDec_1_GetCounter();
   // The main loop:
   for(;;){
     // if power is off and button is pressed, turn power on:
@@ -1191,6 +1193,12 @@ int main()
       power_off();
       power_off_t = 0;
     }
+    
+    // if knob has been turned, and we're in autoswitch, exit autoswitch:
+    if (QuadDec_1_GetCounter() != previous_knob){
+        global_prefs.prefs_data.switch_interval = 0;
+        previous_knob = QuadDec_1_GetCounter();
+    }
     /* Now render the appropriate contents into the display buffer, based upon 
        the current display_mode.  (Note that we're wasting lots of cpu cycles in some cases,
        since the display only changes when once/second for many of the display modes. 
@@ -1212,7 +1220,6 @@ int main()
     
     case analogMode0:
     case analogMode1:
-    case analogMode2:
       renderAnalogClockBuffer(now,&local_bdt,&utc_bdt);
       break;
     
