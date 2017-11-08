@@ -190,12 +190,12 @@ void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   sprintf(esn_string,"Lat: %f",get_lat_or_long(0));
   compileString(esn_string,255,y,MAIN_BUFFER,1,APPEND);
   y -= 36;
-  sprintf(esn_string,"Long: %f",get_lat_or_long(1));
+  sprintf(esn_string,"Lon: %f",get_lat_or_long(1));
   compileString(esn_string,255,y,MAIN_BUFFER,1,APPEND);
   y-=36;
 
   if(power_off_t)
-    sprintf(esn_string,"Sleep in %ld min, %ld sec", (power_off_t-now)/60, (power_off_t-now)%60);
+    sprintf(esn_string,"Sleep in %ldm, %lds", (power_off_t-now)/60, (power_off_t-now)%60);
   else sprintf(esn_string,"No sleep scheduled");
   compileString(esn_string,255,y,MAIN_BUFFER,1,APPEND);
  
@@ -1194,9 +1194,11 @@ int main()
       power_off_t = 0;
     }
     
-    // if knob has been turned, and we're in autoswitch, exit autoswitch:
+    // if knob has been turned, bump sleep timer and exit autoswitch:
     if (QuadDec_1_GetCounter() != previous_knob){
         global_prefs.prefs_data.switch_interval = 0;
+        if(global_prefs.prefs_data.minutes_till_sleep > 0 && global_prefs.prefs_data.minutes_till_sleep <= MAX_TILL_SLEEP)
+        power_off_t = now + 60 * global_prefs.prefs_data.minutes_till_sleep;
         previous_knob = QuadDec_1_GetCounter();
     }
     /* Now render the appropriate contents into the display buffer, based upon 
@@ -1220,6 +1222,7 @@ int main()
     
     case analogMode0:
     case analogMode1:
+    case analogMode2:
       renderAnalogClockBuffer(now,&local_bdt,&utc_bdt);
       break;
     
