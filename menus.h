@@ -17,7 +17,7 @@
 
  *******************************************************************************/
 #include "font.h"
-
+#define MAX_TILL_SLEEP 60  // max minutes until soft power-off
 volatile int button_clicked;
 
 // Some useful strings:

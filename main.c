@@ -160,39 +160,47 @@ void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   int seconds = utc_bdt->tm_sec;
   int minutes = utc_bdt->tm_min;
   int hours = utc_bdt->tm_hour;
+
+  int y = 220;
          
-  sprintf(rtc_string,"RTC: %i:%02i:%02i",hours,minutes,seconds);
-  compileString(rtc_string,255,220,MAIN_BUFFER,1,OVERWRITE); 
-  
+//  sprintf(rtc_string,"RTC: %i:%02i:%02i",hours,minutes,seconds);
+//  compileString(rtc_string,255,y,MAIN_BUFFER,1,OVERWRITE); 
+//  y -= 36;
+  clear_buffer(MAIN_BUFFER);
   time_t ds_time = get_DS3231_time();
   struct tm ds_tm = *gmtime(&ds_time);
 
   strftime(ds3231_string,32,"DS3231: %H:%M:%S",&ds_tm);
-  compileString(ds3231_string,255,210-36,MAIN_BUFFER,1,APPEND);
+  compileString(ds3231_string,255,y,MAIN_BUFFER,1,APPEND);
+  y-=36;
 
   time_t gps_time = rmc_sentence_to_unix_time(sentence);
   struct tm gps_tm = *gmtime(&gps_time);
   strftime(gps_string,32,"GPS: %H:%M:%S",&gps_tm);
-  compileString(gps_string,255,210-72,MAIN_BUFFER,1,APPEND);
+  compileString(gps_string,255,y,MAIN_BUFFER,1,APPEND);
+  y-=36;
 
   sprintf(uptime_string,"up %f days",cycle_count / (31250*86400.0));
-  compileString(uptime_string,255,210-108,MAIN_BUFFER,1,APPEND);
+  compileString(uptime_string,255,y,MAIN_BUFFER,1,APPEND);
+  y -= 36;
 
 
   sprintf(esn_string,"Lat: %f",get_lat_or_long(0));
-  compileString(esn_string,255,210-146,MAIN_BUFFER,1,APPEND);
+  compileString(esn_string,255,y,MAIN_BUFFER,1,APPEND);
+  y -= 36;
   sprintf(esn_string,"Long: %f",get_lat_or_long(1));
-  compileString(esn_string,255,210-182,MAIN_BUFFER,1,APPEND);
+  compileString(esn_string,255,y,MAIN_BUFFER,1,APPEND);
+  y-=36;
 
-
-
-  
+  if(power_off_t)
+    sprintf(esn_string,"Sleep in %ld min, %ld sec", (power_off_t-now)/60, (power_off_t-now)%60);
+  else sprintf(esn_string,"No sleep scheduled");
+  compileString(esn_string,255,y,MAIN_BUFFER,1,APPEND);
+ 
   //  sprintf(pe,"phase error: %Lu",phase_error);
   //  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
   //  sprintf(pe,"minute err: %Lu",minute_error);
   //  compileString(pe,255,128-32,MAIN_BUFFER,1,APPEND);
-
-
 }
 
 // Show a four letter word:
@@ -338,6 +346,8 @@ void render_xmas_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 void render_day_num_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   time_t start_time;
   struct tm start_of_year;
+  char str_buf[64];
+int y = 205;
     
   start_of_year.tm_year = local_bdt->tm_year;
   start_of_year.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
@@ -346,20 +356,31 @@ void render_day_num_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   start_of_year.tm_min = 0;
   start_of_year.tm_sec = 0;
   start_time = mktime(&start_of_year);
-    
-  countdown_to_event(start_time,now,"Day","Of The Year");
+
+  int day_number = (now-start_time)/86400 + 1;
+
+  compileString("Day",255,y,MAIN_BUFFER,2,OVERWRITE);
+  y -= 96;
+
+  sprintf(str_buf,"%d",day_number);
+  compileString(str_buf,255,y,MAIN_BUFFER,3,APPEND);
+  y-= 72;
+
+  sprintf(str_buf,"of %d",local_bdt->tm_year+1900);
+  compileString(str_buf,255,y,MAIN_BUFFER,2,APPEND);
+  
 }
 
-double mod_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
+double julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   double julian_day = (now/86400.0) + 2440587.5;
-  return julian_day  - 2400000.5;
+  return julian_day; //  - 2400000.5;
 }
-// renders the modifed Julian date, which Julian date - 2400000.5:
+// renders the Julian date
 void render_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-  double jd = mod_julian_date(now,local_bdt,utc_bdt);
+  double jd = julian_date(now,local_bdt,utc_bdt);
   char jd_str[32];
     
-  sprintf(jd_str,"Modified Julian Date:");
+  sprintf(jd_str,"Julian Date:");
   compileString(jd_str,255,128+32,MAIN_BUFFER,1,OVERWRITE);
   sprintf(jd_str,"%.5lf",jd);
   compileString(jd_str,255,128-32,MAIN_BUFFER,1,APPEND);
@@ -1279,6 +1300,10 @@ int main()
       // if the power is off, take the button click as a command to turn it on:
       if(power_status() == 0){
         power_on();
+        if(global_prefs.prefs_data.minutes_till_sleep > 0 && global_prefs.prefs_data.minutes_till_sleep < MAX_TILL_SLEEP)
+          power_off_t = now + 60 * global_prefs.prefs_data.minutes_till_sleep;  // reset timer
+        else if(global_prefs.prefs_data.minutes_till_sleep == -1)
+          power_off_t = 0;
       }
       else{
 	// else if we're in menu mode, perform the selected item and return to a display mode
