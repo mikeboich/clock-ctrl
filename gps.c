@@ -66,7 +66,7 @@ float get_lat_or_long(int select){
         result = 10*result + (*src_ptr - '0');
         src_ptr++;
     }
-    // src_ptr+2 now points to the decimal place. src_ptr points to the first digit of minutes.
+    // src_ptr+2 now points to the decimal point. src_ptr points to the first digit of minutes.
     // The minutes string is zero-terminated, so we can just use sscanf to get the value of the minutes
     float minutes;
     sscanf(src_ptr,"%f",&minutes);
@@ -154,15 +154,7 @@ void set_rtc_to_gps(){
     
     struct tm tm_gps;
 
-    tm_gps.tm_hour = a_to_int(field_n(1,sentence));
-    tm_gps.tm_min = a_to_int(field_n(1,sentence)+2);
-    tm_gps.tm_sec = a_to_int(field_n(1,sentence)+4); 
-   
-    tm_gps.tm_mday = a_to_int(field_n(9,sentence));
-    tm_gps.tm_mon = a_to_int(field_n(9,sentence)+2)-1;  //  map 1..12 to 0..11
-    tm_gps.tm_year = 100 + a_to_int(field_n(9,sentence)+4);
-    tm_gps.tm_isdst = 0;
-    time_t gps_time = mktime(&tm_gps);
+    time_t gps_time = rmc_sentence_to_unix_time(sentence);
     
     RTC_1_TIME_DATE *psoc_rtc = RTC_1_ReadTime();
     time_t psoc_time = psoc_to_unix(psoc_rtc);
@@ -179,7 +171,7 @@ void set_rtc_to_gps(){
         
     // create a seed for the random number generator based on time and date:
     if(seed==0){
-        seed = tm_gps.tm_sec+60*tm_gps.tm_min+3600*tm_gps.tm_hour+86400*tm_gps.tm_yday;
+        seed = (int) gps_time;
         srand(seed);
     }
     time_set=1;
