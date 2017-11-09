@@ -479,10 +479,10 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 #define PONG_BOTTOM 4
 #define PONG_LEFT PADDLE_WIDTH
 #define PONG_RIGHT 255-PADDLE_WIDTH
-#define PADDLE_MIN PONG_BOTTOM+(PADDLE_HEIGHT/2)+1
-#define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)-1
-#define PADDLE_STEP 6
-#define MAX_Y_VELOCITY 6
+#define PADDLE_MIN PONG_BOTTOM+(PADDLE_HEIGHT/2)
+#define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)
+#define PADDLE_STEP 4
+#define MAX_Y_VELOCITY 5
 
 typedef struct{
   uint64_t celebrating;    //  zero for normal mode, end-of-celebration time if nonzero
@@ -495,8 +495,8 @@ typedef struct{
 pong_state game_state = {
   .celebrating = 0,
   .paddle_position = {96,140},
-  .puck_velocity = {2,3},
-  .puck_position = {128,200},
+  .puck_velocity = {2,0},
+  .puck_position = {0,PONG_TOP},
   .score = {0,0}};
 
 #define CELEB_DURATION 40000     // flash some decoration on screen for just over 1 second after a score
@@ -596,9 +596,9 @@ int puck_hit_paddle(int *new_velocity){
   int did_hit=0;
   int offset;
     
-  if(game_state.puck_velocity[0]<0 && (game_state.puck_position[0]-PADDLE_WIDTH) <= (-game_state.puck_velocity[0]))
+  if(game_state.puck_velocity[0]<0 && (game_state.puck_position[0]-PONG_LEFT) <= (-game_state.puck_velocity[0]))
     which_paddle = 0;
-  else if(game_state.puck_velocity[0]>0 && ((PONG_RIGHT-PADDLE_WIDTH) - game_state.puck_position[0]) <= (game_state.puck_velocity[0]))
+  else if(game_state.puck_velocity[0]>0 && ((PONG_RIGHT) - game_state.puck_position[0]) <= (game_state.puck_velocity[0]))
     which_paddle=1;
   else return 0;
   
@@ -606,7 +606,7 @@ int puck_hit_paddle(int *new_velocity){
         
   if(abs(offset) > PADDLE_HEIGHT/2) return 0;  // we missed
 
-  *new_velocity = game_state.puck_velocity[1] + (offset);// + (rand() % 7)-3;
+  *new_velocity = game_state.puck_velocity[1] + offset;  // hitting off center of paddle imparts english
   constrain(new_velocity,-MAX_Y_VELOCITY,MAX_Y_VELOCITY);
   return 1;
 }
@@ -657,7 +657,7 @@ void draw_paddles(pong_state the_state){
     line(0,y,PADDLE_WIDTH,y,MAIN_BUFFER);
   // draw the right paddle:
   for(y=the_state.paddle_position[1]-(PADDLE_HEIGHT/2);y<the_state.paddle_position[1]+(PADDLE_HEIGHT/2)+1;y++) \
-    line(254-PADDLE_WIDTH,y,254,y,MAIN_BUFFER);
+    line(255-PADDLE_WIDTH,y,255,y,MAIN_BUFFER);
 }
 
 void draw_puck(pong_state the_state){
