@@ -481,7 +481,8 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 #define PONG_RIGHT 255-PADDLE_WIDTH
 #define PADDLE_MIN PONG_BOTTOM+(PADDLE_HEIGHT/2)+1
 #define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)-1
-#define PADDLE_STEP 4
+#define PADDLE_STEP 6
+#define MAX_Y_VELOCITY 6
 
 typedef struct{
   uint64_t celebrating;    //  zero for normal mode, end-of-celebration time if nonzero
@@ -494,7 +495,7 @@ typedef struct{
 pong_state game_state = {
   .celebrating = 0,
   .paddle_position = {96,140},
-  .puck_velocity = {6,3},
+  .puck_velocity = {2,3},
   .puck_position = {128,200},
   .score = {0,0}};
 
@@ -531,8 +532,11 @@ int puck_dest(){
     PONG_RIGHT - game_state.puck_position[0];
   float delta_t = fabs(delta_x/game_state.puck_velocity[0]);  //this many ticks to reach  edge
   float y_intercept = game_state.puck_position[1] + delta_t * game_state.puck_velocity[1];
-  if(y_intercept < PONG_BOTTOM) y_intercept = -y_intercept;
-  if(y_intercept > PONG_TOP) y_intercept = 2*PONG_TOP - y_intercept;
+  while(y_intercept < PONG_BOTTOM || y_intercept > PONG_TOP){
+    if(y_intercept < PONG_BOTTOM) y_intercept = 8-y_intercept;
+    if(y_intercept > PONG_TOP) y_intercept = 2*PONG_TOP - y_intercept;
+    
+}
   return (int) y_intercept;
 }
 
@@ -559,7 +563,7 @@ void constrain(int *x, int xmin, int xmax){
 
 #define min(x,y) x<y ? x : y
 
-void update_paddles(){
+void update_paddles(int target_offset){
   int player;
   RTC_1_TIME_DATE *the_time;
   the_time = RTC_1_ReadTime();
@@ -574,7 +578,7 @@ void update_paddles(){
     y_target = miss_zone();
   }
   else{
-    y_target = puck_dest();
+    y_target = puck_dest() - target_offset;
   }
   int y_error = abs(y_target - game_state.paddle_position[player]);
 
@@ -592,22 +596,24 @@ int puck_hit_paddle(int *new_velocity){
   int did_hit=0;
   int offset;
     
-  if(game_state.puck_velocity[0]<0 && abs(game_state.puck_position[0]-PADDLE_WIDTH) <= abs(game_state.puck_velocity[0]))
+  if(game_state.puck_velocity[0]<0 && (game_state.puck_position[0]-PADDLE_WIDTH) <= (-game_state.puck_velocity[0]))
     which_paddle = 0;
-  else if(game_state.puck_velocity[0]>0 && abs(game_state.puck_position[0]-(PONG_RIGHT-PADDLE_WIDTH)) <= abs(game_state.puck_velocity[0]))
+  else if(game_state.puck_velocity[0]>0 && ((PONG_RIGHT-PADDLE_WIDTH) - game_state.puck_position[0]) <= (game_state.puck_velocity[0]))
     which_paddle=1;
   else return 0;
   
-  offset = game_state.puck_position[1]-game_state.paddle_position[which_paddle];
+  offset = puck_dest()-game_state.paddle_position[which_paddle];
         
   if(abs(offset) > PADDLE_HEIGHT/2) return 0;  // we missed
 
-  *new_velocity = (offset / 8) + (rand() % 3)-1;
+  *new_velocity = game_state.puck_velocity[1] + (offset);// + (rand() % 7)-3;
+  constrain(new_velocity,-MAX_Y_VELOCITY,MAX_Y_VELOCITY);
   return 1;
 }
 
 void pong_update(){
   int dim;
+    static int target_offset = 0;
   if(!game_state.celebrating){
     for(dim=0;dim<2;dim++){
       game_state.puck_position[dim] += game_state.puck_velocity[dim];  // move the puck
@@ -615,13 +621,14 @@ void pong_update(){
     constrain(&game_state.puck_position[0],PONG_LEFT,PONG_RIGHT);
     constrain(&game_state.puck_position[1],PONG_BOTTOM,PONG_TOP);
     
-    update_paddles();
+    update_paddles(target_offset);
     int new_y_velocity;
     int hit_paddle = puck_hit_paddle(&new_y_velocity);
         
     if(hit_paddle){
       game_state.puck_velocity[1] = new_y_velocity;
       game_state.puck_velocity[0] = -game_state.puck_velocity[0];
+      target_offset = (rand() % 7) - 3;
     }
     int which_edge = puck_at_edge();
     if(which_edge  && !hit_paddle){
@@ -629,6 +636,7 @@ void pong_update(){
 	// puck is  exiting the playing area 
 	start_celebration();
 	game_state.puck_velocity[0] = -game_state.puck_velocity[0];
+    game_state.puck_velocity[1] = 0;
             
       }
       if(which_edge == 3 || which_edge==4){  // hit top or bottom edge. reverse y velocity:
