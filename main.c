@@ -165,9 +165,9 @@ void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 
   int y = 220;
          
-//  sprintf(rtc_string,"RTC: %i:%02i:%02i",hours,minutes,seconds);
-//  compileString(rtc_string,255,y,MAIN_BUFFER,1,OVERWRITE); 
-//  y -= 36;
+  //  sprintf(rtc_string,"RTC: %i:%02i:%02i",hours,minutes,seconds);
+  //  compileString(rtc_string,255,y,MAIN_BUFFER,1,OVERWRITE); 
+  //  y -= 36;
   clear_buffer(MAIN_BUFFER);
   time_t ds_time = get_DS3231_time();
   struct tm ds_tm = *gmtime(&ds_time);
@@ -349,7 +349,7 @@ void render_day_num_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   time_t start_time;
   struct tm start_of_year;
   char str_buf[64];
-int y = 205;
+  int y = 205;
     
   start_of_year.tm_year = local_bdt->tm_year;
   start_of_year.tm_mon = 1-1;   // months are 0..11 rather than 1..12!
@@ -536,7 +536,7 @@ int puck_dest(){
     if(y_intercept < PONG_BOTTOM) y_intercept = 8-y_intercept;
     if(y_intercept > PONG_TOP) y_intercept = 2*PONG_TOP - y_intercept;
     
-}
+  }
   return (int) y_intercept;
 }
 
@@ -613,7 +613,7 @@ int puck_hit_paddle(int *new_velocity){
 
 void pong_update(){
   int dim;
-    static int target_offset = 0;
+  static int target_offset = 0;
   if(!game_state.celebrating){
     for(dim=0;dim<2;dim++){
       game_state.puck_position[dim] += game_state.puck_velocity[dim];  // move the puck
@@ -636,7 +636,7 @@ void pong_update(){
 	// puck is  exiting the playing area 
 	start_celebration();
 	game_state.puck_velocity[0] = -game_state.puck_velocity[0];
-    game_state.puck_velocity[1] = 0;
+	game_state.puck_velocity[1] = 0;
             
       }
       if(which_edge == 3 || which_edge==4){  // hit top or bottom edge. reverse y velocity:
@@ -1204,10 +1204,10 @@ int main()
     
     // if knob has been turned, bump sleep timer and exit autoswitch:
     if (QuadDec_1_GetCounter() != previous_knob){
-        global_prefs.prefs_data.switch_interval = 0;
-        if(global_prefs.prefs_data.minutes_till_sleep > 0 && global_prefs.prefs_data.minutes_till_sleep <= MAX_TILL_SLEEP)
+      global_prefs.prefs_data.switch_interval = 0;
+      if(global_prefs.prefs_data.minutes_till_sleep > 0 && global_prefs.prefs_data.minutes_till_sleep <= MAX_TILL_SLEEP)
         power_off_t = now + 60 * global_prefs.prefs_data.minutes_till_sleep;
-        previous_knob = QuadDec_1_GetCounter();
+      previous_knob = QuadDec_1_GetCounter();
     }
     /* Now render the appropriate contents into the display buffer, based upon 
        the current display_mode.  (Note that we're wasting lots of cpu cycles in some cases,
