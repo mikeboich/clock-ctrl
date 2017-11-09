@@ -496,7 +496,7 @@ pong_state game_state = {
   .celebrating = 0,
   .paddle_position = {96,140},
   .puck_velocity = {2,0},
-  .puck_position = {0,PONG_TOP},
+  .puck_position = {128,128},
   .score = {0,0}};
 
 #define CELEB_DURATION 40000     // flash some decoration on screen for just over 1 second after a score
