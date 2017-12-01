@@ -327,6 +327,8 @@ void set_power_off(){
     }
     
     // store the new value into prefs, unless it was immediate power off:
+    // Value -1 means never sleep.  Values >0 and <= MAXSLEEP = minutes
+    //  Value > MAXSLEEP means never sleep.
     if(result != 0){
       global_prefs.prefs_data.minutes_till_sleep = result < 0 ? -1 : 10* result;
       flush_prefs();

@@ -475,14 +475,14 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 /* ************* Pong Game ************* */
 #define PADDLE_HEIGHT 24
 #define PADDLE_WIDTH   8
-#define PONG_TOP 240
+#define PONG_TOP 252
 #define PONG_BOTTOM 4
 #define PONG_LEFT PADDLE_WIDTH
 #define PONG_RIGHT 255-PADDLE_WIDTH
 #define PADDLE_MIN PONG_BOTTOM+(PADDLE_HEIGHT/2)
 #define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)
 #define PADDLE_STEP 4
-#define MAX_Y_VELOCITY 5
+#define MAX_Y_VELOCITY 9
 
 typedef struct{
   uint64_t celebrating;    //  zero for normal mode, end-of-celebration time if nonzero
@@ -495,7 +495,7 @@ typedef struct{
 pong_state game_state = {
   .celebrating = 0,
   .paddle_position = {96,140},
-  .puck_velocity = {2,0},
+  .puck_velocity = {4,0},
   .puck_position = {128,128},
   .score = {0,0}};
 
@@ -514,11 +514,11 @@ void end_celebration(){
 int puck_at_edge(){
   if(game_state.puck_position[0] <= PONG_LEFT){
     return(1);
-    start_celebration();
+     // doesn't belong here: start_celebration();
   }
   if(game_state.puck_position[0] >= PONG_RIGHT){
     return(2);
-    start_celebration();
+    // doesn't belong here: start_celebration();
   }
   if(game_state.puck_position[1] <= PONG_BOTTOM) return(3);
   if(game_state.puck_position[1 ] >= PONG_TOP) return(4);
@@ -533,7 +533,7 @@ int puck_dest(){
   float delta_t = fabs(delta_x/game_state.puck_velocity[0]);  //this many ticks to reach  edge
   float y_intercept = game_state.puck_position[1] + delta_t * game_state.puck_velocity[1];
   while(y_intercept < PONG_BOTTOM || y_intercept > PONG_TOP){
-    if(y_intercept < PONG_BOTTOM) y_intercept = 8-y_intercept;
+    if(y_intercept < PONG_BOTTOM) y_intercept = 2*PONG_BOTTOM - y_intercept;
     if(y_intercept > PONG_TOP) y_intercept = 2*PONG_TOP - y_intercept;
     
   }
@@ -660,6 +660,7 @@ void draw_paddles(pong_state the_state){
     line(255-PADDLE_WIDTH,y,255,y,MAIN_BUFFER);
 }
 
+
 void draw_puck(pong_state the_state){
   int x,y;
   x = the_state.puck_position[0];
@@ -679,7 +680,7 @@ void draw_celeb(pong_state the_state){
 void draw_center_line(pong_state the_state){
   int x,y;
   x=128;
-  for(y=240;y>0;y-=32){
+  for(y=PONG_TOP;y>0;y-=32){
     line(128,y,128,y-16,MAIN_BUFFER);   
   }  
 }
@@ -694,11 +695,25 @@ void draw_scores(pong_state the_state, struct tm *local_bdt){  // draw the hours
   sprintf(time_str,"%02i",the_minute);
   compileString(time_str,160,200,MAIN_BUFFER,2,APPEND); 
 }
-
+void draw_tick(int seconds){  // draw a seconds tick
+    float second_angle = ((seconds/60.0))*M_PI*2.0;
+    float x0 = 128 + 60*sin(second_angle);
+    float y0 = 128 + 60*cos(second_angle);
+    x0 = 128;
+    y0 = 128;
+    float x1 = 128 + 64*sin(second_angle);
+    float y1 = 132 + 64*cos(second_angle);
+    circle(128,132,8,MAIN_BUFFER);
+    circle(128,132,80,MAIN_BUFFER);
+    
+    line(x0,y0,x1,y1,MAIN_BUFFER);
+    
+}
 void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, struct tm *utc_bdt){
   int x,y;
   
   clear_buffer(MAIN_BUFFER);
+  //draw_tick(local_bdt->tm_sec);
   draw_paddles(the_state);
   if(!the_state.celebrating) draw_puck(the_state);
   draw_center_line(the_state);
@@ -1033,8 +1048,7 @@ void waitForClick(){
 void hw_test(){
   seg_or_flag test_pattern[] = {
     {128,128,254,254,cir,0xff},
-    {128,128,244,244,cir,0xff},
-    {255,255,0,0,cir,0x00},
+     {255,255,0,0,cir,0x00},
   }; 
   seg_or_flag test_pattern2[] = {
     {128,128,64,64,cir,0xff},
@@ -1168,7 +1182,7 @@ int main()
   DS3231_pps_int_Start();
 
   // set the power off time from the prefs value:
-  if (power_off < 0)
+  if (global_prefs.prefs_data.minutes_till_sleep > MAX_TILL_SLEEP)  // this value means "never sleep"
     power_off_t = 0;
   else
     power_off_t = t + 60*global_prefs.prefs_data.minutes_till_sleep;
@@ -1176,7 +1190,7 @@ int main()
   SW_Tx_UART_1_StartEx(3,4);
   SW_Tx_UART_1_PutString("Hello from PSOC-land!");
 
-  //hw_test();
+  hw_test();
   //hw_test2();
   previous_knob = QuadDec_1_GetCounter();
   // The main loop:
