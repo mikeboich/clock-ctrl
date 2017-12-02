@@ -40,10 +40,10 @@
 volatile int pps_available=0;
 
 
-typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,moonriseMode,pongMode,pendulumMode,trump_elapsed_mode, \
+typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,moonriseMode,sunElevMode,moonElevMode,pongMode,pendulumMode,trump_elapsed_mode, \
 	     trumpMode,wordClockMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
-int nmodes = 16;
-int n_auto_modes=11;
+int nmodes = 18;
+int n_auto_modes=13;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -793,6 +793,157 @@ int inBounds(float x, float lower, float upper){
 }
 #define SUN_SIZE 64
 
+// Sun elevation diagram, as inspired by SGITeach:
+void renderSunElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
+  int x,y;
+  static seg_or_flag axes[] = {
+    {128,128,0,240,cir,0x0ff},   
+    {128,8,240,0,cir,0x0ff},   
+    {255,255,0,0,cir,0x00},
+  };
+  time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
+  static time_t last_calcs = 0;
+  time_t t;
+
+  static int time_to_y[24];
+  static time_t sunrise_time,sunset_time;
+
+    
+  // render axes:
+    compileSegments(axes,MAIN_BUFFER,OVERWRITE);
+    //line(0,8,255,8,MAIN_BUFFER);   // horiz axis
+    
+    for(x=10;x<=240;x+=10){         // horiz axis tick marks
+      line(x,0,x,16,MAIN_BUFFER);  
+    }
+    
+    //line(128,0,128,240,MAIN_BUFFER);
+    for(y=10;y<=240;y+=26){    // vertical axis tick marks
+      line(120,y+8,136,y+8,MAIN_BUFFER);
+    }
+    
+    // calc solar elevations if necessary:
+    double elev;
+    struct location my_location;
+    init_location(&my_location);
+    
+    if(today != last_calcs){
+        int index=0;
+        sunrise_time = calcSunOrMoonRiseForDate(now,1,1,my_location);
+        sunrise_time += global_prefs.prefs_data.utc_offset*3600;
+        sunset_time = calcSunOrMoonRiseForDate(now,2,1,my_location);
+        sunset_time += global_prefs.prefs_data.utc_offset*3600;
+
+        for(t=today;t<today+86400;t+=3600){
+            calcSolarAzimuth(NULL, &elev, NULL, NULL, t, my_location);
+            time_to_y[index] = 2.6*elev;
+            circle(10*index,2.6*elev,8,MAIN_BUFFER);
+            index += 1;
+    }
+       last_calcs = today;
+        circle(128,128,8,MAIN_BUFFER);
+  }
+    else{
+        int hour;
+        struct tm bdt;
+        char event_str[64];
+
+        compileString("Sunrise",16,220,MAIN_BUFFER,1,APPEND);
+        compileString("Sunset",154,220,MAIN_BUFFER,1,APPEND);
+        
+        bdt = *gmtime(&sunrise_time);
+        strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
+        compileString(event_str,0,190,MAIN_BUFFER,1,APPEND);
+        bdt = *gmtime(&sunset_time);
+        strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
+        compileString(event_str,138,190,MAIN_BUFFER,1,APPEND);
+
+        for(hour=0;hour<24;hour++){
+            y = time_to_y[hour];
+            if(y>0){
+               circle(10*hour+10,y+8,8,MAIN_BUFFER); 
+            }
+        }
+    }
+    
+}
+
+// Sun elevation diagram, as inspired by SGITeach:
+void renderMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
+  int x,y;
+  static seg_or_flag axes[] = {
+    {128,128,0,240,cir,0x0ff},   
+    {128,8,240,0,cir,0x0ff},   
+    {255,255,0,0,cir,0x00},
+  };
+  time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
+  static time_t last_calcs = 0;
+  time_t t;
+
+  static int time_to_y[24];
+  static time_t moonrise_time,moonset_time;
+  static double fullness;
+
+    
+  // render axes:
+    compileSegments(axes,MAIN_BUFFER,OVERWRITE);
+    //line(0,8,255,8,MAIN_BUFFER);   // horiz axis
+    
+    for(x=10;x<=240;x+=10){         // horiz axis tick marks
+      line(x,0,x,16,MAIN_BUFFER);  
+    }
+    
+    //line(128,0,128,240,MAIN_BUFFER);
+    for(y=10;y<=240;y+=26){    // vertical axis tick marks
+      line(120,y+8,136,y+8,MAIN_BUFFER);
+    }
+    
+    // calc solar elevations if necessary:
+    double elev;
+    struct location my_location;
+    init_location(&my_location);
+    
+    if(today != last_calcs){
+        int index=0;
+        moonrise_time = calcSunOrMoonRiseForDate(now,1,2,my_location);
+        moonrise_time += global_prefs.prefs_data.utc_offset*3600;
+        moonset_time = calcSunOrMoonRiseForDate(now,2,2,my_location);
+        moonset_time += global_prefs.prefs_data.utc_offset*3600;
+
+        for(t=today;t<today+86400;t+=3600){
+            calcLunarAzimuth(NULL, &elev, &fullness,NULL, NULL, t, my_location);
+            time_to_y[index] = 2.6*elev;
+            circle(10*index,2.6*elev,8,MAIN_BUFFER);
+            index += 1;
+    }
+       last_calcs = today;
+        circle(128,128,8,MAIN_BUFFER);
+  }
+    else{
+        int hour;
+        struct tm bdt;
+        char event_str[64];
+
+        compileString("Moonrise",16,220,MAIN_BUFFER,1,APPEND);
+        compileString("Moonset",154,220,MAIN_BUFFER,1,APPEND);
+        
+        bdt = *gmtime(&moonrise_time);
+        strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
+        compileString(event_str,0,190,MAIN_BUFFER,1,APPEND);
+        bdt = *gmtime(&moonset_time);
+        strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
+        compileString(event_str,138,190,MAIN_BUFFER,1,APPEND);
+
+        for(hour=0;hour<24;hour++){
+            y = time_to_y[hour];
+            if(y>0){
+               circle(10*hour+10,y+8,8,MAIN_BUFFER); 
+            }
+        }
+    }
+    
+}
+
 // This (pretty ugly) routine serves for both sunset/sunrise and moonset/moonrise
 void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   static time_t date_for_calcs = 0;
@@ -1260,6 +1411,16 @@ int main()
     case moonriseMode:
       //renderSunrise(now,&local_bdt,&utc_bdt);
       renderSR2(now,&local_bdt,&utc_bdt);
+      break;
+
+    case sunElevMode:
+      //renderSunrise(now,&local_bdt,&utc_bdt);
+      renderSunElev(now,&local_bdt,&utc_bdt);
+      break;
+
+    case moonElevMode:
+      //renderSunrise(now,&local_bdt,&utc_bdt);
+      renderMoonElev(now,&local_bdt,&utc_bdt);
       break;
 
     case pongMode:
