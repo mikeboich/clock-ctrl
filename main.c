@@ -834,12 +834,12 @@ void renderSunOrMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt,int
         for(i=0;i<2;i++){
             int index=0;
             rise_time[i] = calcSunOrMoonRiseForDate(now,1,i+1,my_location);
-            if(zeroForSunOneForMoon==0)
+            if(i==0)
               calcSolarAzimuth(NULL, &rise_elev, NULL, NULL, rise_time[i], my_location);
             else
               calcLunarAzimuth(NULL, &rise_elev, NULL, NULL, NULL, rise_time[i], my_location);
             y_at_rise[i] = 2.6*rise_elev;
-            x_at_rise[i] = 10 + (rise_time[zeroForSunOneForMoon]-today)/360;
+            x_at_rise[i] = 10 + (rise_time[i]-today)/360;
             rise_time[i] += global_prefs.prefs_data.utc_offset*3600;
             set_time[i] = calcSunOrMoonRiseForDate(now,2,i+1,my_location);
             if(i==0)
