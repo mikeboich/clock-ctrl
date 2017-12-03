@@ -475,12 +475,12 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 /* ************* Pong Game ************* */
 #define PADDLE_HEIGHT 24
 #define PADDLE_WIDTH   8
-#define PONG_TOP 252
+#define PONG_TOP 250
 #define PONG_BOTTOM 4
 #define PONG_LEFT PADDLE_WIDTH
 #define PONG_RIGHT 255-PADDLE_WIDTH
 #define PADDLE_MIN PONG_BOTTOM+(PADDLE_HEIGHT/2)
-#define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)
+#define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)-1
 #define PADDLE_STEP 4
 #define MAX_Y_VELOCITY 9
 
@@ -797,8 +797,8 @@ int inBounds(float x, float lower, float upper){
 void renderSunElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   int x,y;
   static seg_or_flag axes[] = {
-    {128,128,0,240,cir,0x0ff},   
-    {128,8,240,0,cir,0x0ff},   
+    {128,128,0,240,neg ,0x0ff},   // y-axis creates a line from 128,8 to 128,248
+    {128,8,240,0,neg,0x0ff},      // x-axis creates a line from 
     {255,255,0,0,cir,0x00},
   };
   time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
@@ -806,19 +806,21 @@ void renderSunElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   time_t t;
 
   static int time_to_y[24];
-  static time_t sunrise_time,sunset_time;
+  static int y_at_sunrise, y_at_sunset, x_at_sunrise, x_at_sunset;
+  static double sunrise_elev, sunset_elev;
+  static time_t sunrise_time=0,sunset_time=0;
 
     
   // render axes:
     compileSegments(axes,MAIN_BUFFER,OVERWRITE);
     //line(0,8,255,8,MAIN_BUFFER);   // horiz axis
     
-    for(x=10;x<=240;x+=10){         // horiz axis tick marks
+    for(x=8;x<=240;x+=10){         // horiz axis tick marks
       line(x,0,x,16,MAIN_BUFFER);  
     }
     
     //line(128,0,128,240,MAIN_BUFFER);
-    for(y=10;y<=240;y+=26){    // vertical axis tick marks
+    for(y=18;y<=248;y+=26){    // vertical axis tick marks
       line(120,y+8,136,y+8,MAIN_BUFFER);
     }
     
@@ -830,20 +832,24 @@ void renderSunElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     if(today != last_calcs){
         int index=0;
         sunrise_time = calcSunOrMoonRiseForDate(now,1,1,my_location);
+        calcSolarAzimuth(NULL, &sunrise_elev, NULL, NULL, sunrise_time, my_location);
+        y_at_sunrise = 2.6*sunrise_elev;
+        x_at_sunrise = 10 + (sunrise_time-today)/360;
         sunrise_time += global_prefs.prefs_data.utc_offset*3600;
         sunset_time = calcSunOrMoonRiseForDate(now,2,1,my_location);
+        calcSolarAzimuth(NULL, &sunset_elev, NULL, NULL, sunset_time, my_location);
+        y_at_sunset = 2.6*sunset_elev;
+        x_at_sunset = 10 + (sunset_time-today)/360;
         sunset_time += global_prefs.prefs_data.utc_offset*3600;
 
         for(t=today;t<today+86400;t+=3600){
             calcSolarAzimuth(NULL, &elev, NULL, NULL, t, my_location);
             time_to_y[index] = 2.6*elev;
-            circle(10*index,2.6*elev,8,MAIN_BUFFER);
             index += 1;
     }
        last_calcs = today;
-        circle(128,128,8,MAIN_BUFFER);
   }
-    else{
+    else{  // calcs have already been done for today.  Just use the cached values:
         int hour;
         struct tm bdt;
         char event_str[64];
@@ -860,20 +866,22 @@ void renderSunElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 
         for(hour=0;hour<24;hour++){
             y = time_to_y[hour];
-            if(y>0){
-               circle(10*hour+10,y+8,8,MAIN_BUFFER); 
+            if(y > 0){
+               circle(10*hour+8,y+8,8,MAIN_BUFFER); 
             }
         }
+        circle(x_at_sunrise,y_at_sunrise+8,8,MAIN_BUFFER);
+        circle(x_at_sunset,y_at_sunset+8,8,MAIN_BUFFER);
     }
     
 }
 
-// Sun elevation diagram, as inspired by SGITeach:
+// Moon elevation diagram, as inspired by SGITeach:
 void renderMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   int x,y;
   static seg_or_flag axes[] = {
-    {128,128,0,240,cir,0x0ff},   
-    {128,8,240,0,cir,0x0ff},   
+    {128,128,0,240,neg ,0x0ff},   // y-axis creates a line from 128,8 to 128,248
+    {128,8,240,0,neg,0x0ff},      // x-axis creates a line from 
     {255,255,0,0,cir,0x00},
   };
   time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
@@ -881,22 +889,25 @@ void renderMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   time_t t;
 
   static int time_to_y[24];
-  static time_t moonrise_time,moonset_time;
   static double fullness;
+  static double moonrise_elev, moonset_elev;
+  static time_t moonrise_time=0,moonset_time=0;
+  static int y_at_moonrise, y_at_moonset,x_at_moonrise,x_at_moonset;
+
 
     
   // render axes:
     compileSegments(axes,MAIN_BUFFER,OVERWRITE);
-    //line(0,8,255,8,MAIN_BUFFER);   // horiz axis
     
-    for(x=10;x<=240;x+=10){         // horiz axis tick marks
+    for(x=8;x<=240;x+=10){         // horiz axis tick marks
       line(x,0,x,16,MAIN_BUFFER);  
     }
     
     //line(128,0,128,240,MAIN_BUFFER);
-    for(y=10;y<=240;y+=26){    // vertical axis tick marks
+    for(y=18;y<=248;y+=26){    // vertical axis tick marks
       line(120,y+8,136,y+8,MAIN_BUFFER);
     }
+
     
     // calc solar elevations if necessary:
     double elev;
@@ -906,8 +917,13 @@ void renderMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     if(today != last_calcs){
         int index=0;
         moonrise_time = calcSunOrMoonRiseForDate(now,1,2,my_location);
+        y_at_moonrise = 2.6*moonrise_elev;
+        x_at_moonrise = 10 + (moonrise_time-today)/360;
         moonrise_time += global_prefs.prefs_data.utc_offset*3600;
+        
         moonset_time = calcSunOrMoonRiseForDate(now,2,2,my_location);
+        y_at_moonset = 2.6*moonset_elev;
+        x_at_moonset = 10 + (moonset_time-today)/360;
         moonset_time += global_prefs.prefs_data.utc_offset*3600;
 
         for(t=today;t<today+86400;t+=3600){
@@ -936,10 +952,13 @@ void renderMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 
         for(hour=0;hour<24;hour++){
             y = time_to_y[hour];
-            if(y>0){
-               circle(10*hour+10,y+8,8,MAIN_BUFFER); 
+            if(y > 0){
+               circle(10*hour+8,y+8,8,MAIN_BUFFER); 
             }
         }
+        circle(x_at_moonrise,y_at_moonrise+8,8,MAIN_BUFFER);
+        circle(x_at_moonset,y_at_moonset+8,8,MAIN_BUFFER);
+
     }
     
 }
