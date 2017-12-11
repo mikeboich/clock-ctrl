@@ -49,16 +49,16 @@ clock_type saved_mode;
 
 int verbose_mode = 0;
 
-typedef enum{blank_unprimed,blank_primed,drawing,last_period,hw_testing}  draw_state;  // States of the draw loop/interrupt code
+typedef enum{idle,blank_primed,drawing,last_period,hw_testing}  draw_state;  // States of the draw loop/interrupt code
 
 uint8 current_mask=0;
-volatile draw_state current_state = blank_unprimed;
+volatile draw_state current_state = idle;
 volatile int current_phase=0;  // phase of sin lookup machinery
-
 volatile int times_to_loop = 0;
+
 volatile uint64_t cycle_count=0;  // poor man's timer
-volatile uint64_t last_pulse=0;
-volatile uint8_t pulse_count=0;
+volatile uint64_t last_pulse=0;   // for validating gps pps
+volatile uint8_t pulse_count=0;   
 
 
 int frame_toggle = 0;   // performance measurement
@@ -95,12 +95,6 @@ int power_status(){
   int status = LED_Reg_Read() & 0x2;
   return status;
 }
-/*
-  int power_off_hour = 22;
-  int power_off_minute = 30;
-  int power_on_hour = 7;
-  int power_on_minute = 30;
-*/
 time_t power_off_t = 0;
 
 /* Define the start-of-segment interrupt routine 
@@ -117,26 +111,26 @@ void wave_started(){
   switch(current_state){
 
   case hw_testing:
-    ShiftReg_1_WriteData(0xff);
+    ShiftReg_1_WriteData(0xff);    // allows us to program the DAC and let it display
     break;
 
-  case blank_unprimed:
-    ShiftReg_1_WriteData(0x0);
+  case idle:
+    ShiftReg_1_WriteData(0x0);      // nothing happening.  Keep display blanked.
     break;
 
   case last_period:
     ShiftReg_1_WriteData(0x0);  // next period is blanked
-    current_state = blank_unprimed;
+    current_state = idle;
     break;
 
   case blank_primed:
     current_state = drawing;
     Phase_Register_Write(current_phase);
-    strobe_LDAC();
+    strobe_LDAC();     // causes previous programming of DAC to take effect
     break;
     
   case drawing:
-    times_to_loop -= 1;
+    times_to_loop -= 1;         // decrement loop counter
     if(times_to_loop==0){
       ShiftReg_1_WriteData(0x0);  // blank on the next cycle
       current_state = last_period;
@@ -148,7 +142,7 @@ void wave_started(){
   }
 }
 
-void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
+void renderDebugInfo(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   char pe[64],me[64];
 
   char time_string[32];
@@ -182,8 +176,10 @@ void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   compileString(gps_string,255,y,MAIN_BUFFER,1,APPEND);
   y-=36;
 
-  sprintf(uptime_string,"up %f days",cycle_count / (31250*86400.0));
-  compileString(uptime_string,255,y,MAIN_BUFFER,1,APPEND);
+  sprintf(pe,"phase error: %Lu",phase_error);
+  compileString(pe,255,y,MAIN_BUFFER,1,APPEND);
+  //  sprintf(uptime_string,"up %f days",cycle_count / (31250*86400.0));
+  //  compileString(uptime_string,255,y,MAIN_BUFFER,1,APPEND);
   y -= 36;
 
 
@@ -199,8 +195,6 @@ void renderGPSDebug(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   else sprintf(esn_string,"No sleep scheduled");
   compileString(esn_string,255,y,MAIN_BUFFER,1,APPEND);
  
-  //  sprintf(pe,"phase error: %Lu",phase_error);
-  //  compileString(pe,255,128-64,MAIN_BUFFER,1,APPEND);
   //  sprintf(pe,"minute err: %Lu",minute_error);
   //  compileString(pe,255,128-32,MAIN_BUFFER,1,APPEND);
 }
@@ -456,20 +450,8 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 	sprintf(time_string[0],"%s",hour_strings[((local_bdt->tm_hour+1)) % 12]);
 	compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);                
       }
-      /*           if(now->Min >= 28 && now->Min<=32){
-		   compileString("It's about",255,200,MAIN_BUFFER,2,OVERWRITE);
-		   past_until_index = approx_minute / 5;
-		   sprintf(time_string[0],"half");
-		   compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);
-		   sprintf(time_string[0],"past");
-		   compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);
-		   sprintf(time_string[0],"%s",hour_strings[now->Hour % 12]);
-		   compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
-		   }
-      */
     }
-  }
-    
+  }    
 }
 
 /* ************* Pong Game ************* */
@@ -514,7 +496,7 @@ void end_celebration(){
 int puck_at_edge(){
   if(game_state.puck_position[0] <= PONG_LEFT){
     return(1);
-     // doesn't belong here: start_celebration();
+    // doesn't belong here: start_celebration();
   }
   if(game_state.puck_position[0] >= PONG_RIGHT){
     return(2);
@@ -540,17 +522,17 @@ int puck_dest(){
   return (int) y_intercept;
 }
 
-int miss_zone(){
+int miss_zone(){     // find a paddle position that allows us to intentionally miss
   int dst = puck_dest();
   int result;
-  if(dst <= PADDLE_HEIGHT){
+  if(dst <= PADDLE_HEIGHT){         // when they go low, we go high
     result = 2*PADDLE_HEIGHT + 4;
   }
-  else if(dst > PONG_TOP - PADDLE_HEIGHT-2){
+  else if(dst > PONG_TOP - PADDLE_HEIGHT-2){  // when they go high, we go low
     result = PONG_TOP - 2 * PADDLE_HEIGHT - 4;
   }
   else{
-    result = dst + PADDLE_HEIGHT + 4;
+    result = dst + PADDLE_HEIGHT + 4;  // just go high when there's room 
   }    
   return result;
 }
@@ -696,17 +678,17 @@ void draw_scores(pong_state the_state, struct tm *local_bdt){  // draw the hours
   compileString(time_str,160,200,MAIN_BUFFER,2,APPEND); 
 }
 void draw_tick(int seconds){  // draw a seconds tick
-    float second_angle = ((seconds/60.0))*M_PI*2.0;
-    float x0 = 128 + 60*sin(second_angle);
-    float y0 = 128 + 60*cos(second_angle);
-    x0 = 128;
-    y0 = 128;
-    float x1 = 128 + 64*sin(second_angle);
-    float y1 = 132 + 64*cos(second_angle);
-    circle(128,132,8,MAIN_BUFFER);
-    circle(128,132,80,MAIN_BUFFER);
+  float second_angle = ((seconds/60.0))*M_PI*2.0;
+  float x0 = 128 + 60*sin(second_angle);
+  float y0 = 128 + 60*cos(second_angle);
+  x0 = 128;
+  y0 = 128;
+  float x1 = 128 + 64*sin(second_angle);
+  float y1 = 132 + 64*cos(second_angle);
+  circle(128,132,8,MAIN_BUFFER);
+  circle(128,132,80,MAIN_BUFFER);
     
-    line(x0,y0,x1,y1,MAIN_BUFFER);
+  line(x0,y0,x1,y1,MAIN_BUFFER);
     
 }
 void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, struct tm *utc_bdt){
@@ -797,8 +779,8 @@ int inBounds(float x, float lower, float upper){
 void renderSunOrMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt,int zeroForSunOneForMoon){
   int x,y;
   static seg_or_flag axes[] = {
-    {128,128,0,240,neg ,0x0ff},   // y-axis creates a line from 128,8 to 128,248
-    {128,8,240,0,neg,0x0ff},      // x-axis creates a line from 
+    {128,120,0,252 ,neg ,0x0ff},   // y-axis creates a line from 128,8 to 128,248
+    {128,8,240,0,neg,0x0ff},      // x-axis creates a line from 8,8 to 248,8
     {255,255,0,0,cir,0x00},
   };
   time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
@@ -812,86 +794,87 @@ void renderSunOrMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt,int
 
     
   // render axes:
-    compileSegments(axes,MAIN_BUFFER,OVERWRITE);
-    //line(0,8,255,8,MAIN_BUFFER);   // horiz axis
+  compileSegments(axes,MAIN_BUFFER,OVERWRITE);
+  //line(0,8,255,8,MAIN_BUFFER);   // horiz axis
     
-    for(x=8;x<=240;x+=10){         // horiz axis tick marks
-      line(x,0,x,16,MAIN_BUFFER);  
-    }
-    
-    //line(128,0,128,240,MAIN_BUFFER);
-    for(y=18;y<=248;y+=26){    // vertical axis tick marks
-      line(120,y+8,136,y+8,MAIN_BUFFER);
-    }
-    
-    // calc elevations if necessary:
-    double elev;
-    struct location my_location;
-    init_location(&my_location);
-    
-    int i;
-    if(today != last_calcs){
-        for(i=0;i<2;i++){
-            int index=0;
-            rise_time[i] = calcSunOrMoonRiseForDate(now,1,i+1,my_location);
-            if(i==0)
-              calcSolarAzimuth(NULL, &rise_elev, NULL, NULL, rise_time[i], my_location);
-            else
-              calcLunarAzimuth(NULL, &rise_elev, NULL, NULL, NULL, rise_time[i], my_location);
-            y_at_rise[i] = 2.6*rise_elev;
-            x_at_rise[i] = 10 + (rise_time[i]-today)/360;
-            rise_time[i] += global_prefs.prefs_data.utc_offset*3600;
-            set_time[i] = calcSunOrMoonRiseForDate(now,2,i+1,my_location);
-            if(i==0)
-              calcSolarAzimuth(NULL, &set_elev, NULL, NULL, set_time[i], my_location);
-            else
-              calcLunarAzimuth(NULL, &set_elev, NULL, NULL, NULL, set_time[i], my_location);
-            
-            y_at_set[i] = 2.6*set_elev;
-            x_at_set[i] = 10 + (set_time[i]-today)/360;
-            set_time[i] += global_prefs.prefs_data.utc_offset*3600;
 
-            for(t=today;t<today+86400;t+=3600){
-                if(i==0)
-                  calcSolarAzimuth(NULL, &elev, NULL, NULL, t, my_location);
-                else
-                  calcLunarAzimuth(NULL, &elev, NULL, NULL, NULL, t, my_location);
-                time_to_y[index][i] = 2.6*elev;
-                index += 1;
-        }
-           last_calcs = today;
+  for(x=8;x<=240;x+=10){         // horiz axis tick marks
+    line(x,0,x,16,MAIN_BUFFER);  
+  }
+    
+  //line(128,0,128,240,MAIN_BUFFER);
+  for(y=18;y<=248;y+=26){    // vertical axis tick marks
+    line(120,y+8,136,y+8,MAIN_BUFFER);
+  }
+    
+  // calc elevations if necessary:
+  double elev;
+  struct location my_location;
+  init_location(&my_location);
+    
+  int i;
+  if(today != last_calcs){
+    for(i=0;i<2;i++){
+      rise_time[i] = calcSunOrMoonRiseForDate(today,1,i+1,my_location);
+      if(i==0)
+	calcSolarAzimuth(NULL, &rise_elev, NULL, NULL, rise_time[i], my_location);
+      else
+	calcLunarAzimuth(NULL, &rise_elev, NULL, NULL, NULL, rise_time[i], my_location);
+      y_at_rise[i] = 2.6*rise_elev;
+      x_at_rise[i] = 8 + (rise_time[i]-today)/360;
+      rise_time[i] += global_prefs.prefs_data.utc_offset*3600;
+      set_time[i] = calcSunOrMoonRiseForDate(today,2,i+1,my_location);
+      if(i==0)
+	calcSolarAzimuth(NULL, &set_elev, NULL, NULL, set_time[i], my_location);
+      else
+	calcLunarAzimuth(NULL, &set_elev, NULL, NULL, NULL, set_time[i], my_location);
+            
+      y_at_set[i] = 2.6*set_elev;
+      x_at_set[i] = 8 + (set_time[i]-today)/360;
+      set_time[i] += global_prefs.prefs_data.utc_offset*3600;
+            
+      int index=0;
+      for(t=today;t<today+86400;t+=3600){
+	if(i==0)
+	  calcSolarAzimuth(NULL, &elev, NULL, NULL, t, my_location);
+	else
+	  calcLunarAzimuth(NULL, &elev, NULL, NULL, NULL, t, my_location);
+	time_to_y[index][i] = 2.6*elev;
+	index += 1;
+      }
+      last_calcs = today;
     }
   }
-    else{  // calcs have already been done for today.  Just use the cached values:
-        int hour;
-        struct tm bdt;
-        char event_str[64];
+  else{  // calcs have already been done for today.  Just use the cached values:
+    int hour;
+    struct tm bdt;
+    char event_str[64];
 
-        if(zeroForSunOneForMoon==0){
-            compileString("Sunrise",16,220,MAIN_BUFFER,1,APPEND);
-            compileString("Sunset",154,220,MAIN_BUFFER,1,APPEND);
-        }
-        else{
-            compileString("Moonrise",16,220,MAIN_BUFFER,1,APPEND);
-            compileString("Moonset",154,220,MAIN_BUFFER,1,APPEND);
-        }
-        
-        bdt = *gmtime(&rise_time[zeroForSunOneForMoon]);
-        strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
-        compileString(event_str,0,190,MAIN_BUFFER,1,APPEND);
-        bdt = *gmtime(&set_time[zeroForSunOneForMoon]);
-        strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
-        compileString(event_str,138,190,MAIN_BUFFER,1,APPEND);
-
-        for(hour=0;hour<24;hour++){
-            y = time_to_y[hour][zeroForSunOneForMoon];
-            if(y > 0){
-               circle(10*hour+8,y+8,8,MAIN_BUFFER); 
-            }
-        }
-        circle(x_at_rise[zeroForSunOneForMoon],y_at_rise[zeroForSunOneForMoon]+8,8,MAIN_BUFFER);
-        circle(x_at_set[zeroForSunOneForMoon],y_at_set[zeroForSunOneForMoon]+8,8,MAIN_BUFFER);
+    if(zeroForSunOneForMoon==0){
+      compileString("Sunrise",16,220,MAIN_BUFFER,1,APPEND);
+      compileString("Sunset",154,220,MAIN_BUFFER,1,APPEND);
     }
+    else{
+      compileString("Moonrise",16,220,MAIN_BUFFER,1,APPEND);
+      compileString("Moonset",154,220,MAIN_BUFFER,1,APPEND);
+    }
+        
+    bdt = *gmtime(&rise_time[zeroForSunOneForMoon]);
+    strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
+    compileString(event_str,0,190,MAIN_BUFFER,1,APPEND);
+    bdt = *gmtime(&set_time[zeroForSunOneForMoon]);
+    strftime(event_str,sizeof(event_str),"%l:%M %p",&bdt);
+    compileString(event_str,138,190,MAIN_BUFFER,1,APPEND);
+
+    for(hour=0;hour<24;hour++){
+      y = time_to_y[hour][zeroForSunOneForMoon];
+      if(y > 0){
+	circle(10*hour+8,y+8,8,MAIN_BUFFER); 
+      }
+    }
+    circle(x_at_rise[zeroForSunOneForMoon],y_at_rise[zeroForSunOneForMoon]+8,8,MAIN_BUFFER);
+    circle(x_at_set[zeroForSunOneForMoon],y_at_set[zeroForSunOneForMoon]+8,8,MAIN_BUFFER);
+  }
     
 }
 
@@ -907,7 +890,6 @@ void renderMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   renderSunOrMoonElev(now,local_bdt,utc_bdt,1);
     
 }
-
 // This (pretty ugly) routine serves for both sunset/sunrise and moonset/moonrise
 void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   static time_t date_for_calcs = 0;
@@ -984,18 +966,19 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     compileSegments(moon,MAIN_BUFFER,APPEND);
   }
   time_t today = midnightInTimeZone(now,global_prefs.prefs_data.utc_offset);
+
   if(today != date_for_calcs){
     date_for_calcs = today;
     init_location(&my_location);  // test values for now..
         
-    sunrise_time = calcSunOrMoonRiseForDate(now,1,1,my_location);
-    sunrise_time += global_prefs.prefs_data.utc_offset*3600;
-    sunset_time = calcSunOrMoonRiseForDate(now,2,1,my_location);
-    sunset_time += global_prefs.prefs_data.utc_offset*3600;
+    sunrise_time = calcSunOrMoonRiseForDate(today,1,1,my_location);  // sunrise UTC
+    sunrise_time += global_prefs.prefs_data.utc_offset*3600;         // cheesy offset to local time
+    sunset_time = calcSunOrMoonRiseForDate(today,2,1,my_location);   // sunset UTC
+    sunset_time += global_prefs.prefs_data.utc_offset*3600;          // offset to local time for display
 
-    moonrise_time = calcSunOrMoonRiseForDate(now,1,2,my_location);
+    moonrise_time = calcSunOrMoonRiseForDate(today,1,2,my_location);   // analogous to above for moon...
     moonrise_time += global_prefs.prefs_data.utc_offset*3600;
-    moonset_time = calcSunOrMoonRiseForDate(now,2,2,my_location);
+    moonset_time = calcSunOrMoonRiseForDate(today,2,2,my_location);
     moonset_time += global_prefs.prefs_data.utc_offset*3600;
         
     // calculate fullness of moon for good measure
@@ -1031,6 +1014,16 @@ uint8_t cordicSqrt(uint16_t value){
   }
   return result;
 }
+
+/* 
+   This routine, plus the interrupt routine, constitute the inner loop of the drawing machinery
+   It cycles through a buffer full of arcs and lines (aka segments), and programs the display 
+   hardware to show them.
+   Because it runs asynchronously to the actual display, it polls to see when the hw
+   is ready for new commands.  When the hardware is busy, it takes the opportunity to process
+   incoming characters from the GPS Module.  (Inspired from the original Macintosh disk driver,
+   that polled the serial ports during its inner loop to avoid missing characters.
+*/
 void display_buffer(uint8 which_buffer){
 #define PI 3
     
@@ -1040,7 +1033,7 @@ void display_buffer(uint8 which_buffer){
   sync_to_60Hz();
   while(seg_ptr->seg_data.x_offset != 0xff){
 
-    if(current_state==blank_unprimed){
+    if(current_state==idle){
       uint8 int_status = CyEnterCriticalSection();
             
       set_DACfor_seg(seg_ptr,ss_x_offset,ss_y_offset);
@@ -1163,7 +1156,7 @@ void waitForClick(){
 void hw_test(){
   seg_or_flag test_pattern[] = {
     {128,128,254,254,cir,0xff},
-     {255,255,0,0,cir,0x00},
+    {255,255,0,0,cir,0x00},
   }; 
   seg_or_flag test_pattern2[] = {
     {128,128,64,64,cir,0xff},
@@ -1305,13 +1298,16 @@ int main()
   SW_Tx_UART_1_StartEx(3,4);
   SW_Tx_UART_1_PutString("Hello from PSOC-land!");
 
-  hw_test();
-  //hw_test2();
+  //hw_test();
+  power_on();
+  hw_test2();
   previous_knob = QuadDec_1_GetCounter();
   // The main loop:
   for(;;){
     // if power is off and button is pressed, turn power on:
     // Turn off the LED part way into each 1 second period:
+    // do it slightly different when using DS3231 vs GPS, so that we have
+    // a visual indication of which mode we're in.
     if(((cycle_count-phase_error) % 31250) > 2000 && !global_prefs.prefs_data.use_gps){
       led_off();
     }
@@ -1331,13 +1327,6 @@ int main()
       power_off_t = 0;
     }
     
-    // if knob has been turned, bump sleep timer and exit autoswitch:
-    if (QuadDec_1_GetCounter() != previous_knob){
-      global_prefs.prefs_data.switch_interval = 0;
-      if(global_prefs.prefs_data.minutes_till_sleep > 0 && global_prefs.prefs_data.minutes_till_sleep <= MAX_TILL_SLEEP)
-        power_off_t = now + 60 * global_prefs.prefs_data.minutes_till_sleep;
-      previous_knob = QuadDec_1_GetCounter();
-    }
     /* Now render the appropriate contents into the display buffer, based upon 
        the current display_mode.  (Note that we're wasting lots of cpu cycles in some cases,
        since the display only changes when once/second for many of the display modes. 
@@ -1346,7 +1335,7 @@ int main()
     switch (display_mode){  
 
     case gpsDebugMode:
-      renderGPSDebug(now,&local_bdt,&utc_bdt);
+      renderDebugInfo(now,&local_bdt,&utc_bdt);
       break;
     
     case flwMode:
@@ -1467,6 +1456,8 @@ int main()
 	if(display_mode==menuMode){
 	  dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
 	  display_mode = saved_mode;
+	  QuadDec_1_SetCounter(saved_mode);
+	  previous_knob = saved_mode;
 	}
 	else {
 	  // we were in a display mode.  enter menuMode:
@@ -1481,9 +1472,19 @@ int main()
         last_switch=cycle_count;  
       }
     }
+    // if knob has been turned, bump sleep timer and exit autoswitch:
+    if (QuadDec_1_GetCounter() != previous_knob){
+      global_prefs.prefs_data.switch_interval = 0;   // cancels autoswitch
+      if(global_prefs.prefs_data.minutes_till_sleep > 0 && global_prefs.prefs_data.minutes_till_sleep <= MAX_TILL_SLEEP)
+        power_off_t = now + 60 * global_prefs.prefs_data.minutes_till_sleep;  // bump the time until sleep
+      previous_knob = QuadDec_1_GetCounter();
+    }
+
   }
 }
-
+// bug fixes since last github sync:
+// corrected several calls to sunrise/moonrise calcs that weren't using MidnightInTimeZone
+// fixed restoration of displayMode, so that executing a menu item doesn't change display
 /* [] END OF FILE */
 	
        
