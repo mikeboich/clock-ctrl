@@ -457,12 +457,12 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 /* ************* Pong Game ************* */
 #define PADDLE_HEIGHT 24
 #define PADDLE_WIDTH   8
-#define PONG_TOP 252
+#define PONG_TOP 250
 #define PONG_BOTTOM 4
 #define PONG_LEFT PADDLE_WIDTH
 #define PONG_RIGHT 255-PADDLE_WIDTH
 #define PADDLE_MIN PONG_BOTTOM+(PADDLE_HEIGHT/2)
-#define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)
+#define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)-1
 #define PADDLE_STEP 4
 #define MAX_Y_VELOCITY 9
 
@@ -779,7 +779,6 @@ int inBounds(float x, float lower, float upper){
 void renderSunOrMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt,int zeroForSunOneForMoon){
   int x,y;
   static seg_or_flag axes[] = {
-   // {128,128,0,240,neg ,0x0ff},   // y-axis creates a line from 128,8 to 128,248
     {128,120,0,252 ,neg ,0x0ff},   // y-axis creates a line from 128,8 to 128,248
     {128,8,240,0,neg,0x0ff},      // x-axis creates a line from 8,8 to 248,8
     {255,255,0,0,cir,0x00},
@@ -798,6 +797,7 @@ void renderSunOrMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt,int
   compileSegments(axes,MAIN_BUFFER,OVERWRITE);
   //line(0,8,255,8,MAIN_BUFFER);   // horiz axis
     
+
   for(x=8;x<=240;x+=10){         // horiz axis tick marks
     line(x,0,x,16,MAIN_BUFFER);  
   }
