@@ -462,7 +462,7 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 #define PONG_LEFT PADDLE_WIDTH
 #define PONG_RIGHT 255-PADDLE_WIDTH
 #define PADDLE_MIN PONG_BOTTOM+(PADDLE_HEIGHT/2)
-#define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)-1
+#define PADDLE_MAX PONG_TOP-(PADDLE_HEIGHT/2)
 #define PADDLE_STEP 4
 #define MAX_Y_VELOCITY 9
 
