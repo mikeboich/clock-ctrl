@@ -18,6 +18,7 @@
 #include "prefs.h"
 #include "time.h"
 
+
 #include "ds3231.h"
 
 #define NEWLINE 0x0A
@@ -28,6 +29,18 @@
 uint8 days_in_month[2][12] = {{31,28,31,30,31,30,31,31,30,31,30,31},\
                             {31,29,31,30,31,30,31,31,30,31,30,31}};
 
+int isNumber(double x) 
+{
+    // This looks like it should always be true, 
+    // but it's false if x is a NaN.
+    return (x == x); 
+}
+int isInBounds(double x) 
+    {
+        return (x <= 180.0 && x >= -180.0); 
+    }
+    
+    
 char *field_n(uint8 n, char *sentence){
     char *c = sentence;
     while(n && *c){
@@ -80,6 +93,11 @@ float get_lat_or_long(int select){
         result = -result;
     }
     
+    // shameful hack:  if we didn't get a good number, fake it for now
+    if(!isNumber(result) || !isInBounds(result)){
+    //if(1 || !isInBounds(result)){
+        result = select == 0 ? 37.368832 : 122.036346;
+    }
     return result;
 }
 

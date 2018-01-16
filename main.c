@@ -38,12 +38,12 @@
 
 // Real time clock variables:
 volatile int pps_available=0;
-
+volatile int second_has_elapsed=0;
 
 typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,moonriseMode,sunElevMode,moonElevMode,pongMode,pendulumMode,trump_elapsed_mode, \
-	     trumpMode,wordClockMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
-int nmodes = 18;
-int n_auto_modes=13;
+	     trumpMode,wordClockMode,bubble_mode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
+int nmodes = 19;
+int n_auto_modes=14;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -212,6 +212,52 @@ void render_flw(){
         
   }
 }
+// Experimental Bubble background:
+#define MIN_COORD 16
+#define MAX_COORD 240
+#define NUM_BUBBLES 64
+
+
+int bubble_vx[BUF_ENTRIES], bubble_vy[BUF_ENTRIES];
+
+void init_bubbles(seg_or_flag *seg_buf){
+    int i;
+    int velocities[] = {-1,1};
+    
+    i=0;
+    while(seg_buf->flag != 255){     
+        bubble_vx[i] = velocities[i % 2]; 
+        bubble_vy[i] = velocities[(i+1) % 2];
+        i += 1;
+        seg_buf++;
+    } 
+}
+void reverse_velocities(seg_or_flag *s){
+    int i = 0;
+    while(s->flag !=255){
+        bubble_vx[i] = -bubble_vx[i];
+        bubble_vy[i] = -bubble_vy[i];
+        i += 1;
+        s++;
+    }
+}
+void check_v(int coord,int *v){
+    if(coord < MIN_COORD || coord>MAX_COORD)
+      *v = -*v;
+}
+void bounce_bubbles(seg_or_flag *s){
+     
+    int which_bub = 0;
+    while(s->flag != 255){
+        check_v(s->seg_data.x_offset,&bubble_vx[which_bub]);
+        check_v(s->seg_data.y_offset,&bubble_vy[which_bub]);
+        s->seg_data.x_offset += bubble_vx[which_bub];
+        s->seg_data.y_offset += bubble_vy[which_bub];
+        
+        which_bub += 1;
+        s++;
+    }
+}
 
 #define HR_HAND_WIDTH 8
 #define HR_HAND_LENGTH 60
@@ -304,6 +350,9 @@ void render_trump_elapsed_buffer(time_t now,struct tm *local_bdt, struct tm *utc
     
     
   countdown_to_event(now,start_time,"Days of Trump","elapsed");
+  
+
+
 }
 
 void render_trump_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -704,7 +753,31 @@ void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, 
   if(the_state.celebrating && cycle_count % 6000 > 3000)
     draw_celeb(the_state);
 }
-
+void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
+    static uint64_t animation_start=0;
+    static int reversal_done=0;
+    
+    if(animation_start == 0){
+        animation_start = cycle_count;
+        init_bubbles(seg_buffer[MAIN_BUFFER]);
+    }
+    if(cycle_count - animation_start < 31250){
+        bounce_bubbles(seg_buffer[MAIN_BUFFER]);
+    }
+    else if(cycle_count - animation_start < 62500){
+        if(reversal_done==0){
+            reverse_velocities(seg_buffer[MAIN_BUFFER]);
+            reversal_done = 1;
+        }
+        bounce_bubbles(seg_buffer[MAIN_BUFFER]);
+    }
+    else if( cycle_count-animation_start < 93750){
+    }
+    else{
+      animation_start = 0;  
+      reversal_done = 0;
+    }
+}
 /*  Pendulum Clock *** */
 void render_pendulum_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   char sec_str[32],hr_min_string[32];
@@ -1302,6 +1375,7 @@ int main()
   power_on();
   hw_test2();
   previous_knob = QuadDec_1_GetCounter();
+
   // The main loop:
   for(;;){
     // if power is off and button is pressed, turn power on:
@@ -1332,6 +1406,8 @@ int main()
        since the display only changes when once/second for many of the display modes. 
        That's ok, we don't have anything more important to do.
     */
+    
+   
     switch (display_mode){  
 
     case gpsDebugMode:
@@ -1383,6 +1459,10 @@ int main()
 
     case pendulumMode:
       render_pendulum_buffer(now,&local_bdt,&utc_bdt);
+      break;
+
+    case bubble_mode:
+      render_bubble_buffer(now,&local_bdt,&utc_bdt);
       break;
 
     case trumpMode:

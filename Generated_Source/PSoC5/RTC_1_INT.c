@@ -55,9 +55,10 @@ static void RTC_1_EverySecondHandler(void)
     /* `#START EVERY_SECOND_HANDLER_CODE` */
   #include "gps.h"
   extern volatile uint64_t phase_error,cycle_count;
-  //extern int second_has_elapsed;
+  extern int second_has_elapsed;
   
   phase_error = (cycle_count % 31250);
+  second_has_elapsed = 1;
     /* `#END` */
     
     #ifdef RTC_1_EVERY_SECOND_HANDLER_CALLBACK
