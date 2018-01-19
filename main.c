@@ -1,3 +1,4 @@
+
 /*  main.c
 
     Copyright (C) 2016 Michael Boich
@@ -39,6 +40,7 @@
 // Real time clock variables:
 volatile int pps_available=0;
 volatile int second_has_elapsed=0;
+volatile int minute_has_elapsed=0;
 
 typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,moonriseMode,sunElevMode,moonElevMode,pongMode,pendulumMode,trump_elapsed_mode, \
 	     trumpMode,wordClockMode,bubble_mode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
@@ -212,24 +214,24 @@ void render_flw(){
         
   }
 }
-// Experimental Bubble background:
-#define MIN_COORD 16
-#define MAX_COORD 240
-#define NUM_BUBBLES 64
+// Experimental animation of character segments:
+#define MIN_COORD 4
+#define MAX_COORD 248
+//#define NUM_BUBBLES 64
 
 
 int bubble_vx[BUF_ENTRIES], bubble_vy[BUF_ENTRIES];
 
-void init_bubbles(seg_or_flag *seg_buf){
+void init_bubbles(seg_or_flag *s){
     int i;
     int velocities[] = {-1,1};
     
     i=0;
-    while(seg_buf->flag != 255){     
-        bubble_vx[i] = velocities[i % 2]; 
-        bubble_vy[i] = velocities[(i+1) % 2];
+    while(s->flag != 255){     
+        bubble_vx[i] = velocities[rand() % 2]; 
+        bubble_vy[i] = velocities[rand() % 2];
         i += 1;
-        seg_buf++;
+        s++;
     } 
 }
 void reverse_velocities(seg_or_flag *s){
@@ -241,7 +243,7 @@ void reverse_velocities(seg_or_flag *s){
         s++;
     }
 }
-void check_v(int coord,int *v){
+void check_v(uint coord,int *v){
     if(coord < MIN_COORD || coord>MAX_COORD)
       *v = -*v;
 }
@@ -494,7 +496,7 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 	past_until_index = approx_minute / 5;
 	sprintf(time_string[0],"%s",minute_strings[(approx_minute/5)]);
 	compileString(time_string[0],255,150,MAIN_BUFFER,2,APPEND);                
-	sprintf(time_string[0],"'till");
+	sprintf(time_string[0],"'til");
 	compileString(time_string[0],255,100,MAIN_BUFFER,2,APPEND);                
 	sprintf(time_string[0],"%s",hour_strings[((local_bdt->tm_hour+1)) % 12]);
 	compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);                
@@ -753,30 +755,43 @@ void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, 
   if(the_state.celebrating && cycle_count % 6000 > 3000)
     draw_celeb(the_state);
 }
+void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt);
+
+#define BOUNCE_PERIOD 300
+
 void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
-    static uint64_t animation_start=0;
+    static int step_number=0;
     static int reversal_done=0;
-    
-    if(animation_start == 0){
-        animation_start = cycle_count;
-        init_bubbles(seg_buffer[MAIN_BUFFER]);
+    if(minute_has_elapsed){
+        step_number = 0;
+        reversal_done=0;
+        render_word_clock(now,local_bdt,utc_bdt);
+        //render_text_clock(now,local_bdt,utc_bdt);
+        //init_bubbles(seg_buffer[MAIN_BUFFER]);
+        minute_has_elapsed = 0;
     }
-    if(cycle_count - animation_start < 31250){
+    if(step_number == 0){
+        init_bubbles(seg_buffer[MAIN_BUFFER]);
         bounce_bubbles(seg_buffer[MAIN_BUFFER]);
     }
-    else if(cycle_count - animation_start < 62500){
+    else if(step_number < BOUNCE_PERIOD){
+        bounce_bubbles(seg_buffer[MAIN_BUFFER]);
+    }
+    else if(step_number < 2*BOUNCE_PERIOD){
         if(reversal_done==0){
             reverse_velocities(seg_buffer[MAIN_BUFFER]);
             reversal_done = 1;
         }
         bounce_bubbles(seg_buffer[MAIN_BUFFER]);
     }
-    else if( cycle_count-animation_start < 93750){
+    else if( step_number < 3*BOUNCE_PERIOD){
     }
     else{
-      animation_start = 0;  
+      step_number = -1;  
       reversal_done = 0;
+      render_word_clock(now,local_bdt,utc_bdt);
     }
+    step_number += 1;
 }
 /*  Pendulum Clock *** */
 void render_pendulum_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -1368,12 +1383,12 @@ int main()
   else
     power_off_t = t + 60*global_prefs.prefs_data.minutes_till_sleep;
 
-  SW_Tx_UART_1_StartEx(3,4);
+  SW_Tx_UART_1_StartEx(12,7);
   SW_Tx_UART_1_PutString("Hello from PSOC-land!");
 
   //hw_test();
   power_on();
-  hw_test2();
+  //hw_test2();
   previous_knob = QuadDec_1_GetCounter();
 
   // The main loop:

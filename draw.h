@@ -43,6 +43,9 @@ void compileMenu(struct menu* the_menu, uint8 buffer_index,int append);
 void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer);
 void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer);
 
+// some utilities for animation:
+void copyBuf(int src_buffer,int dst_buffer);
+
 // adding a debug macro here for now.  Maybe we'll create a new place for it in the future:
 char msg_buf[255];
 

@@ -148,5 +148,14 @@ void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer){
   compileSegments(the_line,which_buffer, APPEND);
 }
 
+void copyBuf(int src_buffer_id,int dst_buffer_id){
+    seg_or_flag *src = seg_buffer[src_buffer_id];
+    seg_or_flag *dst = seg_buffer[dst_buffer_id];
+    
+    while(src->flag != 255){  // copy the segments
+        (dst++)->seg_data = (src++)->seg_data;
+    }
+    dst->flag = 255;  // add the sentinel value  
+}
 
 /* [] END OF FILE */
