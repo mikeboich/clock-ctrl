@@ -224,12 +224,12 @@ int bubble_vx[BUF_ENTRIES], bubble_vy[BUF_ENTRIES];
 
 void init_bubbles(seg_or_flag *s){
     int i;
-    int velocities[] = {-1,1};
+    int velocities[] = {-2,-1,1,2};
     
     i=0;
     while(s->flag != 255){     
-        bubble_vx[i] = velocities[rand() % 2]; 
-        bubble_vy[i] = velocities[rand() % 2];
+        bubble_vx[i] = velocities[rand() % 4]; 
+        bubble_vy[i] = velocities[rand() % 4];
         i += 1;
         s++;
     } 
@@ -244,7 +244,7 @@ void reverse_velocities(seg_or_flag *s){
     }
 }
 void check_v(uint coord,int *v){
-    if(coord < MIN_COORD || coord>MAX_COORD)
+    if((coord < MIN_COORD  && *v < 0) || (coord>MAX_COORD && *v > 0))
       *v = -*v;
 }
 void bounce_bubbles(seg_or_flag *s){
