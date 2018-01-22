@@ -268,7 +268,7 @@ void bounce_bubbles(seg_or_flag *s){
 #define SEC_HAND_LENGTH 124
 
 void drawClockHands(int h, int m, int s){
-  if(h > 11) h -= 12;    // hours > 12 folded into 0-12  
+  if(h > 11) h -= 12;    // hours > 12 folded into 0-11  
   float hour_angle = (h/12.0) * M_PI * 2.0 + (m/60.0)*(M_PI/6.0);  // hour hand angle (we'll ignore the seconds)
   float minute_angle = (m/60.0) * M_PI*2.0 + (s/60.0)*(M_PI/30.0);  // minute hand angle
   float second_angle = ((s/60.0))*M_PI*2.0;
@@ -322,8 +322,6 @@ void countdown_to_event(time_t now, time_t  event_time, char *caption0, char *ca
   double days_remaining;
   char seconds_string[64] = "";
     
-    
-    
   seconds_remaining = difftime(event_time,now);
   days_remaining = fabs(seconds_remaining/86400.0);  
     
@@ -333,9 +331,8 @@ void countdown_to_event(time_t now, time_t  event_time, char *caption0, char *ca
   compileString(seconds_string,255,140,MAIN_BUFFER,3,OVERWRITE);
   compileString(caption0,255,90,MAIN_BUFFER,1,APPEND);
   compileString(caption1,255,40,MAIN_BUFFER,1,APPEND);
-    
-    
 }
+
 void render_trump_elapsed_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   time_t end_time,start_time;
   struct tm end_of_trump,start_of_trump;
@@ -349,12 +346,8 @@ void render_trump_elapsed_buffer(time_t now,struct tm *local_bdt, struct tm *utc
     
   end_time = mktime(&end_of_trump);
   start_time = mktime(&start_of_trump);
-    
-    
+       
   countdown_to_event(now,start_time,"Days of Trump","elapsed");
-  
-
-
 }
 
 void render_trump_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -370,9 +363,9 @@ void render_trump_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   end_time = mktime(&end_of_trump);
   start_time = mktime(&start_of_trump);
     
-    
   countdown_to_event(now,end_time,"Days of Trump","remaining");
 }
+
 void render_xmas_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   time_t end_time;
   struct tm xmas_time;
@@ -390,6 +383,7 @@ void render_xmas_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     
   countdown_to_event(now,end_time,"Shopping Days","until Christmas");
 }
+
 void render_day_num_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   time_t start_time;
   struct tm start_of_year;
@@ -759,15 +753,13 @@ void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt);
 
 #define BOUNCE_PERIOD 300
 
+// Animate individual segments of the characters in the word-clock display:
 void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     static int step_number=0;
-    static int reversal_done=0;
+
     if(minute_has_elapsed){
         step_number = 0;
-        reversal_done=0;
         render_word_clock(now,local_bdt,utc_bdt);
-        //render_text_clock(now,local_bdt,utc_bdt);
-        //init_bubbles(seg_buffer[MAIN_BUFFER]);
         minute_has_elapsed = 0;
     }
     if(step_number == 0){
@@ -778,9 +770,8 @@ void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
         bounce_bubbles(seg_buffer[MAIN_BUFFER]);
     }
     else if(step_number < 2*BOUNCE_PERIOD){
-        if(reversal_done==0){
+        if(step_number==BOUNCE_PERIOD){  // time to reverse
             reverse_velocities(seg_buffer[MAIN_BUFFER]);
-            reversal_done = 1;
         }
         bounce_bubbles(seg_buffer[MAIN_BUFFER]);
     }
@@ -788,7 +779,8 @@ void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     }
     else{
       step_number = -1;  
-      reversal_done = 0;
+        9134mike
+        
       render_word_clock(now,local_bdt,utc_bdt);
     }
     step_number += 1;
