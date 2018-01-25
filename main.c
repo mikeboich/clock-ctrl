@@ -42,10 +42,10 @@ volatile int pps_available=0;
 volatile int second_has_elapsed=0;
 volatile int minute_has_elapsed=0;
 
-typedef enum{textMode,flwMode,analogMode1, secondsOnly,sunriseMode,moonriseMode,sunElevMode,moonElevMode,pongMode,pendulumMode,trump_elapsed_mode, \
-	     trumpMode,wordClockMode,bubble_mode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
+typedef enum{textMode,flwMode,bubble_mode,pongMode,pendulumMode,analogMode1, secondsOnly,sunriseMode,moonriseMode,sunElevMode,moonElevMode,trump_elapsed_mode, \
+	     trumpMode,wordClockMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
 int nmodes = 19;
-int n_auto_modes=14;
+int n_auto_modes=5;
 clock_type display_mode=pendulumMode;
 clock_type saved_mode;
 
@@ -206,7 +206,7 @@ void render_flw(){
   char *rw;
   static uint64_t lastUpdate=0;
     
-  if(cycle_count-lastUpdate > 31250){  // one second update interval..
+  if(cycle_count-lastUpdate > 0){  // one second update interval..
     rw = random_word();
     //rw = next_word();  // uncomment this line to have sequential, rather than random words
     compileString(rw,255,88,MAIN_BUFFER,5,OVERWRITE);
@@ -751,7 +751,7 @@ void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, 
 }
 void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt);
 
-#define BOUNCE_PERIOD 300
+#define BOUNCE_PERIOD 180
 
 // Animate individual segments of the characters in the word-clock display:
 void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -779,9 +779,34 @@ void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     }
     else{
       step_number = -1;  
-        9134mike
-        
       render_word_clock(now,local_bdt,utc_bdt);
+    }
+    step_number += 1;
+}
+
+void render_flw_animated_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
+    static int step_number=0;
+
+    if(step_number==0 ){
+        render_flw();
+    }
+    if(step_number == 0){
+        init_bubbles(seg_buffer[MAIN_BUFFER]);
+        for(step_number=0;step_number<60;step_number++)
+          bounce_bubbles(seg_buffer[MAIN_BUFFER]);
+        reverse_velocities(seg_buffer[MAIN_BUFFER]);
+    }
+    //else if(step_number < 90){
+        //bounce_bubbles(seg_buffer[MAIN_BUFFER]);
+    //}
+    else if(step_number <= 2*60){
+
+        bounce_bubbles(seg_buffer[MAIN_BUFFER]);
+    }
+    else if( step_number < 5*60){
+    }
+    else{
+      step_number = -1;  
     }
     step_number += 1;
 }
@@ -1422,7 +1447,8 @@ int main()
       break;
     
     case flwMode:
-      render_flw();
+      //render_flw();
+      render_flw_animated_buffer(now,&local_bdt,&utc_bdt);
       break;
     
     case textMode:
@@ -1555,9 +1581,9 @@ int main()
     }
     else{
       if(display_mode != menuMode && switch_interval!=0 && cycle_count-last_switch > switch_interval*31250){
-	display_mode = (cycle_count / (switch_interval*31250)) % n_auto_modes;   // switch modes automatically
-        last_switch=cycle_count;  
-      }
+	    display_mode = (cycle_count / (switch_interval*31250)) % n_auto_modes;   // switch modes automatically
+        last_switch=cycle_count; 
+       }
     }
     // if knob has been turned, bump sleep timer and exit autoswitch:
     if (QuadDec_1_GetCounter() != previous_knob){
