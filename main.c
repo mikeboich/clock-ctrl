@@ -47,7 +47,8 @@ typedef enum{textMode,flwMode,bubble_mode,pongMode,pendulumMode,analogMode1, sec
 int nmodes = 19;
 int n_auto_modes=5;
 clock_type display_mode=pendulumMode;
-clock_type saved_mode;
+clock_type saved_mode; 
+int last_switch = 0;
 
 int verbose_mode = 0;
 
@@ -445,7 +446,7 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     int the_hour = local_bdt->tm_min > 56 ? local_bdt->tm_hour+1 : local_bdt->tm_hour;
     sprintf(time_string[0],"%s ",hour_strings[the_hour % 12]);
     compileString(time_string[0],255,108,MAIN_BUFFER,2,APPEND);
-    sprintf(time_string[0],"O'clock");
+    sprintf(time_string[0],"o'clock");
     compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);
     return;
   }
@@ -748,10 +749,15 @@ void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, 
 
   if(the_state.celebrating && cycle_count % 6000 > 3000)
     draw_celeb(the_state);
+    
+//  if(cycle_count-last_switch > 3*31250){
+//    display_mode = (display_mode+1) % n_auto_modes;
+//    last_switch = cycle_count;
+//}
 }
 void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt);
 
-#define BOUNCE_PERIOD 180
+#define BOUNCE_PERIOD 140
 
 // Animate individual segments of the characters in the word-clock display:
 void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -783,7 +789,7 @@ void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     }
     step_number += 1;
 }
-
+#define FLW_ANIM_PERIOD 80
 void render_flw_animated_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     static int step_number=0;
 
@@ -792,21 +798,22 @@ void render_flw_animated_buffer(time_t now,struct tm *local_bdt, struct tm *utc_
     }
     if(step_number == 0){
         init_bubbles(seg_buffer[MAIN_BUFFER]);
-        for(step_number=0;step_number<60;step_number++)
+        for(step_number=0;step_number<FLW_ANIM_PERIOD;step_number++)
           bounce_bubbles(seg_buffer[MAIN_BUFFER]);
         reverse_velocities(seg_buffer[MAIN_BUFFER]);
     }
-    //else if(step_number < 90){
+    //else if(step_number < FLW_ANIM_PERIOD){
         //bounce_bubbles(seg_buffer[MAIN_BUFFER]);
     //}
-    else if(step_number <= 2*60){
+    else if(step_number <= 2*FLW_ANIM_PERIOD){
 
         bounce_bubbles(seg_buffer[MAIN_BUFFER]);
     }
-    else if( step_number < 5*60){
+    else if( step_number < 5*FLW_ANIM_PERIOD){
     }
     else{
       step_number = -1;  
+      display_mode = (display_mode+1) % n_auto_modes;
     }
     step_number += 1;
 }
@@ -833,6 +840,11 @@ void render_pendulum_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt)
 
   //render the point from which the pendulum swings:
   circle(128,245,8,MAIN_BUFFER);
+
+//if (cycle_count-last_switch > 3*31250){
+//    display_mode = (display_mode + 1) % n_auto_modes;
+//    last_switch = cycle_count;
+//}
 
 }
 
@@ -1330,7 +1342,7 @@ void hw_test2(){
 
 int main() 
 {
-  int last_switch = 0;
+
   /* Start up the SPI interface: */
   SPIM_1_Start();
   CyDelay(10);
