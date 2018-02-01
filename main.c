@@ -46,6 +46,8 @@ typedef enum{textMode,flwMode,bubble_mode,pongMode,pendulumMode,analogMode1, sec
 	     trumpMode,wordClockMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
 int nmodes = 19;
 int n_auto_modes=5;
+int switch_modes=0;
+
 clock_type display_mode=pendulumMode;
 clock_type saved_mode; 
 int last_switch = 0;
@@ -750,6 +752,10 @@ void render_pong_buffer(pong_state the_state, time_t now, struct tm *local_bdt, 
   if(the_state.celebrating && cycle_count % 6000 > 3000)
     draw_celeb(the_state);
     
+  if(cycle_count-last_switch > 6*31250){
+  switch_modes=1;
+  }
+    
 //  if(cycle_count-last_switch > 3*31250){
 //    display_mode = (display_mode+1) % n_auto_modes;
 //    last_switch = cycle_count;
@@ -786,10 +792,13 @@ void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     else{
       step_number = -1;  
       render_word_clock(now,local_bdt,utc_bdt);
+      // autoswitch:
+      if(cycle_count-last_switch > 10*31250)
+        switch_modes=1;
     }
     step_number += 1;
 }
-#define FLW_ANIM_PERIOD 80
+#define FLW_ANIM_PERIOD 160
 void render_flw_animated_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     static int step_number=0;
 
@@ -813,7 +822,9 @@ void render_flw_animated_buffer(time_t now,struct tm *local_bdt, struct tm *utc_
     }
     else{
       step_number = -1;  
-      display_mode = (display_mode+1) % n_auto_modes;
+      // autoswitch time:
+      if(cycle_count-last_switch > 10*31250)
+        switch_modes=1;
     }
     step_number += 1;
 }
@@ -841,10 +852,10 @@ void render_pendulum_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt)
   //render the point from which the pendulum swings:
   circle(128,245,8,MAIN_BUFFER);
 
-//if (cycle_count-last_switch > 3*31250){
-//    display_mode = (display_mode + 1) % n_auto_modes;
-//    last_switch = cycle_count;
-//}
+  //auto-switch test:
+  if (cycle_count-last_switch > 6*31250){
+    switch_modes=1;
+  }
 
 }
 
@@ -872,6 +883,11 @@ void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   char dw[12];
   sprintf(dw,"%s",day_names[day_of_week]);
   compileString(dw,255,202,MAIN_BUFFER,2,APPEND);
+
+// autoswitch logic, since this is an auto-mode:
+  if(cycle_count-last_switch > 5*31250){
+    switch_modes = 1;
+  }
 }
 
 void renderSeconds(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -1559,8 +1575,10 @@ int main()
       last_refresh = cycle_count;
 
     }
-    int switch_interval = global_prefs.prefs_data.switch_interval;
+    int switch_interval = global_prefs.prefs_data.switch_interval;  //formerly an interval.  Now a boolean.
     int knob_position;
+    
+    // if not auto-switching, set mode according to knob position:
     if(display_mode != menuMode && switch_interval == 0) {
       if((knob_position=QuadDec_1_GetCounter()) < 0) QuadDec_1_SetCounter(knob_position + nmodes);  // wrap around
       display_mode = QuadDec_1_GetCounter() % nmodes;
@@ -1572,7 +1590,6 @@ int main()
     if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
     
-
     if(button_clicked){
       button_clicked=0;  // consume the click
       // if the power is off, take the button click as a command to turn it on:
@@ -1598,12 +1615,20 @@ int main()
 	}
       }
     }
-    else{
-      if(display_mode != menuMode && switch_interval!=0 && cycle_count-last_switch > switch_interval*31250){
-	    display_mode = (cycle_count / (switch_interval*31250)) % n_auto_modes;   // switch modes automatically
+    
+    else{  // auto-switch
+      if(display_mode != menuMode && switch_interval!=0 && switch_modes){
+        if(local_bdt.tm_sec > 48){
+           display_mode = pongMode;  // so we can see the score at the end of each minute 
+        }
+        else{
+	      display_mode = (display_mode+1) % n_auto_modes;   // switch modes automatically
+        }
+        switch_modes=0;
         last_switch=cycle_count; 
        }
     }
+    
     // if knob has been turned, bump sleep timer and exit autoswitch:
     if (QuadDec_1_GetCounter() != previous_knob){
       global_prefs.prefs_data.switch_interval = 0;   // cancels autoswitch

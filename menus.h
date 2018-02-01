@@ -33,6 +33,7 @@ extern menu *active_menu;
 // utility functions:
 void sync_to_60Hz();
 void wait_for_twist();
+int trackKnob(int initial_value,int min_value,int max_value, void display_proc(int value));
 
 // display a menu:
 void render_menu(menu the_menu);
