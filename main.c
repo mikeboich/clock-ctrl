@@ -893,6 +893,9 @@ int inBounds(float x, float lower, float upper){
 #define SUN_SIZE 64
 
 // Sun elevation diagram, as inspired by SGITeach:
+#define LEFT_MARGIN 8
+#define RIGHT_MARGIN 248
+
 void renderSunOrMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt,int zeroForSunOneForMoon){
   int x,y;
   static seg_or_flag axes[] = {
@@ -923,8 +926,13 @@ void renderSunOrMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt,int
   for(y=18;y<=248;y+=26){    // vertical axis tick marks
     line(120,y+8,136,y+8,MAIN_BUFFER);
   }
-    
-  // calc elevations if necessary:
+
+// draw a dotted line denoting the current time:
+   float day_fraction = local_bdt->tm_hour/24.0 + local_bdt->tm_min/1440.0;
+  int x_offset = LEFT_MARGIN + (day_fraction)*(RIGHT_MARGIN-LEFT_MARGIN);
+  vertical_dashed_line(x_offset,0,x_offset,180,MAIN_BUFFER);
+
+// calc elevations if necessary:
   double elev;
   struct location my_location;
   init_location(&my_location);
@@ -1422,7 +1430,6 @@ int main()
 
   // The main loop:
   for(;;){
-    // if power is off and button is pressed, turn power on:
     // Turn off the LED part way into each 1 second period:
     // do it slightly different when using DS3231 vs GPS, so that we have
     // a visual indication of which mode we're in.
@@ -1440,7 +1447,7 @@ int main()
     struct tm local_bdt = *gmtime(&to_local);  // my way of getting local time
     struct tm utc_bdt = *gmtime(&now);
     
-    if(power_off_t && now > power_off_t){
+    if(power_off_t && now > power_off_t){      // time to go to sleep?
       power_off();
       power_off_t = 0;
     }

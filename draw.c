@@ -158,4 +158,23 @@ void copyBuf(int src_buffer_id,int dst_buffer_id){
     dst->flag = 255;  // add the sentinel value  
 }
 
+void vertical_dashed_line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer){
+    int x2,y2,x3,y3;
+  
+  // We'd like to assume that y0 is the lowest point, so make it so:
+  if(x0 > y1){
+    uint8 tmp = x0;
+    x0 = x1;
+    x1 = tmp;
+    
+    tmp = y0;
+    y0 = y1;
+    y1 = tmp;
+  }
+
+    for(y2=y0;y2<y1;y2+=8){
+        line(x0,y2,x0,y2+2,which_buffer);
+    }
+    
+}
 /* [] END OF FILE */
