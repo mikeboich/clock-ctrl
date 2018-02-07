@@ -50,7 +50,7 @@ int switch_modes=0;
 
 clock_type display_mode=pendulumMode;
 clock_type saved_mode; 
-int last_switch = 0;
+uint64_t last_switch = 0;
 
 int verbose_mode = 0;
 
@@ -793,8 +793,7 @@ void render_bubble_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
       step_number = -1;  
       render_word_clock(now,local_bdt,utc_bdt);
       // autoswitch:
-      if(cycle_count-last_switch > 10*31250)
-        switch_modes=1;
+      switch_modes=1;
     }
     step_number += 1;
 }
@@ -823,7 +822,7 @@ void render_flw_animated_buffer(time_t now,struct tm *local_bdt, struct tm *utc_
     else{
       step_number = -1;  
       // autoswitch time:
-      if(cycle_count-last_switch > 10*31250)
+      if(cycle_count-last_switch > 4*31250)
         switch_modes=1;
     }
     step_number += 1;
