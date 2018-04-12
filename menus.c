@@ -369,18 +369,18 @@ void set_gps(){
 
 void show_switch_interval(int i){
     char interval_buf[64];
-    if(i != 0){
-        sprintf(interval_buf,"Switch every %i sec", i);
+    if(i == 0){
+        sprintf(interval_buf,"Don't auto-switch", i);
     }
     else{
-        sprintf(interval_buf,"Don't auto-switch");
+        sprintf(interval_buf,"Auto-switch");
     }
     compileString(interval_buf,16,128,MAIN_BUFFER,1,0);
     display_buffer(MAIN_BUFFER);   
 }
 
 void set_switch_interval(){
-    int switch_interval = trackKnob(global_prefs.prefs_data.switch_interval,0,60,show_switch_interval);
+    int switch_interval = trackKnob(global_prefs.prefs_data.switch_interval,0,1,show_switch_interval);
     global_prefs.prefs_data.switch_interval = switch_interval;
     flush_prefs();
 }
