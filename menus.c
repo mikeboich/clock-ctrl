@@ -375,7 +375,7 @@ void show_switch_interval(int i){
     else{
         sprintf(interval_buf,"Auto-switch");
     }
-    compileString(interval_buf,16,128,MAIN_BUFFER,1,0);
+    compileString(interval_buf,255,128,MAIN_BUFFER,1,0);
     display_buffer(MAIN_BUFFER);   
 }
 
