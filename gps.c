@@ -59,6 +59,49 @@ int a_to_int(char *s){
 // utility routines, mostly for the sunrise/sunset calcs:
   char test_str[] = "$GPRMC,123519,A,4807.038,S,01131.000,E,022.4,084.4,230394,003.1,E*6A";
 
+#define is_digit(c) (c >= '0' && c <= '9')
+#define Success 1
+#define Fail 0
+#define is_digit(c) (c >= '0' && c <= '9')
+
+#include <stdio.h>
+
+
+#define Success 1
+#define Fail 0
+
+
+int coord_available(char *c_ptr){
+  // confirms that c_ptr points to a valid latitude or longitude in the NMEA format
+  // prevents a crash when the routine is called and the GPS hasn't established a fix yet
+  //  Coords are of the form (d{3}|d{5})\.d+(N|S|E|W)
+  //  This isn't as precise as it could be, but should serve my needs
+  int int_digits = 0;
+  while(int_digits <=5 && *(c_ptr+2)!='.'){
+    // scan to the decimal point, or until we have too many digits
+    c_ptr+=1;
+    int_digits += 1;
+  }
+  c_ptr += 2;  // skip over the two integer digits of minutes
+  if(int_digits < 1 || int_digits>3){
+    return(Fail);  // wrong number of int digits
+  }
+  if(*c_ptr != '.'){
+
+    return(Fail);
+   }
+  
+  c_ptr += 1;
+  while(is_digit(*c_ptr)){
+    c_ptr += 1;
+  }
+  
+  if(*c_ptr == 'N' || *c_ptr == 'S' || *c_ptr == 'E' || *c_ptr == 'W'){
+    return(Success);
+  }
+  
+  return(Fail);
+}
 float get_lat_or_long(int select){
     float result=0.0;
     char lat_or_long_str[32];
@@ -69,12 +112,17 @@ float get_lat_or_long(int select){
     while(*src_ptr != ','){
         *dst_ptr++ = *src_ptr++;
     }
-    *dst_ptr++ = 0;  //terminate string
+    *dst_ptr++ = 0;   //terminate string
     
     // parse out the integer degree portion:
     // there are always two integer minutes digits, then a decimal place, 
     // so everything two or more chars before the decimal point is part of the integer degree representation
     src_ptr = lat_or_long_str;
+    
+    // interim check that the lat/long value is safe to parse:
+    if(!coord_available(src_ptr)&& 0){
+        return select == 0 ? 37.368832 : 122.036346;
+    }
     while(*(src_ptr+2) != '.'){
         result = 10*result + (*src_ptr - '0');
         src_ptr++;
