@@ -12,8 +12,8 @@
 */
 #include <RTC_1.h>
 #include "time.h"
-extern int sentence_avail;
-extern char sentence[256];
+int sentence_avail;
+char sentence[256];
 
 // number of pps pulses required before we start using gps pss for timekeeping:
 #define REQUIRED_PULSES 4

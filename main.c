@@ -1586,12 +1586,12 @@ int main()
       if((knob_position=QuadDec_1_GetCounter()) < 0) QuadDec_1_SetCounter(knob_position + main_menu.n_items);  // wrap around
       main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     }
-    if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+    //if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
     
     if(button_clicked){
       button_clicked=0;  // consume the click
-      // if the power is off, take the button click as a command to turn it on:
+       // if the power is off, take the button click as a command to turn it on:
       if(power_status() == 0){
         power_on();
         if(global_prefs.prefs_data.minutes_till_sleep > 0 && global_prefs.prefs_data.minutes_till_sleep < MAX_TILL_SLEEP)

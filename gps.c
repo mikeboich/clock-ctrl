@@ -62,7 +62,6 @@ int a_to_int(char *s){
 #define is_digit(c) (c >= '0' && c <= '9')
 #define Success 1
 #define Fail 0
-#define is_digit(c) (c >= '0' && c <= '9')
 
 #include <stdio.h>
 
@@ -76,6 +75,7 @@ int coord_available(char *c_ptr){
   // prevents a crash when the routine is called and the GPS hasn't established a fix yet
   //  Coords are of the form (d{3}|d{5})\.d+(N|S|E|W)
   //  This isn't as precise as it could be, but should serve my needs
+    
   int int_digits = 0;
   while(int_digits <=5 && *(c_ptr+2)!='.'){
     // scan to the decimal point, or until we have too many digits
@@ -95,12 +95,8 @@ int coord_available(char *c_ptr){
   while(is_digit(*c_ptr)){
     c_ptr += 1;
   }
-  
-  if(*c_ptr == 'N' || *c_ptr == 'S' || *c_ptr == 'E' || *c_ptr == 'W'){
-    return(Success);
-  }
-  
-  return(Fail);
+
+  return(Success);
 }
 float get_lat_or_long(int select){
     float result=0.0;
@@ -120,7 +116,7 @@ float get_lat_or_long(int select){
     src_ptr = lat_or_long_str;
     
     // interim check that the lat/long value is safe to parse:
-    if(!coord_available(src_ptr)&& 0){
+    if(!coord_available(src_ptr)){
         return select == 0 ? 37.368832 : 122.036346;
     }
     while(*(src_ptr+2) != '.'){
@@ -181,7 +177,9 @@ void send_command(char *s){
 }
 
 void init_gps(){
-    UART_1_Start();
+    strcpy(sentence,"Uninitialized");  // sentence will hold NMEA sentences when they arrive
+    sentence_avail = 0;
+    UART_1_Start();  
     CyDelay(100);  // for luck
      //send_command("$PSRF100,1,38400,8,1,0");
      send_command("$PSRF103,00,00,00,01");
@@ -204,8 +202,8 @@ void init_gps(){
 }
 typedef enum {awaiting_dollar,awaiting_char, in_sentence} gps_parse_state;
 extern int second_has_elapsed;
-int sentence_avail;
-char sentence[256] = "Hello World";
+
+
 float gps_long,gps_lat;
 
 
