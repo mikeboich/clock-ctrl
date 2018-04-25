@@ -370,7 +370,7 @@ void set_gps(){
 void show_switch_interval(int i){
     char interval_buf[64];
     if(i == 0){
-        sprintf(interval_buf,"Don't auto-switch", i);
+        sprintf(interval_buf,"Don't auto-switch");
     }
     else{
         sprintf(interval_buf,"Auto-switch");
