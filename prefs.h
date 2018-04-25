@@ -1,6 +1,6 @@
- /*  main.c
+ /*  prefs.h
 
-    Copyright (C) 2016 Michael Boich
+    Copyright (C) 2016-2018 Michael Boich
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

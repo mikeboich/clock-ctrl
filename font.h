@@ -1,13 +1,24 @@
-/* ========================================
- *
- * Font code for my Oscilloclock derivative
- * Copyright Michael Boich, 2016
- * All Rights Reserved
- * UNPUBLISHED, LICENSED SOFTWARE.
- *
- * Based on the excellent work of Aaron Stokes and David Forbes
- * ========================================
+/*  
+
+ Copyright (C) 2016 Michael Boich
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ Routines to compile strings, menus, and other primitives into display lists
+
+
+* Based on the excellent work of Aaron Stokes and David Forbes
+* ========================================
 */
+
 #ifndef font_h
 #define font_h
 #include <device.h>

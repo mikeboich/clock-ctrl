@@ -1,4 +1,4 @@
- /*  main.c
+ /*  prefs.c
 
     Copyright (C) 2016 Michael Boich
 
