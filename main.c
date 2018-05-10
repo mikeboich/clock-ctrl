@@ -45,7 +45,7 @@ volatile int minute_has_elapsed=0;
 typedef enum{textMode,flwMode,bubble_mode,pongMode,pendulumMode,analogMode1, secondsOnly,sunriseMode,moonriseMode,sunElevMode,moonElevMode,trump_elapsed_mode, \
 	     trumpMode,wordClockMode,xmasMode,analogMode0,analogMode2,gpsDebugMode,julianDate,menuMode} clock_type;
 int nmodes = 19;
-int n_auto_modes=5;
+int n_auto_modes=10;
 int switch_modes=0;
 
 clock_type display_mode=pendulumMode;
@@ -147,6 +147,13 @@ void wave_started(){
   }
 }
 
+// utility function to decide if it's time to auto-switch display modes:
+void autocheck(unsigned long period){
+    if(cycle_count - last_switch > period*31250){
+        switch_modes = 1;
+    }
+}
+
 void renderDebugInfo(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   char pe[64],me[64];
 
@@ -202,6 +209,10 @@ void renderDebugInfo(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
  
   //  sprintf(pe,"minute err: %Lu",minute_error);
   //  compileString(pe,255,128-32,MAIN_BUFFER,1,APPEND);
+
+  // autoswitch test:
+ autocheck(4);
+
 }
 
 // Show a four letter word:
@@ -313,6 +324,8 @@ void renderAnalogClockBuffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt
     float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-phase_error)/31250.0);
     circle(x,y,16,MAIN_BUFFER);
   }
+
+  autocheck(4);
 }
 
 asm (".global _scanf_float");       // forces floating point formatting code to load
@@ -351,6 +364,7 @@ void render_trump_elapsed_buffer(time_t now,struct tm *local_bdt, struct tm *utc
   start_time = mktime(&start_of_trump);
        
   countdown_to_event(now,start_time,"Days of Trump","elapsed");
+  autocheck(5);
 }
 
 void render_trump_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -367,6 +381,7 @@ void render_trump_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   start_time = mktime(&start_of_trump);
     
   countdown_to_event(now,end_time,"Days of Trump","remaining");
+  autocheck(5);
 }
 
 void render_xmas_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -385,6 +400,7 @@ void render_xmas_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   end_time = mktime(&xmas_time);
     
   countdown_to_event(now,end_time,"Shopping Days","until Christmas");
+  autocheck(5);
 }
 
 void render_day_num_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -412,6 +428,7 @@ void render_day_num_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 
   sprintf(str_buf,"of %d",local_bdt->tm_year+1900);
   compileString(str_buf,255,y,MAIN_BUFFER,2,APPEND);
+  autocheck(5);
   
 }
 
@@ -428,6 +445,7 @@ void render_julian_date(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   compileString(jd_str,255,128+32,MAIN_BUFFER,1,OVERWRITE);
   sprintf(jd_str,"%.5lf",jd);
   compileString(jd_str,255,128-32,MAIN_BUFFER,1,APPEND);
+  autocheck(3);
 }
 
 void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -499,7 +517,8 @@ void render_word_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 	compileString(time_string[0],255,50,MAIN_BUFFER,2,APPEND);                
       }
     }
-  }    
+  } 
+  autocheck(3);
 }
 
 /* ************* Pong Game ************* */
@@ -822,8 +841,7 @@ void render_flw_animated_buffer(time_t now,struct tm *local_bdt, struct tm *utc_
     else{
       step_number = -1;  
       // autoswitch time:
-      if(cycle_count-last_switch > 4*31250)
-        switch_modes=1;
+      autocheck(5);
     }
     step_number += 1;
 }
@@ -852,9 +870,8 @@ void render_pendulum_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt)
   circle(128,245,8,MAIN_BUFFER);
 
   //auto-switch test:
-  if (cycle_count-last_switch > 6*31250){
-    switch_modes=1;
-  }
+  autocheck(5);
+  
 
 }
 
@@ -884,9 +901,7 @@ void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   compileString(dw,255,202,MAIN_BUFFER,2,APPEND);
 
 // autoswitch logic, since this is an auto-mode:
-  if(cycle_count-last_switch > 5*31250){
-    switch_modes = 1;
-  }
+  autocheck(5);
 }
 
 void renderSeconds(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -900,6 +915,7 @@ void renderSeconds(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   compileString(sec_str,255,10,MAIN_BUFFER,2,OVERWRITE);
   compileString(hour_min_str,255,85,MAIN_BUFFER,4,APPEND);
   compileString(day_of_week_str,255,205,MAIN_BUFFER,2,APPEND);
+  autocheck(5);
 }
 int inBounds(float x, float lower, float upper){
   if(x <= upper && x >= lower) return 1;
@@ -1015,20 +1031,20 @@ void renderSunOrMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt,int
     circle(x_at_rise[zeroForSunOneForMoon],y_at_rise[zeroForSunOneForMoon]+8,8,MAIN_BUFFER);
     circle(x_at_set[zeroForSunOneForMoon],y_at_set[zeroForSunOneForMoon]+8,8,MAIN_BUFFER);
   }
-    
+  
 }
 
 // Sun elevation diagram, as inspired by SGITeach:
 void renderSunElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   renderSunOrMoonElev(now,local_bdt,utc_bdt,0);
-    
+  autocheck(6);
 }
 
 
 // Moon elevation diagram, as inspired by SGITeach:
 void renderMoonElev(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   renderSunOrMoonElev(now,local_bdt,utc_bdt,1);
-    
+  autocheck(6);
 }
 // This (pretty ugly) routine serves for both sunset/sunrise and moonset/moonrise
 void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -1140,6 +1156,7 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     sprintf(fullness_str,"%.0f%% full",100*moon_fullness);
     compileString(fullness_str,255,230,MAIN_BUFFER,1,APPEND);
   }
+  autocheck(6);
 }
 
 
@@ -1617,7 +1634,7 @@ int main()
     
     else{  // auto-switch
       if(display_mode != menuMode && switch_interval!=0 && switch_modes){
-        if(local_bdt.tm_sec > 48){
+        if(local_bdt.tm_sec > 48 && local_bdt.tm_min % 2 ==1){
            display_mode = pongMode;  // so we can see the score at the end of each minute 
         }
         else{
