@@ -1185,7 +1185,7 @@ void display_buffer(uint8 which_buffer){
 #define PI 3
     
   seg_or_flag *seg_ptr = seg_buffer[which_buffer];
-  FrameDrawReg_Write(frame_toggle);
+  //FrameDrawReg_Write(frame_toggle);
   frame_toggle = 1 - frame_toggle;
   sync_to_60Hz();
   while(seg_ptr->seg_data.x_offset != 0xff){

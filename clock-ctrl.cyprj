@@ -4556,6 +4556,7 @@
 <selected_device v="CY8C5888LTI-LP097" />
 <CyGuid_495451fe-d201-4d01-b22d-5d3f5609ac37 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtComponentMgrSerialize" version="4" xml_contents_version="1">
 <library_deps>
+<library_dep persistent="..\..\PSOC_Src\DDS24\DDS24_lib\DDS24_lib\DDS24_lib.cylib\DDS24_lib.cyprj" />
 <library_dep persistent="${CyRoot}\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj" />
 <library_dep persistent="${CyRoot}\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj" />
 </library_deps>
@@ -4563,6 +4564,6 @@
 <ignored_deps />
 </CyGuid_495451fe-d201-4d01-b22d-5d3f5609ac37>
 <boot_component v="cy_boot_v4_20" />
-<current_generation v="465" />
+<current_generation v="466" />
 </CyGuid_fec8f9e8-2365-4bdb-96d3-a4380222e01b>
 </CyXmlSerializer>
