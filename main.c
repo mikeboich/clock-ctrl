@@ -1388,7 +1388,7 @@ int main()
   CyDelay(10);
 
   /* Start up i2c for DS3231 clock */
-  I2C_1_Start();
+ // I2C_1_Start();
     
   /* Start VDACs */
   VDAC8_1_Start();
