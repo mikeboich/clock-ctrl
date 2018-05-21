@@ -19,12 +19,13 @@
 #include "max509.h"
 #include "menus.h"
 #include "draw.h"
+#include "QuadDec.h"
 #include "prefs.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 
-#include "DS3231.h"
+#include "ds3231.h"
 
 extern int cycle_count;
 extern int verbose_mode;
@@ -53,8 +54,8 @@ void sync_to_60Hz(){
 }
 
 void wait_for_twist(){
- int tmp = QuadDec_1_GetCounter();
- while(tmp==QuadDec_1_GetCounter());
+ int tmp = QuadDec_Read();
+ while(tmp==QuadDec_Read());
 }
 
 void render_menu(menu the_menu){
@@ -142,19 +143,19 @@ void set_the_time(){
   clock_time = get_DS3231_time();
 
   int selected_field=0;
-  int prev_counter = QuadDec_1_GetCounter();
+  int prev_counter = QuadDec_Read();
   int field_min[7] = {1,1,2016,0,0,0,0};
   int field_max[7] = {12,31,2100,23,59,59,6};
   uint8 done=0;
   unix_to_psoc(clock_time,&psoc_time);
 
   unpack_time(&psoc_time,time_params);
-  QuadDec_1_SetCounter(time_params[selected_field]);
+  QuadDec_Write(time_params[selected_field]);
 
   while(!done){
     compile_time_screen(time_params,selected_field);
     display_buffer(MAIN_BUFFER);
-    int new_counter = QuadDec_1_GetCounter();
+    int new_counter = QuadDec_Read();
     if(new_counter < field_min[selected_field] || new_counter > field_max[selected_field]){
         new_counter = (new_counter < field_min[selected_field]) ? field_min[selected_field] : field_max[selected_field];
     }
@@ -178,7 +179,7 @@ void set_the_time(){
       }
       else {
 	    selected_field = (selected_field + 1) % 7; 
-        QuadDec_1_SetCounter(time_params[selected_field]);
+        QuadDec_Write(time_params[selected_field]);
       }    
     }
   }  
@@ -271,19 +272,19 @@ void align_screen(){
 // Routine for tracking decoder knob with feedback.  Used by several UI routines
 int trackKnob(int initial_value,int min_value,int max_value, void display_proc(int value)){
     int result;
-    int saved_knob = QuadDec_1_GetCounter();
-    QuadDec_1_SetCounter(initial_value);
+    int saved_knob = QuadDec_Read();
+    QuadDec_Write(initial_value);
     
     while(!button_clicked){
-        result = QuadDec_1_GetCounter();
+        result = QuadDec_Read();
         if (result < min_value || result > max_value){
             result = result < min_value ? min_value : max_value;
-            QuadDec_1_SetCounter(result);
+            QuadDec_Write(result);
         }
         display_proc(result);  
     }
     button_clicked = 0;  // consume click
-    QuadDec_1_SetCounter(saved_knob);  // restore knob setting
+    QuadDec_Write(saved_knob);  // restore knob setting
     return(result);
 }
 // UI feedback routine for "Set Locale"
@@ -387,7 +388,7 @@ void set_switch_interval(){
 
 void dispatch_menu(int menu_number, int item_number){
   // save the decoder position, so that it makes sense upon returning:
-  int prev_counter = QuadDec_1_GetCounter();
+  int prev_counter = QuadDec_Read();
   switch (menu_number){
   case 0: /* main menu */
     switch (item_number){
@@ -421,5 +422,5 @@ void dispatch_menu(int menu_number, int item_number){
     
     }                 
   }
-  QuadDec_1_SetCounter(prev_counter);   // restore the knob position
+  QuadDec_Write(prev_counter);   // restore the knob position
 }

@@ -24,6 +24,11 @@
 #include "menus.h"
 #include "prefs.h"
 #include "max509.h"
+#include "blanking.h"
+#include "QuadDec.h"
+#include "DDS_0.h"
+#include "DDS_1.h"
+
 #include "fourletter.h"
 #include "gps.h"
 #include "ds3231.h"
@@ -57,7 +62,7 @@ int verbose_mode = 0;
 typedef enum{idle,blank_primed,drawing,last_period,hw_testing}  draw_state;  // States of the draw loop/interrupt code
 
 uint8 current_mask=0;
-volatile draw_state current_state = idle;
+volatile draw_state current_state = hw_testing;
 volatile int current_phase=0;  // phase of sin lookup machinery
 volatile int times_to_loop = 0;
 
@@ -73,6 +78,8 @@ volatile uint64_t minute_error=0;            // difference between (cycle_count 
 int previous_knob=0;  // for checking to see if knob has been turned
 
 int last_refresh=0,loops_per_frame=0;   // for performance measurement
+
+volatile int load_ready = 0;
 /* Some housekeeping/utility items that should probably be moved to another source file: */
 
 void led_on(){
@@ -116,35 +123,104 @@ void wave_started(){
   switch(current_state){
 
   case hw_testing:
-    ShiftReg_1_WriteData(0xff);    // allows us to program the DAC and let it display
+    //ShiftReg_1_WriteData(0xff);    // allows us to program the DAC and let it display
+    //DDS_1_SetPhase(128);  // hardwire to cos for the moment ***
+    beam_on_now();                  // set the z signal to high
     break;
 
   case idle:
-    ShiftReg_1_WriteData(0x0);      // nothing happening.  Keep display blanked.
+    //ShiftReg_1_WriteData(0x0);      // nothing happening.  Keep display blanked.
+    beam_off_now();  // nothing happening.  Keep display blanked.
     break;
 
   case last_period:
-    ShiftReg_1_WriteData(0x0);  // next period is blanked
+    //ShiftReg_1_WriteData(0x0);  // next period is blanked
+    beam_off_now();
     current_state = idle;
     break;
 
   case blank_primed:
     current_state = drawing;
-    Phase_Register_Write(current_phase);
+    DDS_1_SetPhase(64);  // hardwire to cos for the moment ***
     strobe_LDAC();     // causes previous programming of DAC to take effect
     break;
     
   case drawing:
     times_to_loop -= 1;         // decrement loop counter
     if(times_to_loop==0){
-      ShiftReg_1_WriteData(0x0);  // blank on the next cycle
+      //ShiftReg_1_WriteData(0x0);  // blank on the next cycle
       current_state = last_period;
     }
     else {
-      ShiftReg_1_WriteData(current_mask);
+      //ShiftReg_1_WriteData(current_mask);
     }
     break;
   }
+}
+
+CY_ISR_PROTO(dds_load_ready);  // test comment
+
+void dds_load_ready(){
+  timer_isr_ClearPending();       // clear the interrupt
+  load_ready = 1;
+}
+
+void old_adjust_phase(){
+    static int dds1_phase = 0;
+    static int increment = 1;
+    
+    load_ready = 0;
+    dds1_phase += increment;
+    if(dds1_phase >= 255){
+        increment = -1;
+        LED_Reg_Write(!LED_Reg_Read());
+    }
+    
+    else if(dds1_phase <= 0){
+        increment = 1;
+        LED_Reg_Write(!LED_Reg_Read());
+    }
+    DDS_1_SetPhase(dds1_phase);
+}
+
+void adjust_phase()
+{   
+    //uint8 status = CyEnterCriticalSection();
+    load_ready = 0;
+    static uint8 counter = 0;   //use static to keep  recorded value
+    static int8 increment = 1;  //use static to keep  recorded value
+    
+    uint8 Phase = counter;
+            
+    DDS_1_SetPhase(Phase); // [0-256] <-> [0-2xPI]
+    
+    //move phase back-forward between 0 and NSteps 
+    if (counter >= 255) counter=0; else    //go backwards
+    if (counter <= 0) increment = 1;            //go forward
+    //if(counter == 255) counter = 0;
+    
+    counter += increment;
+    //CyExitCriticalSection(status);
+}
+
+void adjust_freq(){
+    double x_freqs[] = {20000.0, 30000.0,40000.0};
+    double y_freqs[] = {10000.0, 20000.0,30000.0, 40000.0};
+    static long long cycles = 0;
+    
+    
+    int nx = 3;
+    int ny = 4;
+    static int xindex=0;
+    static int yindex=0;
+    
+    cycles+=1;
+    if(cycles % 360 == 0){
+        DDS_0_SetFrequency(x_freqs[xindex]/2.0);
+        DDS_1_SetFrequency(y_freqs[yindex]/2.0);
+        xindex = (xindex + 1) % nx;
+        yindex = (yindex + 1) % ny;
+    }
 }
 
 // utility function to decide if it's time to auto-switch display modes:
@@ -1264,7 +1340,7 @@ void display_buffer(uint8 which_buffer){
     
       current_mask = seg_ptr->seg_data.mask;
 
-      ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
+      //ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
 
       current_state = blank_primed;
       seg_ptr++;
@@ -1310,29 +1386,37 @@ void waitForClick(){
 }
 
 #define LINELEN 128
+
 void hw_test(){
   seg_or_flag test_pattern[] = {
-    {128,128,254,254,cir,0xff},
+    {128,128,220,220,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
   seg_or_flag test_pattern2[] = {
-    {128,128,64,64,cir,0xff},
+    {128,128,128,128,cir,0xff},
     {128,128,244,244,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
 
   clear_buffer(MAIN_BUFFER);
-  compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
-  while(!button_clicked){
-    display_buffer(MAIN_BUFFER);
-  }
-  button_clicked=0;
-    
+  DDS_0_SetFrequency(31250.0/2.0);
+  DDS_1_SetFrequency(31250.0/2.0);
+  timer_isr_StartEx(dds_load_ready);
   set_DACfor_seg(test_pattern2,0,0);
   strobe_LDAC();
+  beam_off_now();
+  DDS_Control_Reg_Write(0x1);
+  DDS_1_SetPhase(64);
+  CyDelay(2000);
+
   //current_state = hw_testing;
-  while(!button_clicked) {}
-  button_clicked = 0;
+  while(1) {
+    if(load_ready){
+      adjust_phase();   
+      adjust_freq();
+    }
+  }
+    button_clicked = 0;
 }
 
 void hw_test2(){
@@ -1389,6 +1473,10 @@ int main()
 
   /* Start up i2c for DS3231 clock */
  // I2C_1_Start();
+
+ // start up the DDS phase accumulators:
+  DDS_0_Start();
+  DDS_1_Start();
     
   /* Start VDACs */
   VDAC8_1_Start();
@@ -1396,12 +1484,9 @@ int main()
   
   CyDelay(50);
     
-  /* Initialize the shift register: */
-  ShiftReg_1_Start();
-  CyDelay(50);
 
   // Start the quadrature decoder(aka "the knob"):
-  QuadDec_1_Start();
+  QuadDec_Init();
   CyDelay(50);
 
   // Initialize button interrupt (an interrupt routine that polls the button at 60Hz):
@@ -1454,11 +1539,11 @@ int main()
 
   SW_Tx_UART_1_StartEx(12,7);
   SW_Tx_UART_1_PutString("Hello from PSOC-land!");
-
-  //hw_test();
   power_on();
+
+  hw_test();
   //hw_test2();
-  previous_knob = QuadDec_1_GetCounter();
+  previous_knob = QuadDec_Read();
 
   // The main loop:
   for(;;){
@@ -1596,12 +1681,12 @@ int main()
     
     // if not auto-switching, set mode according to knob position:
     if(display_mode != menuMode && switch_interval == 0) {
-      if((knob_position=QuadDec_1_GetCounter()) < 0) QuadDec_1_SetCounter(knob_position + nmodes);  // wrap around
-      display_mode = QuadDec_1_GetCounter() % nmodes;
+      if((knob_position=QuadDec_Read()) < 0) QuadDec_Write(knob_position + nmodes);  // wrap around
+      display_mode = QuadDec_Read() % nmodes;
     }
     else {
-      if((knob_position=QuadDec_1_GetCounter()) < 0) QuadDec_1_SetCounter(knob_position + main_menu.n_items);  // wrap around
-      main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
+      if((knob_position=QuadDec_Read()) < 0) QuadDec_Write(knob_position + main_menu.n_items);  // wrap around
+      main_menu.highlighted_item_index = QuadDec_Read() % (main_menu.n_items);
     }
     //if(display_mode == menuMode) main_menu.highlighted_item_index = QuadDec_1_GetCounter() % (main_menu.n_items);
     
@@ -1621,7 +1706,7 @@ int main()
 	if(display_mode==menuMode){
 	  dispatch_menu(main_menu.menu_number,main_menu.highlighted_item_index);
 	  display_mode = saved_mode;
-	  QuadDec_1_SetCounter(saved_mode);
+	  QuadDec_Write(saved_mode);
 	  previous_knob = saved_mode;
 	}
 	else {
@@ -1646,11 +1731,11 @@ int main()
     }
     
     // if knob has been turned, bump sleep timer and exit autoswitch:
-    if (QuadDec_1_GetCounter() != previous_knob){
+    if (QuadDec_Read() != previous_knob){
       global_prefs.prefs_data.switch_interval = 0;   // cancels autoswitch
       if(global_prefs.prefs_data.minutes_till_sleep > 0 && global_prefs.prefs_data.minutes_till_sleep <= MAX_TILL_SLEEP)
         power_off_t = now + 60 * global_prefs.prefs_data.minutes_till_sleep;  // bump the time until sleep
-      previous_knob = QuadDec_1_GetCounter();
+      previous_knob = QuadDec_Read();
     }
 
   }
