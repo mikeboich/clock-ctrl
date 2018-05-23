@@ -126,12 +126,21 @@ void wave_started(){
   case hw_testing:
     //ShiftReg_1_WriteData(0xff);    // allows us to program the DAC and let it display
     //DDS_1_SetPhase(128);  // hardwire to cos for the moment ***
-    beam_on_now();                  // set the z signal to high
-    break;
+    //reset_timers();
+
+//    Z_On_Timer_WriteCounter(30*4);
+//    Z_On_Timer_WritePeriod(32*4);
+//    Z_Off_Timer_WriteCounter(16*4);
+//    Z_Off_Timer_WritePeriod(32*4);
+      //reset_timers();
+      //enable_timers();
+break;
 
   case idle:
     //ShiftReg_1_WriteData(0x0);      // nothing happening.  Keep display blanked.
     //beam_off_now();  // nothing happening.  Keep display blanked.
+    reset_timers();
+    enable_timers();
     break;
 
   case last_period:
@@ -1405,35 +1414,38 @@ void hw_test(){
     {255,255,0,0,cir,0x00},
   }; 
   button_clicked = 0;  
-  timer_isr_StartEx(dds_load_ready);
+  //timer_isr_StartEx(dds_load_ready);
 
   DDS_0_SetFrequency(31250);
   DDS_1_SetFrequency(31250);
+  DDS_1_SetPhase(64);
 
   set_DACfor_seg(test_pattern2,0,0);
   strobe_LDAC();
 
-  Timer_Reg_Write(0);  // turn off DDS and timers and beam
+ 
+  int delay = 4*QuadDec_Read();
   CyDelay(1);
-  DDS_1_SetPhase(64);
-  Z_On_Timer_WriteCounter(16*24);
-  Z_On_Timer_WritePeriod(32*24);
-  Z_Off_Timer_WriteCounter(24*24);
-  Z_Off_Timer_WritePeriod(32*24);
+  Z_On_Timer_WriteCounter(delay);
+  Z_On_Timer_WritePeriod(32*4-1);
+  Z_Off_Timer_WriteCounter(16*4-1+delay);
+  Z_Off_Timer_WritePeriod(32*4-1);
 
   Timer_Reg_Write(DDS_ENABLE | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+ //Timer_Reg_Write(DDS_ENABLE);
 
-  //current_state = hw_testing;
-  while(!button_clicked) {
+  current_state = hw_testing;
+ //beam_on_now();
+
+    while(!button_clicked) {
     if(load_ready){
-      adjust_phase();   
-      adjust_freq();
+      //adjust_phase();   
+      //adjust_freq();
     }
   }
     button_clicked = 0;
-  beam_off_now();
   CyDelay(1000);
-  beam_on_now();
+  current_state = idle;
 }
 
 void hw_test2(){
