@@ -1404,19 +1404,24 @@ void hw_test(){
     {128,128,244,244,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
-  button_clicked = 0;
-  clear_buffer(MAIN_BUFFER);
-  DDS_0_SetFrequency(31250.0/2.0);
-  DDS_1_SetFrequency(31250.0/2.0);
+  button_clicked = 0;  
   timer_isr_StartEx(dds_load_ready);
+
+  DDS_0_SetFrequency(31250);
+  DDS_1_SetFrequency(31250);
+
   set_DACfor_seg(test_pattern2,0,0);
   strobe_LDAC();
-  Timer_Reg_Write(0);
+
+  Timer_Reg_Write(0);  // turn off DDS and timers and beam
   CyDelay(1);
-  Timer_Reg_Write(DDS_ENABLE);
-  beam_on_now();
   DDS_1_SetPhase(64);
-  CyDelay(2000);
+  Z_On_Timer_WriteCounter(16*24);
+  Z_On_Timer_WritePeriod(32*24);
+  Z_Off_Timer_WriteCounter(24*24);
+  Z_Off_Timer_WritePeriod(32*24);
+
+  Timer_Reg_Write(DDS_ENABLE | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
 
   //current_state = hw_testing;
   while(!button_clicked) {
