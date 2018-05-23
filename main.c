@@ -62,7 +62,7 @@ int verbose_mode = 0;
 typedef enum{idle,blank_primed,drawing,last_period,hw_testing}  draw_state;  // States of the draw loop/interrupt code
 
 uint8 current_mask=0;
-volatile draw_state current_state = hw_testing;
+volatile draw_state current_state = idle;
 volatile int current_phase=0;  // phase of sin lookup machinery
 volatile int times_to_loop = 0;
 
@@ -103,6 +103,7 @@ void power_off(){
   LED_Reg_Write(status);
 }
 
+
 int power_status(){
   int status = LED_Reg_Read() & 0x2;
   return status;
@@ -130,18 +131,17 @@ void wave_started(){
 
   case idle:
     //ShiftReg_1_WriteData(0x0);      // nothing happening.  Keep display blanked.
-    beam_off_now();  // nothing happening.  Keep display blanked.
+    //beam_off_now();  // nothing happening.  Keep display blanked.
     break;
 
   case last_period:
     //ShiftReg_1_WriteData(0x0);  // next period is blanked
-    beam_off_now();
+   // beam_off_now();
     current_state = idle;
     break;
 
   case blank_primed:
     current_state = drawing;
-    DDS_1_SetPhase(64);  // hardwire to cos for the moment ***
     strobe_LDAC();     // causes previous programming of DAC to take effect
     break;
     
@@ -189,10 +189,14 @@ void adjust_phase()
     load_ready = 0;
     static uint8 counter = 0;   //use static to keep  recorded value
     static int8 increment = 1;  //use static to keep  recorded value
-    
+    int tmp;
     uint8 Phase = counter;
-            
-    DDS_1_SetPhase(Phase); // [0-256] <-> [0-2xPI]
+    tmp = QuadDec_Read(); 
+    
+    char msg[32];
+    sprintf(msg, "Decoder = %i\n\r",tmp);
+    SW_Tx_UART_1_PutString(msg);
+    DDS_1_SetPhase(tmp % 256); // [0-256] <-> [0-2xPI]
     
     //move phase back-forward between 0 and NSteps 
     if (counter >= 255) counter=0; else    //go backwards
@@ -1273,14 +1277,17 @@ void display_buffer(uint8 which_buffer){
       switch(seg_ptr->seg_data.arc_type){
       case cir:
         current_phase=0x1;   // phase register can't be written here, as drawing may still be active, so set current_phase instead
+        DDS_1_SetPhase(64);
 	break;
         
       case pos:
 	current_phase = 0x0;
+    DDS_1_SetPhase(0);
 	break;
         
       case neg:
         current_phase = 0x2;
+        DDS_1_SetPhase(128);
 	break;
       }
 #define SGI_TEACH   
@@ -1397,26 +1404,31 @@ void hw_test(){
     {128,128,244,244,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
-
+  button_clicked = 0;
   clear_buffer(MAIN_BUFFER);
   DDS_0_SetFrequency(31250.0/2.0);
   DDS_1_SetFrequency(31250.0/2.0);
   timer_isr_StartEx(dds_load_ready);
   set_DACfor_seg(test_pattern2,0,0);
   strobe_LDAC();
-  beam_off_now();
-  DDS_Control_Reg_Write(0x1);
+  Timer_Reg_Write(0);
+  CyDelay(1);
+  Timer_Reg_Write(DDS_ENABLE);
+  beam_on_now();
   DDS_1_SetPhase(64);
   CyDelay(2000);
 
   //current_state = hw_testing;
-  while(1) {
+  while(!button_clicked) {
     if(load_ready){
       adjust_phase();   
       adjust_freq();
     }
   }
     button_clicked = 0;
+  beam_off_now();
+  CyDelay(1000);
+  beam_on_now();
 }
 
 void hw_test2(){
@@ -1537,7 +1549,7 @@ int main()
   else
     power_off_t = t + 60*global_prefs.prefs_data.minutes_till_sleep;
 
-  SW_Tx_UART_1_StartEx(12,7);
+  SW_Tx_UART_1_StartEx(15,0);
   SW_Tx_UART_1_PutString("Hello from PSOC-land!");
   power_on();
 
