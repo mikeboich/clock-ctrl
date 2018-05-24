@@ -383,10 +383,12 @@
       <Data key="9aeb770a-6080-4509-bd46-6ffac1fa53fc" value="EncoderButton" />
       <Data key="19ed7a04-693c-4415-96b9-e92398820540" value="int_svc_pin" />
       <Data key="21eb92f0-727d-4d3f-a825-0dad031f8dae" value="FrameDrawn" />
+      <Data key="23dbc4f0-cb06-4e1e-a858-12de44428061" value="On_TC" />
       <Data key="58ec9100-9032-4e61-ad76-42a98a1c4c04" value="Load_pin" />
       <Data key="76dcac08-f1b0-4e69-840e-d85e42bf5957" value="Cos_Pin" />
       <Data key="94b942b9-c830-4f85-a810-158114f7c12f/52f31aa9-2f0a-497d-9a1f-1424095e13e6" value="SW_Tx_UART_1_tx" />
       <Data key="264be2d3-9481-494b-8d9c-c1905a45e9cc" value="sda_pin" />
+      <Data key="293c286f-5224-4357-a184-bcc51386e0fc" value="Off_TC" />
       <Data key="1939a9da-d017-48f7-b9f0-c8b09d615946" value="debug_Pin_0_2" />
       <Data key="79635c11-01f0-4a65-b6e6-26e6b5e76bb3" value="ldac_pin" />
       <Data key="993606f4-1ae2-4b78-9436-3eabb195f0b8" value="Wave_Out_Pin" />
@@ -490,6 +492,11 @@
         <Data key="Port Format" value="15,0" />
       </Group>
     </Group>
+    <Group key="23dbc4f0-cb06-4e1e-a858-12de44428061">
+      <Group key="0">
+        <Data key="Port Format" value="3,3" />
+      </Group>
+    </Group>
     <Group key="58ec9100-9032-4e61-ad76-42a98a1c4c04">
       <Group key="0">
         <Data key="Port Format" value="3,5" />
@@ -508,6 +515,11 @@
     <Group key="264be2d3-9481-494b-8d9c-c1905a45e9cc">
       <Group key="0">
         <Data key="Port Format" value="12,1" />
+      </Group>
+    </Group>
+    <Group key="293c286f-5224-4357-a184-bcc51386e0fc">
+      <Group key="0">
+        <Data key="Port Format" value="3,4" />
       </Group>
     </Group>
     <Group key="1939a9da-d017-48f7-b9f0-c8b09d615946">

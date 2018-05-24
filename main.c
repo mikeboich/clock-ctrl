@@ -1417,21 +1417,24 @@ void hw_test(){
   //timer_isr_StartEx(dds_load_ready);
 
   DDS_0_SetFrequency(31250);
+  DDS_0_SetPhase(4);
   DDS_1_SetFrequency(31250);
-  DDS_1_SetPhase(64);
+  DDS_1_SetPhase(68);
 
   set_DACfor_seg(test_pattern2,0,0);
   strobe_LDAC();
-
  
-  int delay = 4*QuadDec_Read();
+  int delay = 0;
   CyDelay(1);
-  Z_On_Timer_WriteCounter(delay);
+  Z_On_Timer_WriteCounter(4*4-1);
   Z_On_Timer_WritePeriod(32*4-1);
-  Z_Off_Timer_WriteCounter(16*4-1+delay);
+  Z_Off_Timer_WriteCounter(32*4-1);
   Z_Off_Timer_WritePeriod(32*4-1);
-
-  Timer_Reg_Write(DDS_ENABLE | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+  //set_timers_from_mask(test_pattern2->seg_data.mask);
+  Timer_Reg_Write(DDS_ENABLE);
+  CyDelayUs(11);
+  enable_timers();
+  //Timer_Reg_Write(DDS_ENABLE | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
  //Timer_Reg_Write(DDS_ENABLE);
 
   current_state = hw_testing;
@@ -1439,12 +1442,13 @@ void hw_test(){
 
     while(!button_clicked) {
     if(load_ready){
-      //adjust_phase();   
-      //adjust_freq();
+      adjust_phase();   
+      adjust_freq();
     }
   }
     button_clicked = 0;
   CyDelay(1000);
+  beam_on_now();
   current_state = idle;
 }
 

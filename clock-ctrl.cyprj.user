@@ -51,6 +51,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -162,6 +166,10 @@
 <file name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <file name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <file name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<file name=".\Generated_Source\PSoC5\Off_TC.h" />
+<file name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<file name=".\Generated_Source\PSoC5\On_TC.h" />
+<file name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <file name=".\Generated_Source\PSoC5\QuadA.h" />
 <file name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <file name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -397,6 +405,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -496,6 +508,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -828,6 +844,28 @@
 <dep name=".\Generated_Source\PSoC5\cytypes.h" />
 </file>
 <file name=".\Generated_Source\PSoC5\MOSI_Pin.c" />
+<file name=".\ARM_GCC_541\Debug\Off_TC.o">
+<dep name=".\Generated_Source\PSoC5\Off_TC.c" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\cydevice.h" />
+<dep name=".\Generated_Source\PSoC5\cydevice_trm.h" />
+<dep name=".\Generated_Source\PSoC5\cyfitter.h" />
+<dep name=".\Generated_Source\PSoC5\cypins.h" />
+<dep name=".\Generated_Source\PSoC5\cytypes.h" />
+</file>
+<file name=".\Generated_Source\PSoC5\Off_TC.c" />
+<file name=".\ARM_GCC_541\Debug\On_TC.o">
+<dep name=".\Generated_Source\PSoC5\On_TC.c" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\cydevice.h" />
+<dep name=".\Generated_Source\PSoC5\cydevice_trm.h" />
+<dep name=".\Generated_Source\PSoC5\cyfitter.h" />
+<dep name=".\Generated_Source\PSoC5\cypins.h" />
+<dep name=".\Generated_Source\PSoC5\cytypes.h" />
+</file>
+<file name=".\Generated_Source\PSoC5\On_TC.c" />
 <file name=".\ARM_GCC_541\Debug\QuadA.o">
 <dep name=".\Generated_Source\PSoC5\QuadA.c" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
@@ -1393,6 +1431,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -1494,6 +1536,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -1595,6 +1641,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -1696,6 +1746,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -1798,6 +1852,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -1899,6 +1957,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -2009,6 +2071,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -2112,6 +2178,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -2214,6 +2284,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -2321,6 +2395,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -2422,6 +2500,10 @@
 <dep name=".\Generated_Source\PSoC5\MISO_Pin_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin.h" />
 <dep name=".\Generated_Source\PSoC5\MOSI_Pin_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC.h" />
+<dep name=".\Generated_Source\PSoC5\Off_TC_aliases.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC.h" />
+<dep name=".\Generated_Source\PSoC5\On_TC_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA.h" />
 <dep name=".\Generated_Source\PSoC5\QuadA_aliases.h" />
 <dep name=".\Generated_Source\PSoC5\QuadB.h" />
@@ -5894,6 +5976,8 @@
 <dep name=".\ARM_GCC_541\Debug\Z_Out.o" />
 <dep name=".\ARM_GCC_541\Debug\Quad_A_isr.o" />
 <dep name=".\ARM_GCC_541\Debug\Load_pin.o" />
+<dep name=".\ARM_GCC_541\Debug\Off_TC.o" />
+<dep name=".\ARM_GCC_541\Debug\On_TC.o" />
 <dep name=".\ARM_GCC_541\Debug\clock-ctrl.a" />
 <dep name="${CyRoot}\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CortexM3\ARM_GCC_541\Debug\CyComponentLibrary.a" />
 </file>
@@ -6198,6 +6282,8 @@
 <name_val_pair name="Generated_Source\PSoC5\Quad_B_isr.c" v="-mcpu=cortex-m3 -mthumb -I. -IGenerated_Source\PSoC5 -Wa,-alh=${OutputDir}/${CompileFile}.lst -g -ffunction-sections -ffat-lto-objects -Os" />
 <name_val_pair name="Generated_Source\PSoC5\isr_3.c" v="-mcpu=cortex-m3 -mthumb -I. -IGenerated_Source\PSoC5 -Wa,-alh=${OutputDir}/${CompileFile}.lst -g -ffunction-sections -ffat-lto-objects -Os" />
 <name_val_pair name="Generated_Source\PSoC5\Load_pin.c" v="-mcpu=cortex-m3 -mthumb -I. -IGenerated_Source\PSoC5 -Wa,-alh=${OutputDir}/${CompileFile}.lst -g -ffunction-sections -ffat-lto-objects -Os" />
+<name_val_pair name="Generated_Source\PSoC5\Off_TC.c" v="-mcpu=cortex-m3 -mthumb -I. -IGenerated_Source\PSoC5 -Wa,-alh=${OutputDir}/${CompileFile}.lst -g -ffunction-sections -ffat-lto-objects -Os" />
+<name_val_pair name="Generated_Source\PSoC5\On_TC.c" v="-mcpu=cortex-m3 -mthumb -I. -IGenerated_Source\PSoC5 -Wa,-alh=${OutputDir}/${CompileFile}.lst -g -ffunction-sections -ffat-lto-objects -Os" />
 </name>
 <name v="c9323d49-d323-40b8-9b59-cc008d68a989@Release@CortexM3">
 <name_val_pair name=".\main.c" v="-mcpu=cortex-m3 -mthumb -Wno-main -I. -IGenerated_Source\PSoC5 -Wa,-alh=${OutputDir}/${CompileFile}.lst -g -D NDEBUG -ffunction-sections -O3 -ffat-lto-objects" />
@@ -6269,7 +6355,7 @@
 <dataGuid v="769d31ea-68b1-4f0c-b90a-7c10a43ee563">
 <CyGuid_769d31ea-68b1-4f0c-b90a-7c10a43ee563 type_name="CyDesigner.Common.ProjMgmt.Model.CyLinkCustomData" version="1">
 <link_deps_times>
-<name_val_pair name="c9323d49-d323-40b8-9b59-cc008d68a989@Debug@CortexM3" v="131715848576254302" />
+<name_val_pair name="c9323d49-d323-40b8-9b59-cc008d68a989@Debug@CortexM3" v="131716656838398759" />
 </link_deps_times>
 </CyGuid_769d31ea-68b1-4f0c-b90a-7c10a43ee563>
 </dataGuid>
@@ -6345,7 +6431,7 @@
 <CyGuid_76464711-0ae1-4583-b869-f07a0403fc6e type_name="CyDesigner.Common.Debugger.CyFileLineBreakpoint" version="1" hitcount="0" condition="" enabled="False" hardware="True" temparary="False" filename=".\gps.c" linenumber="78" />
 <CyGuid_76464711-0ae1-4583-b869-f07a0403fc6e type_name="CyDesigner.Common.Debugger.CyFileLineBreakpoint" version="1" hitcount="0" condition="" enabled="True" hardware="True" temparary="False" filename=".\menus.c" linenumber="374" />
 <CyGuid_76464711-0ae1-4583-b869-f07a0403fc6e type_name="CyDesigner.Common.Debugger.CyFileLineBreakpoint" version="1" hitcount="0" condition="" enabled="False" hardware="True" temparary="False" filename=".\QuadDec.c" linenumber="38" />
-<CyGuid_76464711-0ae1-4583-b869-f07a0403fc6e type_name="CyDesigner.Common.Debugger.CyFileLineBreakpoint" version="1" hitcount="0" condition="" enabled="True" hardware="True" temparary="False" filename=".\blanking.c" linenumber="53" />
+<CyGuid_76464711-0ae1-4583-b869-f07a0403fc6e type_name="CyDesigner.Common.Debugger.CyFileLineBreakpoint" version="1" hitcount="0" condition="" enabled="True" hardware="True" temparary="False" filename=".\blanking.c" linenumber="70" />
 </debugger_breakpoint_list>
 </CyGuid_504337dd-7d07-4bc7-9057-90e60cf6c469>
 </dataGuid>
@@ -7090,6 +7176,12 @@
 <v>Generated_Source\PSoC5\Load_pin_aliases.h</v>
 <v>Generated_Source\PSoC5\Load_pin.c</v>
 <v>Generated_Source\PSoC5\Load_pin.h</v>
+<v>Generated_Source\PSoC5\Off_TC_aliases.h</v>
+<v>Generated_Source\PSoC5\Off_TC.c</v>
+<v>Generated_Source\PSoC5\Off_TC.h</v>
+<v>Generated_Source\PSoC5\On_TC_aliases.h</v>
+<v>Generated_Source\PSoC5\On_TC.c</v>
+<v>Generated_Source\PSoC5\On_TC.h</v>
 </gen_list>
 <warp_dep>
 <v>C:\Program Files (x86)\Cypress\PSoC Creator\4.1\PSoC Creator\warp\lib\ieee\work\stdlogic.vif</v>
@@ -7099,7 +7191,7 @@
 <v>C:\Program Files (x86)\Cypress\PSoC Creator\4.1\PSoC Creator\warp\lib\common\stdlogic\rtlpkg.vif</v>
 <v>C:\Program Files (x86)\Cypress\PSoC Creator\4.1\PSoC Creator\warp\lib\common\stdlogic\cy_psoc3.vif</v>
 </warp_dep>
-<deps_time v="131715843778195145" />
+<deps_time v="131716656324315916" />
 <top_block v="TopDesign" />
 <last_generation v="486" />
 <pdl_path v="" />
