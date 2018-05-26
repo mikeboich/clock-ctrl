@@ -126,19 +126,11 @@ void wave_started(){
 
   switch(current_state){
 
-  case hw_testing:
-    //ShiftReg_1_WriteData(0xff);    // allows us to program the DAC and let it display
-    //DDS_1_SetPhase(128);  // hardwire to cos for the moment ***
-    //reset_timers();
+  case hw_testing:      
+    enable_timers();
+    break;
 
-//    Z_On_Timer_WriteCounter(30*4);
-//    Z_On_Timer_WritePeriod(32*4);
-//    Z_Off_Timer_WriteCounter(16*4);
-//    Z_Off_Timer_WritePeriod(32*4);
-      //reset_timers();
-      //enable_timers();
-break;
-
+    
   case idle:
     //ShiftReg_1_WriteData(0x0);      // nothing happening.  Keep display blanked.
     //beam_off_now();  // nothing happening.  Keep display blanked.
@@ -155,9 +147,10 @@ break;
   case blank_primed:
     current_state = drawing;
     strobe_LDAC();     // causes previous programming of DAC to take effect
+    dds_load();
     enable_dds();
     enable_timers();
-    beam_on_now();
+    //beam_on_now();
     break;
     
   case drawing:
@@ -1293,23 +1286,23 @@ void display_buffer(uint8 which_buffer){
       switch(seg_ptr->seg_data.arc_type){
       case cir:
         current_phase=0x1;   // phase register can't be written here, as drawing may still be active, so set current_phase instead
-        DDS_0_SetPhase(-4);
-        DDS_1_SetPhase(64-4);
-        dds_load();
+        DDS_0_SetPhase(-8);
+        DDS_1_SetPhase(64-8);
+        //dds_load();
 	break;
         
       case pos:
 	current_phase = 0x0;
-    DDS_0_SetPhase(-4);
-    DDS_1_SetPhase(-4);
-    dds_load();
+    DDS_0_SetPhase(-8);
+    DDS_1_SetPhase(-8);
+    //dds_load();
 	break;
         
       case neg:
         current_phase = 0x2;
-        DDS_0_SetPhase(-4);
-        DDS_1_SetPhase(128-4);
-        dds_load();
+        DDS_0_SetPhase(-8);
+        DDS_1_SetPhase(128-8);
+       // dds_load();
 	break;
       }
 #define SGI_TEACH   
@@ -1370,6 +1363,7 @@ void display_buffer(uint8 which_buffer){
       current_mask = seg_ptr->seg_data.mask;
 
       //ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
+      disable_timers();
       set_timers_from_mask(current_mask);
       current_state = blank_primed;
       seg_ptr++;
@@ -1422,23 +1416,29 @@ void hw_test(){
     {255,255,0,0,cir,0x00},
   }; 
   seg_or_flag test_pattern2[] = {
-    {128,128,128,128,cir,0xff},
-    {128,128,244,244,cir,0xff},
+    {128,128,128,128,cir,0x01},
+    {128,128,128,128,cir,0x02},
+    {128,128,128,128,cir,0x04},
+    {128,128,128,128,cir,0x08},
+    {128,128,128,128,cir,0x10},
+    {128,128,128,128,cir,0x20},
+    {128,128,128,128,cir,0x40},
+    {128,128,128,128,cir,0x80},
+    {128,128,244,244,cir,0x0f},
+    {128,128,244,244,cir,0xf0},
     {255,255,0,0,cir,0x00},
   }; 
   current_state = hw_testing;
   button_clicked = 0;  
  // timer_isr_StartEx(dds_load_ready);
 
-  //DDS_0_SetFrequency(31250);
   set_DACfor_seg(test_pattern2,0,0);
-  DDS_0_SetPhase(4);
-  DDS_1_SetPhase(68);
+  DDS_0_SetPhase(0-4);
+  DDS_1_SetPhase(64-4);
   DDS_0_SetFrequency(31250);
   DDS_1_SetFrequency(31250);
   Timer_Reg_Write(DDS_ENABLE);
-  beam_on_now();
-  wait_for_click();
+  beam_off_now();
   dds_load();
 
   set_DACfor_seg(test_pattern2,0,0);
@@ -1447,11 +1447,11 @@ void hw_test(){
   wait_for_click();
   
   int i;
-  for(i=-8;i<17;i+=4){
-      DDS_1_SetPhase(i);
+  for(i=0;i<11;i++){
+      //DDS_1_SetPhase(128);
       dds_load();
+      set_timers_from_mask(test_pattern2[i].seg_data.mask);
       wait_for_click();
-    CyDelay(100);
 }
 
   DDS_1_SetPhase(128);
