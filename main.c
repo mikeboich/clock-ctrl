@@ -102,7 +102,10 @@ void power_off(){
   status &= 0x1;  // turn power bit off
   LED_Reg_Write(status);
 }
-
+void wait_for_click(){
+    while (!button_clicked);
+    button_clicked = 0;
+}
 
 int power_status(){
   int status = LED_Reg_Read() & 0x2;
@@ -139,19 +142,22 @@ break;
   case idle:
     //ShiftReg_1_WriteData(0x0);      // nothing happening.  Keep display blanked.
     //beam_off_now();  // nothing happening.  Keep display blanked.
-    reset_timers();
-    enable_timers();
+    //reset_timers();
+    //enable_timers();
     break;
 
   case last_period:
     //ShiftReg_1_WriteData(0x0);  // next period is blanked
-   // beam_off_now();
+    beam_off_now();
     current_state = idle;
     break;
 
   case blank_primed:
     current_state = drawing;
     strobe_LDAC();     // causes previous programming of DAC to take effect
+    enable_dds();
+    enable_timers();
+    beam_on_now();
     break;
     
   case drawing:
@@ -1281,22 +1287,29 @@ void display_buffer(uint8 which_buffer){
 
     if(current_state==idle){
       uint8 int_status = CyEnterCriticalSection();
-            
+      //Timer_Reg_Write(0);  // pause everything
+      //disable_dds();
       set_DACfor_seg(seg_ptr,ss_x_offset,ss_y_offset);
       switch(seg_ptr->seg_data.arc_type){
       case cir:
         current_phase=0x1;   // phase register can't be written here, as drawing may still be active, so set current_phase instead
-        DDS_1_SetPhase(64);
+        DDS_0_SetPhase(-4);
+        DDS_1_SetPhase(64-4);
+        dds_load();
 	break;
         
       case pos:
 	current_phase = 0x0;
-    DDS_1_SetPhase(0);
+    DDS_0_SetPhase(-4);
+    DDS_1_SetPhase(-4);
+    dds_load();
 	break;
         
       case neg:
         current_phase = 0x2;
-        DDS_1_SetPhase(128);
+        DDS_0_SetPhase(-4);
+        DDS_1_SetPhase(128-4);
+        dds_load();
 	break;
       }
 #define SGI_TEACH   
@@ -1357,7 +1370,7 @@ void display_buffer(uint8 which_buffer){
       current_mask = seg_ptr->seg_data.mask;
 
       //ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
-
+      set_timers_from_mask(current_mask);
       current_state = blank_primed;
       seg_ptr++;
         
@@ -1413,32 +1426,53 @@ void hw_test(){
     {128,128,244,244,cir,0xff},
     {255,255,0,0,cir,0x00},
   }; 
+  current_state = hw_testing;
   button_clicked = 0;  
-  //timer_isr_StartEx(dds_load_ready);
+ // timer_isr_StartEx(dds_load_ready);
 
-  DDS_0_SetFrequency(31250);
+  //DDS_0_SetFrequency(31250);
+  set_DACfor_seg(test_pattern2,0,0);
   DDS_0_SetPhase(4);
-  DDS_1_SetFrequency(31250);
   DDS_1_SetPhase(68);
+  DDS_0_SetFrequency(31250);
+  DDS_1_SetFrequency(31250);
+  Timer_Reg_Write(DDS_ENABLE);
+  beam_on_now();
+  wait_for_click();
+  dds_load();
 
   set_DACfor_seg(test_pattern2,0,0);
   strobe_LDAC();
+
+  wait_for_click();
+  
+  int i;
+  for(i=-8;i<17;i+=4){
+      DDS_1_SetPhase(i);
+      dds_load();
+      wait_for_click();
+    CyDelay(100);
+}
+
+  DDS_1_SetPhase(128);
+  dds_load();
+  wait_for_click();
+
  
   int delay = 0;
   CyDelay(1);
-  Z_On_Timer_WriteCounter(4*4-1);
-  Z_On_Timer_WritePeriod(32*4-1);
-  Z_Off_Timer_WriteCounter(32*4-1);
-  Z_Off_Timer_WritePeriod(32*4-1);
+  Z_On_Timer_WriteCounter(8*12-1);
+  Z_On_Timer_WritePeriod(32*12-1);
+  Z_Off_Timer_WriteCounter(24*12-1);
+  Z_Off_Timer_WritePeriod(32*12-1);
   //set_timers_from_mask(test_pattern2->seg_data.mask);
   Timer_Reg_Write(DDS_ENABLE);
   CyDelayUs(11);
   enable_timers();
-  //Timer_Reg_Write(DDS_ENABLE | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+ //Timer_Reg_Write(DDS_ENABLE | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
  //Timer_Reg_Write(DDS_ENABLE);
 
   current_state = hw_testing;
- //beam_on_now();
 
     while(!button_clicked) {
     if(load_ready){
@@ -1450,6 +1484,7 @@ void hw_test(){
   CyDelay(1000);
   beam_on_now();
   current_state = idle;
+  wait_for_click();
 }
 
 void hw_test2(){
@@ -1510,6 +1545,7 @@ int main()
  // start up the DDS phase accumulators:
   DDS_0_Start();
   DDS_1_Start();
+
     
   /* Start VDACs */
   VDAC8_1_Start();
