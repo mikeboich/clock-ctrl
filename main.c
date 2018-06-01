@@ -127,7 +127,6 @@ void wave_started(){
   switch(current_state){
 
   case hw_testing:      
-    enable_timers();
     break;
 
     
@@ -1281,7 +1280,7 @@ void display_buffer(uint8 which_buffer){
     if(current_state==idle){
       uint8 int_status = CyEnterCriticalSection();
       //Timer_Reg_Write(0);  // pause everything
-      //disable_dds();
+      Timer_Reg_Write(0);
       set_DACfor_seg(seg_ptr,ss_x_offset,ss_y_offset);
       switch(seg_ptr->seg_data.arc_type){
       case cir:
@@ -1314,8 +1313,8 @@ void display_buffer(uint8 which_buffer){
 #define CIRCLE_VERY_DIM_OCTANT 0x05
 #define CIRCLE_VERY_VERY_DIM_OCTANT  0x1
 
-
-      if(seg_ptr->seg_data.arc_type == cir){
+  
+  if(seg_ptr->seg_data.arc_type == cir){
 	if(seg_ptr->seg_data.x_size == seg_ptr->seg_data.y_size)
 	  times_to_loop = PI*seg_ptr->seg_data.x_size;  // circle case
 	else{
@@ -1366,6 +1365,8 @@ void display_buffer(uint8 which_buffer){
       disable_timers();
       set_timers_from_mask(current_mask);
       current_state = blank_primed;
+      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+    
       seg_ptr++;
         
       CyExitCriticalSection(int_status);
@@ -1433,24 +1434,35 @@ void hw_test(){
  // timer_isr_StartEx(dds_load_ready);
 
   set_DACfor_seg(test_pattern2,0,0);
-  DDS_0_SetPhase(0-4);
+  CyDelayUs(100);
+  strobe_LDAC();
+
+  Timer_Reg_Write(0);  // halt the machinery
+  wait_for_click();
+  DDS_0_SetPhase(256-4);
   DDS_1_SetPhase(64-4);
   DDS_0_SetFrequency(31250);
   DDS_1_SetFrequency(31250);
-  Timer_Reg_Write(DDS_ENABLE);
-  beam_off_now();
-  dds_load();
-
-  set_DACfor_seg(test_pattern2,0,0);
-  strobe_LDAC();
+  enable_dds();
+  dds_load();  
+  beam_on_now();
 
   wait_for_click();
   
   int i;
   for(i=0;i<11;i++){
-      //DDS_1_SetPhase(128);
-      dds_load();
-      set_timers_from_mask(test_pattern2[i].seg_data.mask);
+      Timer_Reg_Write(0);  // halt the machinery
+      DDS_0_SetPhase(256-4);
+      DDS_1_SetPhase(64-4);
+      DDS_0_SetFrequency(31250);
+      DDS_1_SetFrequency(31250);
+   
+      //set_timers_from_mask(test_pattern2[i].seg_data.mask);
+      Z_On_Timer_WriteCounter(4*12*i);
+      Z_On_Timer_WritePeriod(384);
+      Z_Off_Timer_WriteCounter(4*12*(i+1));
+      Z_Off_Timer_WriteCounter(384);
+      Timer_Reg_Write(ON_TIMER_ENABLE | OFF_TIMER_ENABLE |DDS_ENABLE|LOAD_CTRL);
       wait_for_click();
 }
 
