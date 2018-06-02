@@ -21,11 +21,11 @@
 
 void beam_on_now(){
     uint8 reg = Timer_Reg_Read();
-//    reg |= TIMERS_RESET;            // reset timers...
-//    Timer_Reg_Write(reg);
-//
-//    //reg = Timer_Reg_Read();
-//    reg &= ~(ON_TIMER_ENABLE | OFF_TIMER_ENABLE |BEAM_OFF);  //.. disable timers
+    reg |= TIMERS_RESET;            // reset timers...
+    Timer_Reg_Write(reg);
+
+    //reg = Timer_Reg_Read();
+    reg &= ~(ON_TIMER_ENABLE | OFF_TIMER_ENABLE |BEAM_OFF);  //.. disable timers
     reg |= BEAM_ON;
     Timer_Reg_Write(reg);
     
