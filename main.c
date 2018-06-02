@@ -127,7 +127,9 @@ void wave_started(){
   switch(current_state){
 
   case hw_testing:      
-    break;
+       Timer_Reg_Write(ON_TIMER_ENABLE | OFF_TIMER_ENABLE |DDS_ENABLE|LOAD_CTRL);
+       current_state = idle;
+       break;
 
     
   case idle:
@@ -144,11 +146,13 @@ void wave_started(){
     break;
 
   case blank_primed:
-    current_state = drawing;
+    //current_state = drawing;
+    current_state = hw_testing;
     strobe_LDAC();     // causes previous programming of DAC to take effect
     dds_load();
     enable_dds();
     enable_timers();
+    Timer_Reg_Write(ON_TIMER_ENABLE|OFF_TIMER_ENABLE|DDS_ENABLE);
     //beam_on_now();
     break;
     
@@ -1429,74 +1433,45 @@ void hw_test(){
     {128,128,244,244,cir,0xf0},
     {255,255,0,0,cir,0x00},
   }; 
-  current_state = hw_testing;
+  current_state = idle;
   button_clicked = 0;  
  // timer_isr_StartEx(dds_load_ready);
 
   set_DACfor_seg(test_pattern2,0,0);
-  CyDelayUs(100);
-  strobe_LDAC();
+  //CyDelayUs(100);
+  //strobe_LDAC();
 
   Timer_Reg_Write(0);  // halt the machinery
-  wait_for_click();
   DDS_0_SetPhase(256-4);
   DDS_1_SetPhase(64-4);
   DDS_0_SetFrequency(31250);
   DDS_1_SetFrequency(31250);
-  enable_dds();
-  dds_load();  
-  beam_on_now();
-
+//  dds_load();
+//  enable_dds();
+//  beam_on_now();
+  current_state = hw_testing;
   wait_for_click();
   
   int i;
-  for(i=0;i<11;i++){
-      Timer_Reg_Write(0);  // halt the machinery
-      DDS_0_SetPhase(256-4);
-      DDS_1_SetPhase(64-4);
-      DDS_0_SetFrequency(31250);
-      DDS_1_SetFrequency(31250);
-   
+//  Timer_Reg_Write(0);  // halt the machinery
+//  DDS_0_SetPhase(0);
+//  DDS_1_SetPhase(64);
+//  DDS_0_SetFrequency(31250);
+//  DDS_1_SetFrequency(31250);
+//  enable_dds();
+//  wait_for_click();
+  for(i=0;i<8;i++){
+      current_state = idle;
+      Timer_Reg_Write(0);
       //set_timers_from_mask(test_pattern2[i].seg_data.mask);
-      Z_On_Timer_WriteCounter(4*12*i);
-      Z_On_Timer_WritePeriod(384);
-      Z_Off_Timer_WriteCounter(4*12*(i+1));
-      Z_Off_Timer_WriteCounter(384);
-      Timer_Reg_Write(ON_TIMER_ENABLE | OFF_TIMER_ENABLE |DDS_ENABLE|LOAD_CTRL);
+      Z_On_Timer_WriteCounter(4*12*i-1);
+      Z_On_Timer_WritePeriod(384-1);
+      Z_Off_Timer_WriteCounter(4*12*(i+1)-1);
+      Z_Off_Timer_WritePeriod(384-1);
+      current_state = blank_primed;
       wait_for_click();
 }
 
-  DDS_1_SetPhase(128);
-  dds_load();
-  wait_for_click();
-
- 
-  int delay = 0;
-  CyDelay(1);
-  Z_On_Timer_WriteCounter(8*12-1);
-  Z_On_Timer_WritePeriod(32*12-1);
-  Z_Off_Timer_WriteCounter(24*12-1);
-  Z_Off_Timer_WritePeriod(32*12-1);
-  //set_timers_from_mask(test_pattern2->seg_data.mask);
-  Timer_Reg_Write(DDS_ENABLE);
-  CyDelayUs(11);
-  enable_timers();
- //Timer_Reg_Write(DDS_ENABLE | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
- //Timer_Reg_Write(DDS_ENABLE);
-
-  current_state = hw_testing;
-
-    while(!button_clicked) {
-    if(load_ready){
-      adjust_phase();   
-      adjust_freq();
-    }
-  }
-    button_clicked = 0;
-  CyDelay(1000);
-  beam_on_now();
-  current_state = idle;
-  wait_for_click();
 }
 
 void hw_test2(){
@@ -1562,6 +1537,10 @@ int main()
   /* Start VDACs */
   VDAC8_1_Start();
   VDAC8_2_Start();
+
+  /* Start blanking timers */
+  Z_On_Timer_Start();
+  Z_Off_Timer_Start();
   
   CyDelay(50);
     

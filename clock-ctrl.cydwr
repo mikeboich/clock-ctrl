@@ -395,6 +395,7 @@
       <Data key="993606f4-1ae2-4b78-9436-3eabb195f0b8" value="Wave_Out_Pin" />
       <Data key="1425177d-0d0e-4468-8bcc-e638e5509a9b" value="Rx_1" />
       <Data key="77715107-f8d5-47e5-a629-0fb83101ac6b" value="Sin_Pin" />
+      <Data key="a5cfadf9-e9fe-492f-a7a6-044d99b92440" value="Wave_Start_Pin" />
       <Data key="a7c372d5-b3e5-47ce-b4eb-15458737c97f" value="scl_pin" />
       <Data key="b75a7882-443a-4458-9722-7c61eee88e20" value="DS3231_PPS_In" />
       <Data key="b7873fe0-c153-458d-8f53-3c9500a36ab8" value="LED_Pin" />
@@ -546,6 +547,11 @@
     <Group key="77715107-f8d5-47e5-a629-0fb83101ac6b">
       <Group key="0">
         <Data key="Port Format" value="3,7" />
+      </Group>
+    </Group>
+    <Group key="a5cfadf9-e9fe-492f-a7a6-044d99b92440">
+      <Group key="0">
+        <Data key="Port Format" value="3,2" />
       </Group>
     </Group>
     <Group key="a7c372d5-b3e5-47ce-b4eb-15458737c97f">
