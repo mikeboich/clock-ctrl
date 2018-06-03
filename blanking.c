@@ -24,7 +24,7 @@ void beam_on_now(){
     reg |= TIMERS_RESET;            // reset timers...
     Timer_Reg_Write(reg);
 
-    //reg = Timer_Reg_Read();
+    // reg = Timer_Reg_Read();
     reg &= ~(ON_TIMER_ENABLE | OFF_TIMER_ENABLE |BEAM_OFF);  //.. disable timers
     reg |= BEAM_ON;
     Timer_Reg_Write(reg);
@@ -80,7 +80,6 @@ void dds_load(){
 
 void set_timers_from_mask(uint8 mask){
     uint8 bits[8];
-    int start_times[] = {0,16,32,48,64,80,96,112}; // based on 4MHz timer clock
     int index;
     int start_octant=7, stop_octant=0;
     int on_time, off_time;
@@ -101,16 +100,14 @@ void set_timers_from_mask(uint8 mask){
     // for now, we're going to break on non-contiguous masks, by just drawing from the earliest on-time
     // to the latest off-time
     // each octant is 4 microseconds, which is timer_clk * 4 clocks
-    on_time = 4*TIMER_CLK_FREQ*start_octant - 1 + PHASE_LEAD;
-    if(on_time <4) on_time = 4;
+    on_time = 4*TIMER_CLK_FREQ*start_octant + lead_time + FILTER_LAG;
     
-    off_time = 4*TIMER_CLK_FREQ*(stop_octant+1) - 1 + 4;
-    if(off_time >= TIMER_CLK_FREQ * 4 - 1) off_time -= 4;
+    off_time = 4*TIMER_CLK_FREQ*(stop_octant+1) - 1 + lead_time + FILTER_LAG;
     
-    Z_On_Timer_WriteCounter(on_time);
-    Z_On_Timer_WritePeriod(32*12-1);
-    Z_Off_Timer_WriteCounter(off_time);
-    Z_Off_Timer_WritePeriod(32*12-1);
+    Z_On_Timer_WriteCounter(on_time-1);
+    Z_On_Timer_WritePeriod(32*TIMER_CLK_FREQ-1);
+    Z_Off_Timer_WriteCounter(off_time-1);
+    Z_Off_Timer_WritePeriod(32*TIMER_CLK_FREQ-1);
 
 }
 

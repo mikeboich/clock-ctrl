@@ -24,6 +24,7 @@
 // Define bit constants for TimerReg control register:
 #define TIMER_CLK_FREQ 12
 #define PHASE_LEAD 12
+#define FILTER_LAG 0
 
 #define ON_TIMER_ENABLE 1
 #define BEAM_ON 2
