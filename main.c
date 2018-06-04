@@ -148,7 +148,12 @@ void wave_started(){
   case blank_primed:
     current_state = drawing;
     strobe_LDAC();     // causes previous programming of DAC to take effect
-    Timer_Reg_Write(ON_TIMER_ENABLE|OFF_TIMER_ENABLE|DDS_ENABLE|LOAD_CTRL|DDS_RESET);
+      if(current_mask == 0xff) {
+        Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON);
+    }
+    else{
+        Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | ON_TIMER_ENABLE | OFF_TIMER_ENABLE );
+    }
     //beam_on_now();
     break;
     
@@ -1279,28 +1284,25 @@ void display_buffer(uint8 which_buffer){
 
     if(current_state==idle){
       uint8 int_status = CyEnterCriticalSection();
-      //Timer_Reg_Write(0);  // pause everything
-      //Timer_Reg_Write(0);
+      Timer_Reg_Write(0);
       set_DACfor_seg(seg_ptr,ss_x_offset,ss_y_offset);
       switch(seg_ptr->seg_data.arc_type){
       case cir:
         current_phase=0x1;   // phase register can't be written here, as drawing may still be active, so set current_phase instead
-        DDS_0_SetPhase(256-PHASE_LEAD);
-        DDS_1_SetPhase(64-PHASE_LEAD);
-        //dds_load();
+        DDS_0_SetPhase(256-4);
+        DDS_1_SetPhase(256-64-4);
 	break;
         
       case pos:
 	current_phase = 0x0;
-    DDS_0_SetPhase(256-PHASE_LEAD);
-    DDS_1_SetPhase(256-PHASE_LEAD);
-    //dds_load();
+    DDS_0_SetPhase(256-4);
+    DDS_1_SetPhase(256-4);
 	break;
         
       case neg:
         current_phase = 0x2;
-        DDS_0_SetPhase(256-PHASE_LEAD);
-        DDS_1_SetPhase(128-PHASE_LEAD);
+        DDS_0_SetPhase(256-4);
+        DDS_1_SetPhase(128-4);
        // dds_load();
 	break;
       }
@@ -1363,14 +1365,16 @@ void display_buffer(uint8 which_buffer){
       current_mask = seg_ptr->seg_data.mask;
 
       //ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
-      disable_timers();
+      //disable_timers();
       set_timers_from_mask(current_mask);
       current_state = blank_primed;
     
       seg_ptr++;
         
       CyExitCriticalSection(int_status);
-    
+      Timer_Reg_Write(ON_TIMER_ENABLE|OFF_TIMER_ENABLE|DDS_ENABLE|LOAD_CTRL|DDS_RESET);
+
+      
     }
     else{
       // check serial port for gps characters:
@@ -1448,33 +1452,33 @@ void hw_test(){
   Timer_Reg_Write(0);
   DDS_0_SetPhase(256-4);
   DDS_1_SetPhase(64-4);
-  DDS_0_SetFrequency(31250);
+  DDS_0_SetFrequency(31250 );
   DDS_1_SetFrequency(15625);
-  //dds_load();
-  //enable_dds();
   Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET);
   wait_for_click();
   int i;
 
   for(i=0;i<8;i++){
       Timer_Reg_Write(0);
-      //set_timers_from_mask(test_pattern2[i].seg_data.mask);
-      Z_On_Timer_WriteCounter(4*12*i);
+      Z_On_Timer_WriteCounter(4*12*1+4*12-1);
       Z_On_Timer_WritePeriod(384-1);
-      Z_Off_Timer_WriteCounter(4*12*(i+1));
+      Z_Off_Timer_WriteCounter(4*12*(i+1)+4*12-1);
       Z_Off_Timer_WritePeriod(384-1);
-      DDS_0_Init();
-      DDS_1_Init();
-      dds_load();
+      //set_timers_from_mask(test_pattern2[i].seg_data.mask);
+      //dds_load();
       DDS_0_SetFrequency(31250);
       DDS_1_SetFrequency(31250);
-      dds_load();
-      //DDS_0_SetPhase(0);
-      //DDS_1_SetPhase(64);
-      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | ON_TIMER_ENABLE | OFF_TIMER_ENABLE | DDS_RESET);
+      //dds_load();
+      DDS_0_SetPhase(256-4);
+      DDS_1_SetPhase(256-64-4);
+      if(i==7) {
+        Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET);
+    }
+    else{
+        Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | ON_TIMER_ENABLE | OFF_TIMER_ENABLE | DDS_RESET);
+    }
       wait_for_click();    
 }
-  beam_on_now();
   wait_for_click();
 
   current_state = idle;        

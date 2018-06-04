@@ -86,8 +86,8 @@ void set_timers_from_mask(uint8 mask){
     
     // separate into 8 individual bits
     int b = mask;
-    for(index=0;index<8;index++, b = b << 1){
-        bits[index] = (b & 0x80) ? 1 : 0;             // bits are in hardware-draw-order now (clockwise from 3 o'clock)
+    for(index=0;index<8;index++, b = b >> 1){
+        bits[index] = (b & 0x01) ? 1 : 0;             // bits are in hardware-draw-order now (clockwise from 3 o'clock)
     }
     
     for(index=0;index<8;index++){
@@ -100,13 +100,13 @@ void set_timers_from_mask(uint8 mask){
     // for now, we're going to break on non-contiguous masks, by just drawing from the earliest on-time
     // to the latest off-time
     // each octant is 4 microseconds, which is timer_clk * 4 clocks
-    on_time = 4*TIMER_CLK_FREQ*start_octant + lead_time + FILTER_LAG;
-    
-    off_time = 4*TIMER_CLK_FREQ*(stop_octant+1) - 1 + lead_time + FILTER_LAG;
-    
-    Z_On_Timer_WriteCounter(on_time-1);
+    //on_time = 4*TIMER_CLK_FREQ*start_octant + lead_time + FILTER_LAG;
+    on_time = 4*12*start_octant+4*12;
+    //off_time = 4*TIMER_CLK_FREQ*(stop_octant+1) - 1 + lead_time + FILTER_LAG;
+    off_time = 4*12*(stop_octant+1)+4*12;
+    Z_On_Timer_WriteCounter(on_time);
     Z_On_Timer_WritePeriod(32*TIMER_CLK_FREQ-1);
-    Z_Off_Timer_WriteCounter(off_time-1);
+    Z_Off_Timer_WriteCounter(off_time);
     Z_Off_Timer_WritePeriod(32*TIMER_CLK_FREQ-1);
 
 }

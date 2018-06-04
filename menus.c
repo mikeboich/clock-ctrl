@@ -236,7 +236,7 @@ void align_screen2(){
    clear_buffer(MAIN_BUFFER);
   x=y=0;
   for(i=0;i<9;i++){
-    test_pattern[0].seg_data.mask=masks[i]^0xff;
+    test_pattern[0].seg_data.mask=masks[i];//^0xff;
     clear_buffer(MAIN_BUFFER);
     compileSegments(test_pattern,MAIN_BUFFER,APPEND);
 
