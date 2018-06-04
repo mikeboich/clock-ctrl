@@ -23,7 +23,7 @@
 
 // Define bit constants for TimerReg control register:
 #define TIMER_CLK_FREQ 12
-#define PHASE_LEAD 12
+#define PHASE_LEAD 2
 #define FILTER_LAG 0
 
 #define ON_TIMER_ENABLE 1
@@ -33,6 +33,7 @@
 #define DDS_ENABLE 16
 #define TIMERS_RESET 32
 #define LOAD_CTRL 64
+#define DDS_RESET 128
 
 // define some macros to save call overhead:
 

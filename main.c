@@ -148,7 +148,7 @@ void wave_started(){
   case blank_primed:
     current_state = drawing;
     strobe_LDAC();     // causes previous programming of DAC to take effect
-    Timer_Reg_Write(ON_TIMER_ENABLE|OFF_TIMER_ENABLE|DDS_ENABLE|LOAD_CTRL);
+    Timer_Reg_Write(ON_TIMER_ENABLE|OFF_TIMER_ENABLE|DDS_ENABLE|LOAD_CTRL|DDS_RESET);
     //beam_on_now();
     break;
     
@@ -1304,6 +1304,7 @@ void display_buffer(uint8 which_buffer){
        // dds_load();
 	break;
       }
+    
 #define SGI_TEACH   
 #ifdef SGI_TEACH    
       // trying SGITeach brightness algorithm, vs my stupid very simple one:
@@ -1445,15 +1446,13 @@ void hw_test(){
   beam_on_now();
   wait_for_click();
   Timer_Reg_Write(0);
- // DDS_0_SetPhase(256-4);
- // DDS_1_SetPhase(64-4);
-  // DDS_0_SetFrequency(31250);
-  //DDS_1_SetFrequency(15625);
+  DDS_0_SetPhase(256-4);
+  DDS_1_SetPhase(64-4);
+  DDS_0_SetFrequency(31250);
+  DDS_1_SetFrequency(15625);
   //dds_load();
   //enable_dds();
-  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF);
-  wait_for_click();
-  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON);
+  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET);
   wait_for_click();
   int i;
 
@@ -1472,13 +1471,12 @@ void hw_test(){
       dds_load();
       //DDS_0_SetPhase(0);
       //DDS_1_SetPhase(64);
-      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | ON_TIMER_ENABLE | OFF_TIMER_ENABLE | DDS_RESET);
       wait_for_click();    
 }
   beam_on_now();
   wait_for_click();
 
- 
   current_state = idle;        
 }
   
