@@ -59,7 +59,7 @@ uint64_t last_switch = 0;
 
 int verbose_mode = 0;
 
-typedef enum{idle,blank_primed,drawing,last_period,hw_testing}  draw_state;  // States of the draw loop/interrupt code
+typedef enum{idle,blank_primed,drawing,last_period,hw_testing,timer_pending}  draw_state;  // States of the draw loop/interrupt code
 
 uint8 current_mask=0;
 volatile draw_state current_state = idle;
@@ -131,6 +131,12 @@ void wave_started(){
        //current_state = idle;
        break;
 
+      case timer_pending:      
+        enable_timers();
+        current_state = hw_testing;
+        //current_state = idle;
+       break;
+
     
   case idle:
     //ShiftReg_1_WriteData(0x0);      // nothing happening.  Keep display blanked.
@@ -152,8 +158,8 @@ void wave_started(){
         beam_on_now();
     }
     else{
-        enable_timers();
-        times_to_loop += 2;
+        //enable_timers();
+       times_to_loop += 2;
     }
     //beam_on_now();
     break;
@@ -1373,7 +1379,7 @@ void display_buffer(uint8 which_buffer){
       seg_ptr++;
         
       CyExitCriticalSection(int_status);
-      Timer_Reg_Write(DDS_ENABLE|LOAD_CTRL|DDS_RESET);
+      Timer_Reg_Write(DDS_ENABLE|LOAD_CTRL|DDS_RESET| ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
 
       
     }
@@ -1457,28 +1463,28 @@ void hw_test(){
   DDS_1_SetFrequency(15625);
   Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET);
   wait_for_click();
-  int i;
+  int i;          
+
+  Timer_Reg_Write(0);
+  DDS_0_SetFrequency(31250);
+  DDS_1_SetFrequency(31250);
+  DDS_0_SetPhase(0);
+  DDS_1_SetPhase(64);
+  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET);
 
   for(i=0;i<8;i++){
-      Timer_Reg_Write(0);
-      Z_On_Timer_WriteCounter(4*12*1+4*12-1);
-      Z_On_Timer_WritePeriod(384-1);
-      Z_Off_Timer_WriteCounter(4*12*(i+1)+4*12-1);
-      Z_Off_Timer_WritePeriod(384-1);
-      //set_timers_from_mask(test_pattern2[i].seg_data.mask);
-      //dds_load();
-      DDS_0_SetFrequency(31250);
-      DDS_1_SetFrequency(31250);
-      //dds_load();
-      DDS_0_SetPhase(256-4);
-      DDS_1_SetPhase(256-64-4);
-      if(i==7) {
-        Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET);
-    }
-    else{
-        Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | ON_TIMER_ENABLE | OFF_TIMER_ENABLE | DDS_RESET);
-    }
-      wait_for_click();    
+      while(!button_clicked){
+          disable_timers();
+          set_timers_from_mask(test_pattern2[i].seg_data.mask);
+          current_state = timer_pending;
+          CyDelay(6);
+          disable_timers();
+          set_timers_from_mask(test_pattern2[(i+4) % 8].seg_data.mask);
+          current_state = timer_pending;
+          CyDelay(6);
+      }
+      button_clicked = 0;
+    
 }
   wait_for_click();
 
