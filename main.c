@@ -149,10 +149,11 @@ void wave_started(){
     current_state = drawing;
     strobe_LDAC();     // causes previous programming of DAC to take effect
       if(current_mask == 0xff) {
-        Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON);
+        beam_on_now();
     }
     else{
-        Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | ON_TIMER_ENABLE | OFF_TIMER_ENABLE );
+        enable_timers();
+        times_to_loop += 2;
     }
     //beam_on_now();
     break;
@@ -1372,7 +1373,7 @@ void display_buffer(uint8 which_buffer){
       seg_ptr++;
         
       CyExitCriticalSection(int_status);
-      Timer_Reg_Write(ON_TIMER_ENABLE|OFF_TIMER_ENABLE|DDS_ENABLE|LOAD_CTRL|DDS_RESET);
+      Timer_Reg_Write(DDS_ENABLE|LOAD_CTRL|DDS_RESET);
 
       
     }
