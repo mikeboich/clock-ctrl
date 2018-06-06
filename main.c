@@ -1468,15 +1468,17 @@ void hw_test(){
   DDS_1_SetFrequency(31250);
   DDS_0_SetPhase(256-PHASE_LEAD);
   DDS_1_SetPhase(256-64-PHASE_LEAD);
-  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET);
-#undef hw_test_a
+  Show_Time_Reg_Write(0x1);  // contrary to the name, inhibits timers
+  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+#define hw_test_a
 #ifdef hw_test_a
   for(i=0;i<8;i++){
       while(!button_clicked){
-          beam_off_now();
+         disable_timers();
           set_timers_from_mask(test_pattern2[i].seg_data.mask);
           set_DACfor_seg(&test_pattern2[i],0,0);
           times_to_loop = 10;
+          enable_timers();
           current_state = blank_primed;
           while(! (current_state == idle));
         
@@ -1485,6 +1487,7 @@ void hw_test(){
           set_DACfor_seg(&test_pattern2[i],0,0);
 
           times_to_loop = 10;
+          enable_timers();
           current_state = blank_primed;
           while(! (current_state == idle));
 
