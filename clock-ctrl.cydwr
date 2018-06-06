@@ -362,12 +362,17 @@
       <Data key="b0162966-0060-4af5-82d1-fcb491ad7619/be0a0e37-ad17-42ca-b5a1-1a654d736358" value="UART_1_IntClock" />
     </Group>
     <Group key="Interrupt">
-      <Data key="0c3049f2-6733-4d6c-ab15-6194b2d6b50f" value="one_pps_int" />
+      <Data key="0c3049f2-6733-4d6c-ab15-6194b2d6b50f" value="gps_pps_int" />
+      <Data key="0dab8dcf-2b68-4148-ad2e-5c29086a7abf" value="Quad_A_isr" />
+      <Data key="7fb0f2ea-84b2-4c58-a26a-bce0e32ae1ca" value="DS3231_pps_int" />
       <Data key="16fd1cf2-0409-4c28-9470-589ab59c2c48/8cd26920-7e5d-4972-9609-a2b16ac529a8" value="RTC_1_isr" />
       <Data key="59c33ef1-6267-4c54-b105-2790244267be" value="isr_1" />
+      <Data key="725e015d-ddd3-4c38-89d6-0158f7e7171c/74b069b5-d5c5-469b-a48a-44b8a12146cd" value="I2C_1_I2C_IRQ" />
       <Data key="4095ad94-2354-4cca-8f2c-6cf51cd700c8" value="button_isr" />
       <Data key="b0162966-0060-4af5-82d1-fcb491ad7619/10dce1ed-dd83-44c0-9cff-cc3ee25204cd" value="UART_1_RXInternalInterrupt" />
       <Data key="b0162966-0060-4af5-82d1-fcb491ad7619/0758f7e0-b58c-4a6b-bb59-e7d003cac7de" value="UART_1_TXInternalInterrupt" />
+      <Data key="b9565846-ff0f-47e2-94c0-dd8bf1f86091" value="isr_1" />
+      <Data key="dbac0714-e847-40b3-a1d3-215165e68006" value="timer_isr" />
     </Group>
     <Group key="Pin">
       <Data key="0eaa4b80-e5c5-4663-865b-61c892e3f92b" value="debug_Pin_0_3" />
@@ -429,6 +434,13 @@
       <Group key="CortexM3">
         <Data key="Assigned" value="True" />
         <Data key="Priority" value="6" />
+        <Data key="Vector" value="-1" />
+      </Group>
+    </Group>
+    <Group key="b9565846-ff0f-47e2-94c0-dd8bf1f86091">
+      <Group key="CortexM3">
+        <Data key="Assigned" value="True" />
+        <Data key="Priority" value="5" />
         <Data key="Vector" value="-1" />
       </Group>
     </Group>

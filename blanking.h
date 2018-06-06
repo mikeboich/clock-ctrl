@@ -22,8 +22,10 @@
 #include <stdlib.h>
 
 // Define bit constants for TimerReg control register:
-#define TIMER_CLK_FREQ 12
-#define PHASE_LEAD 2
+// timer clock in MHz:
+#define TIMER_CLK_FREQ 4
+// phase lead in microseconds:
+#define PHASE_LEAD 16
 #define FILTER_LAG 0
 
 #define ON_TIMER_ENABLE 1

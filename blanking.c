@@ -101,9 +101,9 @@ void set_timers_from_mask(uint8 mask){
     // to the latest off-time
     // each octant is 4 microseconds, which is timer_clk * 4 clocks
     //on_time = 4*TIMER_CLK_FREQ*start_octant + lead_time + FILTER_LAG;
-    on_time = 4*12*start_octant+4*12;
+    on_time = 4*TIMER_CLK_FREQ*start_octant+1*TIMER_CLK_FREQ;
     //off_time = 4*TIMER_CLK_FREQ*(stop_octant+1) - 1 + lead_time + FILTER_LAG;
-    off_time = 4*12*(stop_octant+1)+4*12;
+    off_time = 4*TIMER_CLK_FREQ*(stop_octant+1)+4*TIMER_CLK_FREQ;
     Z_On_Timer_WriteCounter(on_time);
     Z_On_Timer_WritePeriod(32*TIMER_CLK_FREQ-1);
     Z_Off_Timer_WriteCounter(off_time);
@@ -112,8 +112,8 @@ void set_timers_from_mask(uint8 mask){
 }
 
 void set_timers_for_line(){
-    Z_On_Timer_WriteCounter(64);
-    Z_Off_Timer_WriteCounter(192);
+    Z_On_Timer_WriteCounter(1);
+    Z_Off_Timer_WriteCounter(31*TIMER_CLK_FREQ);
 }
 
 /* [] END OF FILE */
