@@ -1377,7 +1377,8 @@ void display_buffer(uint8 which_buffer){
         
       CyExitCriticalSection(int_status);
       Timer_Reg_Write(DDS_ENABLE|LOAD_CTRL);
-      Timer_Reg_Write(DDS_ENABLE|DDS_RESET);
+      Show_Time_Reg_Write(0x1);
+      Timer_Reg_Write(DDS_ENABLE|DDS_RESET | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
 
       
     }
@@ -1478,6 +1479,7 @@ void hw_test(){
           set_timers_from_mask(test_pattern2[i].seg_data.mask);
           set_DACfor_seg(&test_pattern2[i],0,0);
           times_to_loop = 10;
+          Show_Time_Reg_Write(0x1);
           enable_timers();
           current_state = blank_primed;
           while(! (current_state == idle));
@@ -1487,6 +1489,7 @@ void hw_test(){
           set_DACfor_seg(&test_pattern2[i],0,0);
 
           times_to_loop = 10;
+          Show_Time_Reg_Write(0x1);
           enable_timers();
           current_state = blank_primed;
           while(! (current_state == idle));
