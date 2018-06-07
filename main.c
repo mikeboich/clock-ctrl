@@ -59,7 +59,7 @@ uint64_t last_switch = 0;
 
 int verbose_mode = 0;
 
-typedef enum{idle,blank_primed,drawing,last_period,hw_testing,timer_pending}  draw_state;  // States of the draw loop/interrupt code
+typedef enum{idle,blank_primed,drawing,last_period,cool_down_period, hw_testing,timer_pending}  draw_state;  // States of the draw loop/interrupt code
 
 uint8 current_mask=0;
 volatile draw_state current_state = idle;
@@ -147,14 +147,17 @@ void wave_started(){
 
   case last_period:
     //ShiftReg_1_WriteData(0x0);  // next period is blanked
+    current_state = cool_down_period;
+    break;
+    
+  case cool_down_period:
     beam_off_now();
     current_state = idle;
     break;
-
+    
   case blank_primed:
     current_state = drawing;
     strobe_LDAC();     // causes previous programming of DAC to take effect
-    enable_timers();
     //beam_on_now();
     break;
     
@@ -1286,11 +1289,8 @@ void display_buffer(uint8 which_buffer){
     if(current_state==idle){
       uint8 int_status = CyEnterCriticalSection();
       current_mask = seg_ptr->seg_data.mask;
-
-
-     // Timer_Reg_Write(0);
-      disable_timers();
       set_DACfor_seg(seg_ptr,ss_x_offset,ss_y_offset);
+      strobe_LDAC();
       set_timers_from_mask(current_mask);
     
 
@@ -1313,7 +1313,8 @@ void display_buffer(uint8 which_buffer){
         DDS_1_SetPhase(128-PHASE_LEAD);
        // dds_load();
 	break;
-      }
+  }
+  dds_load();
     
 #define SGI_TEACH   
 #ifdef SGI_TEACH    
@@ -1370,15 +1371,16 @@ void display_buffer(uint8 which_buffer){
       // performance measurement:
       if(which_buffer != DEBUG_BUFFER) loops_per_frame+=times_to_loop+1;
     
-      //ShiftReg_1_WriteData(current_mask);  // "prime" the shift register
+      Show_Time_Reg_Write(0x1);
+      
       current_state = blank_primed;
     
       seg_ptr++;
         
       CyExitCriticalSection(int_status);
-      Timer_Reg_Write(DDS_ENABLE|LOAD_CTRL);
-      Show_Time_Reg_Write(0x1);
-      Timer_Reg_Write(DDS_ENABLE|DDS_RESET | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+      //Timer_Reg_Write(DDS_ENABLE|LOAD_CTRL);
+  Show_Time_Reg_Write(0x1);  // contrary to the name, inhibits timers
+  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
 
       
     }
@@ -1435,8 +1437,17 @@ void hw_test(){
     {128,128,168,168,cir,0x20},
     {128,128,176,176,cir,0x40},
     {128,128,184,184,cir,0x80},
+   {128,128,244,244,pos,0xfe},
+    {128,128,244,244,pos,0xfe},
+    {128,128,244,244,pos,0xfe},
     {128,128,244,244,pos,0xfe},
     {128,128,244,244,cir,0xfe},
+    {255,255,0,0,cir,0x00},
+  }; 
+  seg_or_flag test_pattern3[] = {
+    {128,128,240,240,cir,0xff},
+    {128,128,128,128,cir,0xff},
+    {128,128,64,64,cir,0x0ff},
     {255,255,0,0,cir,0x00},
   }; 
   current_state = idle;
@@ -1471,55 +1482,77 @@ void hw_test(){
   DDS_1_SetPhase(256-64-PHASE_LEAD);
   Show_Time_Reg_Write(0x1);  // contrary to the name, inhibits timers
   Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
-#define hw_test_a
-#ifdef hw_test_a
-  for(i=0;i<8;i++){
+
+  for(i=0;i<1;i++){
       while(!button_clicked){
          disable_timers();
-          set_timers_from_mask(test_pattern2[i].seg_data.mask);
-          set_DACfor_seg(&test_pattern2[i],0,0);
-          times_to_loop = 10;
+          set_timers_from_mask(test_pattern3[0].seg_data.mask);
+          set_DACfor_seg(&test_pattern3[0],0,0);
+          times_to_loop = 3;
           Show_Time_Reg_Write(0x1);
           enable_timers();
           current_state = blank_primed;
           while(! (current_state == idle));
         
           disable_timers();
-          set_timers_from_mask(test_pattern2[(i+4) % 8].seg_data.mask);
-          set_DACfor_seg(&test_pattern2[i],0,0);
+          set_timers_from_mask(test_pattern3[1].seg_data.mask);
+          set_DACfor_seg(&test_pattern3[1],0,0);
+          times_to_loop = 1;
+          Show_Time_Reg_Write(0x1);
+          enable_timers();
+          DDS_0_SetPhase(256-PHASE_LEAD);
+          DDS_1_SetPhase(256-PHASE_LEAD);
+          dds_load();
+          current_state = blank_primed;
+          while(! (current_state == idle));
 
-          times_to_loop = 10;
+          DDS_0_SetPhase(256-PHASE_LEAD);
+          DDS_1_SetPhase(256-64-PHASE_LEAD);
+          dds_load();
+          disable_timers();
+          set_timers_from_mask(test_pattern3[(1) % 8].seg_data.mask);
+          set_DACfor_seg(&test_pattern3[1],0,0);
+          times_to_loop = 1;
           Show_Time_Reg_Write(0x1);
           enable_timers();
           current_state = blank_primed;
           while(! (current_state == idle));
 
-//          Timer_Reg_Write(0);
-//          set_timers_from_mask(test_pattern2[8].seg_data.mask);
-//          set_DACfor_seg(&test_pattern2[8],0,0);
-//          DDS_0_SetPhase(256-PHASE_LEAD);
-//          DDS_1_SetPhase(256-PHASE_LEAD);
-//          Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET);
-//          times_to_loop = 10;
-//          current_state = blank_primed;
-//          while(! (current_state == idle));
+
+
 }
 
       button_clicked = 0;
 }
-#else
 
-
-  compileSegments(test_pattern2,MAIN_BUFFER,OVERWRITE);
+  wait_for_click();
+  compileSegments(test_pattern3,MAIN_BUFFER,OVERWRITE);
+  line(1,1,254,254,MAIN_BUFFER);
   while(!button_clicked){
     display_buffer(MAIN_BUFFER);
 }
-#endif
 
 
   wait_for_click();
 
-  current_state = idle;        
+  current_state = idle; 
+
+int radius,x,y;
+radius = 8;
+  while(radius < 64){
+    clear_buffer(MAIN_BUFFER);
+    for(x=radius;x<256-radius+1;x+=2*radius)
+      for(y=radius;y<256-radius+1;y+=2*radius){
+        circle(x,y,radius,MAIN_BUFFER);
+      }
+    while(!button_clicked){
+      display_buffer(MAIN_BUFFER);
+    }
+    button_clicked=0;
+    radius*=2;
+  }
+  current_state = idle; 
+
 }
 
 
