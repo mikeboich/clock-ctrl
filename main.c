@@ -1291,8 +1291,8 @@ void display_buffer(uint8 which_buffer){
       current_mask = seg_ptr->seg_data.mask;
       set_DACfor_seg(seg_ptr,ss_x_offset,ss_y_offset);
       strobe_LDAC();
-      set_timers_from_mask(current_mask);
-    
+      set_timers_from_mask(current_mask);  
+
 
       switch(seg_ptr->seg_data.arc_type){
       case cir:
@@ -1380,7 +1380,7 @@ void display_buffer(uint8 which_buffer){
       CyExitCriticalSection(int_status);
       //Timer_Reg_Write(DDS_ENABLE|LOAD_CTRL);
   Show_Time_Reg_Write(0x1);  // contrary to the name, inhibits timers
-  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
 
       
     }
@@ -1424,6 +1424,18 @@ void waitForClick(){
 #define LINELEN 128
 
 void hw_test(){
+  seg_or_flag big_circle[] = {
+    {128,128,64,64,cir,0x0fe},
+    {255,255,0,0,cir,0x00},
+  }; 
+  seg_or_flag medium_circle[] = {
+    {128,128,128,128,pos,0x0fe},
+    {255,255,0,0,cir,0x00},
+  }; 
+  seg_or_flag small_circle[] = {
+    {128,128,220,220,neg,0x0fe},
+    {255,255,0,0,cir,0x00},
+  }; 
   seg_or_flag test_pattern[] = {
     {128,128,220,220,cir,0x0f},
     {255,255,0,0,cir,0x00},
@@ -1458,72 +1470,81 @@ void hw_test(){
   CyDelayUs(100);
   strobe_LDAC();
 
-  //DDS_0_SetPhase(256-4);
-  //(128-4);
+// Draw a circle:
   DDS_0_SetFrequency(31250);
   DDS_1_SetFrequency(31250);
+  DDS_0_SetPhase(256-4);
+  DDS_1_SetPhase(64-4);
   dds_load();
   enable_dds();
   beam_on_now();
   wait_for_click();
-  Timer_Reg_Write(0);
-  DDS_0_SetPhase(256-4);
-  DDS_1_SetPhase(64-4);
+
+//Draw a Lissajou curve:
+  //Timer_Reg_Write(0);
   DDS_0_SetFrequency(31250 );
   DDS_1_SetFrequency(15625);
   Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET);
   wait_for_click();
-  int i;          
 
-  Timer_Reg_Write(0);
-  DDS_0_SetFrequency(31250);
-  DDS_1_SetFrequency(31250);
-  DDS_0_SetPhase(256-PHASE_LEAD);
-  DDS_1_SetPhase(256-64-PHASE_LEAD);
-  Show_Time_Reg_Write(0x1);  // contrary to the name, inhibits timers
-  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+      DDS_0_SetFrequency(31250);
+      DDS_1_SetFrequency(31250);
+      DDS_0_SetPhase(256-PHASE_LEAD);   
+      DDS_1_SetPhase(256-64-PHASE_LEAD);
+      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET);
 
-  for(i=0;i<1;i++){
-      while(!button_clicked){
-         disable_timers();
-          set_timers_from_mask(test_pattern3[0].seg_data.mask);
-          set_DACfor_seg(&test_pattern3[0],0,0);
-          times_to_loop = 3;
-          Show_Time_Reg_Write(0x1);
-          enable_timers();
-          current_state = blank_primed;
-          while(! (current_state == idle));
-        
-          disable_timers();
-          set_timers_from_mask(test_pattern3[1].seg_data.mask);
-          set_DACfor_seg(&test_pattern3[1],0,0);
-          times_to_loop = 1;
-          Show_Time_Reg_Write(0x1);
-          enable_timers();
-          DDS_0_SetPhase(256-PHASE_LEAD);
-          DDS_1_SetPhase(256-PHASE_LEAD);
-          dds_load();
-          current_state = blank_primed;
-          while(! (current_state == idle));
+    while(!button_clicked){
+    // Draw a circle with an X in the middle:
+      int i;          
 
-          DDS_0_SetPhase(256-PHASE_LEAD);
-          DDS_1_SetPhase(256-64-PHASE_LEAD);
-          dds_load();
-          disable_timers();
-          set_timers_from_mask(test_pattern3[(1) % 8].seg_data.mask);
-          set_DACfor_seg(&test_pattern3[1],0,0);
-          times_to_loop = 1;
-          Show_Time_Reg_Write(0x1);
-          enable_timers();
-          current_state = blank_primed;
-          while(! (current_state == idle));
+    //
+      beam_off_now(); 
+      set_DACfor_seg(big_circle,0,0);
+      set_timers_from_mask(0xf0);
+      times_to_loop = 1;
+      Show_Time_Reg_Write(0x1);  // pull down the curtain..
+      current_state = blank_primed;
+      Show_Time_Reg_Write(0x1);
+      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON |  ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+      while(! (current_state == idle));
+      CyDelay(1);
 
+      beam_off_now(); 
+      set_DACfor_seg(medium_circle,0,0);
+      set_timers_from_mask(0x3c);
+      times_to_loop = 1;
+      Show_Time_Reg_Write(0x1);  // pull down the curtain..
+      current_state = blank_primed;
+      Show_Time_Reg_Write(0x1);
+      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON  | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+      while(! (current_state == idle));
 
+      beam_off_now(); 
+      set_DACfor_seg(small_circle,0,0);
+      set_timers_from_mask(0xc0);
+      times_to_loop = 1;
+      Show_Time_Reg_Write(0x1);  // pull down the curtain..
+      enable_timers();
+      current_state = blank_primed;
+      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON  | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+      while(! (current_state == idle));
 
+      beam_off_now(); 
+      set_DACfor_seg(small_circle,0,0);
+      set_timers_from_mask(0x03);
+      times_to_loop = 1;
+      Show_Time_Reg_Write(0x1);  // pull down the curtain..
+      enable_timers();
+      current_state = blank_primed;
+      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON  | ON_TIMER_ENABLE | OFF_TIMER_ENABLE);
+      while(! (current_state == idle));
 }
 
-      button_clicked = 0;
-}
+
+  wait_for_click();
+
+  
+  
 
   wait_for_click();
   compileSegments(test_pattern3,MAIN_BUFFER,OVERWRITE);
