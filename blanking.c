@@ -96,19 +96,19 @@ void set_timers_from_mask(uint8 mask){
              if(stop_octant < index) stop_octant = index;
         }
     }
-    int lead_time = PHASE_LEAD * TIMER_CLK_FREQ;
+    int lead_time = PHASE_LEAD_US * TIMER_CLK_FREQ + FILTER_LAG*TIMER_CLK_FREQ;
     // for now, we're going to break on non-contiguous masks, by just drawing from the earliest on-time
     // to the latest off-time
     // each octant is 4 microseconds, which is timer_clk * 4 clocks
     //on_time = 4*TIMER_CLK_FREQ*start_octant + lead_time + FILTER_LAG;
-    on_time = 4*TIMER_CLK_FREQ*start_octant+1*TIMER_CLK_FREQ;
+    on_time = 4*TIMER_CLK_FREQ*start_octant+1*TIMER_CLK_FREQ + lead_time;
     //off_time = 4*TIMER_CLK_FREQ*(stop_octant+1) - 1 + lead_time + FILTER_LAG;
-    off_time = 4*TIMER_CLK_FREQ*(stop_octant+1)+4*TIMER_CLK_FREQ;
+    off_time = 4*TIMER_CLK_FREQ*(stop_octant+1)+2*TIMER_CLK_FREQ + lead_time;
     
     // intervention for the 0xff case so timers don't collide:
     if(mask == 0xff){
-        on_time = 1;
-        off_time = 8*4*TIMER_CLK_FREQ-2;
+        on_time = 0;
+        off_time = 8*4*TIMER_CLK_FREQ-1;
         
     }
     Z_On_Timer_WriteCounter(on_time);

@@ -25,7 +25,9 @@
 // timer clock in MHz:
 #define TIMER_CLK_FREQ 4
 // phase lead in microseconds:
-#define PHASE_LEAD 16
+#define PHASE_LEAD_US 8
+// phase lead where one period = 256:
+#define PHASE_LEAD_DDS 64
 #define FILTER_LAG 0
 
 #define ON_TIMER_ENABLE 1

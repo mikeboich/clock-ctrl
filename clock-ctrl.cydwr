@@ -376,6 +376,7 @@
     </Group>
     <Group key="Pin">
       <Data key="0eaa4b80-e5c5-4663-865b-61c892e3f92b" value="debug_Pin_0_3" />
+      <Data key="1d2c78bf-4570-4ce5-90fd-e02dc91b0095" value="times_up_pin" />
       <Data key="04d4c694-1159-4527-97cc-18016dd20ad4" value="SCLK_Pin" />
       <Data key="5a0f4af6-d99d-481f-88f2-828fb244b4e7" value="debug_Pin_0_4" />
       <Data key="5c492e54-4b18-4bcd-822d-43a3ee5ff5c0" value="LED0_Pin" />
@@ -389,7 +390,7 @@
       <Data key="9aeb770a-6080-4509-bd46-6ffac1fa53fc" value="EncoderButton" />
       <Data key="19ed7a04-693c-4415-96b9-e92398820540" value="int_svc_pin" />
       <Data key="21eb92f0-727d-4d3f-a825-0dad031f8dae" value="FrameDrawn" />
-      <Data key="23dbc4f0-cb06-4e1e-a858-12de44428061" value="On_TC" />
+      <Data key="23dbc4f0-cb06-4e1e-a858-12de44428061" value="Show_Time_Pin" />
       <Data key="58ec9100-9032-4e61-ad76-42a98a1c4c04" value="Load_pin" />
       <Data key="76dcac08-f1b0-4e69-840e-d85e42bf5957" value="Cos_Pin" />
       <Data key="94b942b9-c830-4f85-a810-158114f7c12f/52f31aa9-2f0a-497d-9a1f-1424095e13e6" value="SW_Tx_UART_1_tx" />
@@ -449,6 +450,11 @@
     <Group key="0eaa4b80-e5c5-4663-865b-61c892e3f92b">
       <Group key="0">
         <Data key="Port Format" value="12,7" />
+      </Group>
+    </Group>
+    <Group key="1d2c78bf-4570-4ce5-90fd-e02dc91b0095">
+      <Group key="0">
+        <Data key="Port Format" value="0,2" />
       </Group>
     </Group>
     <Group key="04d4c694-1159-4527-97cc-18016dd20ad4">
