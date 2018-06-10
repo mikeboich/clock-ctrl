@@ -49,6 +49,8 @@ typedef  struct {
     uint8 mask;
 } vc_segment;
 
+
+
 typedef  union{
         vc_segment seg_data;
         uint8   flag;

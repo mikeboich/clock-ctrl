@@ -57,7 +57,7 @@ clock_type display_mode=pendulumMode;
 clock_type saved_mode; 
 uint64_t last_switch = 0;
 
-int verbose_mode = 0;
+int verbose_mode = 1;
 
 typedef enum{idle,blank_primed,drawing,last_period,cool_down_period, hw_testing,timer_pending}  draw_state;  // States of the draw loop/interrupt code
 
@@ -1312,14 +1312,14 @@ void display_buffer(uint8 which_buffer){
         
       case pos:
 	current_phase = 0x0;
-    DDS_0_SetPhase(256-PHASE_LEAD_DDS);
-    DDS_1_SetPhase(256-PHASE_LEAD_DDS);
+    DDS_0_SetPhase(256-64-PHASE_LEAD_DDS);
+    DDS_1_SetPhase(256-64-PHASE_LEAD_DDS);
 	break;
         
       case neg:
         current_phase = 0x2;
-        DDS_0_SetPhase(256-PHASE_LEAD_DDS);
-        DDS_1_SetPhase(128-PHASE_LEAD_DDS);
+        DDS_0_SetPhase(256-64-PHASE_LEAD_DDS);
+        DDS_1_SetPhase(128-64-PHASE_LEAD_DDS);
        // dds_load();
 	break;
   }
@@ -1444,14 +1444,14 @@ void draw_seg(seg_or_flag *v,int loops){
           break;
         
         pos:
-          DDS_0_SetPhase(256-PHASE_LEAD_DDS);
-          DDS_1_SetPhase(256-PHASE_LEAD_DDS);
+          DDS_0_SetPhase(256-64-PHASE_LEAD_DDS);
+          DDS_1_SetPhase(256-64-PHASE_LEAD_DDS);
 
         break;
         
       neg:
-          DDS_0_SetPhase(256-PHASE_LEAD_DDS);
-          DDS_1_SetPhase(128-PHASE_LEAD_DDS);
+          DDS_0_SetPhase(256-64-PHASE_LEAD_DDS);
+          DDS_1_SetPhase(128-64-PHASE_LEAD_DDS);
           break;
     }
     dds_load();
@@ -1480,6 +1480,16 @@ void hw_test(){
   }; 
   seg_or_flag big_circle[] = {
     {128,128,220,220,neg,0x0fe},
+    {255,255,0,0,cir,0x00},
+  }; 
+  seg_or_flag neg_line[] = {
+    {128,128,64,64,neg,0x09},
+    {128,128,64,64,neg,0x90},
+    {255,255,0,0,cir,0x00},
+  }; 
+  seg_or_flag pos_line[] = {
+    {128,128,64,64,pos,0x09},
+    {128,128,64,64,pos,0x09},
     {255,255,0,0,cir,0x00},
   }; 
   seg_or_flag test_pattern[] = {
@@ -1528,27 +1538,32 @@ void hw_test(){
 
 //Draw a Lissajou curve:
   //Timer_Reg_Write(0);
+  disable_dds();
   DDS_0_SetFrequency(31250 );
   DDS_1_SetFrequency(15625);
-      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET);
+  DDS_0_SetPhase(256-PHASE_LEAD_DDS);
+  DDS_1_SetPhase(256-64-PHASE_LEAD_DDS);
+  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET);
   wait_for_click();
 
-      DDS_0_SetFrequency(31250);
-      DDS_1_SetFrequency(31250);
-      Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET);
-      DDS_0_SetPhase(256-PHASE_LEAD_DDS);   
-      DDS_1_SetPhase(256-64-PHASE_LEAD_DDS);
-      dds_load();
+  DDS_0_SetFrequency(31250);
+  DDS_1_SetFrequency(31250);
+  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_OFF | DDS_RESET);
+  DDS_0_SetPhase(256-PHASE_LEAD_DDS);   
+  DDS_1_SetPhase(256-64-PHASE_LEAD_DDS);
+  dds_load();
     while(!button_clicked){
     // Draw a circle with an X in the middle:
       int i;          
 
     //
-      draw_seg(medium_circle,1);
+      draw_seg(medium_circle,10);
       CyDelay(2);
-      draw_seg(small_circle,1);
+      draw_seg(small_circle,10);
       CyDelay(2);
-      draw_seg(big_circle,1);
+      draw_seg(big_circle,10);
+      draw_seg(pos_line,10);
+      draw_seg(neg_line,10);
 //    seg_or_flag *seg_ptr = system_font[6];
 //    while(seg_ptr->flag <= 0x80){
 //        draw_seg(seg_ptr++,20);

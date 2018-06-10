@@ -121,7 +121,8 @@ void circle(uint8 x0, uint8 y0, uint8 radius,int which_buffer){
 }
 
 void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer){
-  seg_or_flag the_line[] = {{0,0,0,0,pos,0xff},
+  seg_or_flag the_line[] = {
+                             {0,0,0,0,pos,0xff},
 			    {.flag=0xff}};
 
   // We'd like to assume that x0 is the left-most point, so make it so:
@@ -135,17 +136,18 @@ void line(uint8 x0, uint8 y0, uint8 x1, uint8 y1,int which_buffer){
     y1 = tmp;
   }
   
-  the_line->seg_data.x_offset = (x0 + x1) / 2;
-  the_line->seg_data.y_offset = (y0 + y1) / 2;
+  int i;
+      the_line->seg_data.x_offset = (x0 + x1) / 2;
+      the_line->seg_data.y_offset = (y0 + y1) / 2;
 
-  the_line->seg_data.x_size =  x1-x0;
-  the_line->seg_data.y_size = (y1>y0) ? y1-y0:y0-y1;
+      the_line->seg_data.x_size =  x1-x0;
+      the_line->seg_data.y_size = (y1>y0) ? y1-y0:y0-y1;
 
-  if(y1<y0){
-    the_line->seg_data.arc_type = neg;
-  }
- 
-  compileSegments(the_line,which_buffer, APPEND);
+      if(y1<y0){
+        the_line->seg_data.arc_type = neg;
+      }
+     
+      compileSegments(the_line,which_buffer, APPEND);
 }
 
 void copyBuf(int src_buffer_id,int dst_buffer_id){
