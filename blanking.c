@@ -70,6 +70,11 @@ void disable_dds(){
    reg = reg & ~DDS_ENABLE;
    Timer_Reg_Write(reg);
 }
+void reset_dds(){
+   uint8 reg = Timer_Reg_Read();
+   reg = reg & DDS_RESET;
+   Timer_Reg_Write(reg);
+}
 
 void dds_load(){
    uint8 reg = Timer_Reg_Read();
@@ -103,7 +108,7 @@ void set_timers_from_mask(uint8 mask){
     //on_time = 4*TIMER_CLK_FREQ*start_octant + lead_time + FILTER_LAG;
     on_time = 4*TIMER_CLK_FREQ*start_octant+1*TIMER_CLK_FREQ + lead_time;
     //off_time = 4*TIMER_CLK_FREQ*(stop_octant+1) - 1 + lead_time + FILTER_LAG;
-    off_time = 4*TIMER_CLK_FREQ*(stop_octant+1)+2*TIMER_CLK_FREQ + lead_time;
+    off_time = 4*TIMER_CLK_FREQ*(stop_octant+1)+2*TIMER_CLK_FREQ + lead_time-3;
     
     // intervention for the 0xff case so timers don't collide:
     if(mask == 0xff){
@@ -116,6 +121,21 @@ void set_timers_from_mask(uint8 mask){
     Z_Off_Timer_WriteCounter(off_time);
     Z_Off_Timer_WritePeriod(32*TIMER_CLK_FREQ-1);
 
+}
+void x_set_timers_from_mask(uint8 mask){
+   uint8 hi_nybble = (mask >> 4) & 0x0f;
+   uint8 low_nybble = mask & 0x0f;
+   if(hi_nybble==low_nybble){
+     set_timers_from_mask(0xC0);
+    
+    // back the timers up by one quadrant:
+     Z_On_Timer_WriteCounter(Z_On_Timer_ReadCounter()+4*TIMER_CLK_FREQ);
+     Z_Off_Timer_WriteCounter(Z_Off_Timer_ReadCounter()+4*TIMER_CLK_FREQ);
+    
+    // halve the periods:
+     Z_On_Timer_WritePeriod(16*TIMER_CLK_FREQ-1);  // half the period of normal
+     Z_Off_Timer_WritePeriod(16*TIMER_CLK_FREQ-1);
+}
 }
 
 void set_timers_for_line(){

@@ -28,7 +28,7 @@
 #define PHASE_LEAD_US 8
 // phase lead where one period = 256:
 #define PHASE_LEAD_DDS 64
-#define FILTER_LAG 0
+#define FILTER_LAG 1
 
 #define ON_TIMER_ENABLE 1
 #define BEAM_ON 2
@@ -48,9 +48,11 @@ void enable_timers();
 void disable_timers();
 void reset_timers();
 void set_timers_from_mask(uint8 mask);
+void x_set_timers_from_mask(uint8 mask);
 void set_timers_for_line();
 void enable_dds();
 void disable_dds();
+void reset_dds();
 void dds_load();
 
 

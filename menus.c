@@ -211,8 +211,8 @@ void char_test(){
 
 void align_screen2(){
   seg_or_flag test_pattern[] = {
-    {128,128,64,64,cir,0xff},
     {128,128,254,254,cir,0xff},
+    {128,128,64,64,cir,0xff},
     {128,254,8,8,cir,0xff},  //top
     {128,1,8,8,cir,0xff},  //bottom
     {1,128,8,8,cir,0xff},   // 9 o'clock
@@ -242,11 +242,11 @@ void align_screen2(){
 
     {255,255,0,0,cir,0x00},
   }; 
-   uint8 masks[9] ={0,1,2,4,8,16,32,64,128};
+   uint8 masks[10] ={0,1,2,4,8,16,32,64,128,255};
    uint8 x,y,i;
    clear_buffer(MAIN_BUFFER);
   x=y=0;
-  for(i=0;i<9;i++){
+  for(i=0;i<10;i++){
     test_pattern[0].seg_data.mask=masks[i];//^0xff;
     clear_buffer(MAIN_BUFFER);
     compileSegments(test_pattern,MAIN_BUFFER,APPEND);
