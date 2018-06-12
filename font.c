@@ -562,7 +562,8 @@ vector_font SmallB={
 
 };
 vector_font SmallC={
-{05,06,10,12,cir,0x9f},
+{05,06,10,12,cir,0x80},
+{05,06,10,12,cir,0x1f},
 {.flag=0x88},
 
 };
@@ -573,7 +574,9 @@ vector_font SmallD={
 
 };
 vector_font SmallE={
-{05,06,10,12,cir,0xbf},
+{05,06,10,12,cir,0x80},
+{05,06,10,12,cir,0x30},
+{05,06,10,12,cir,0x0f},
 {05,06,15,00,pos,0x99},
 {.flag=0x8a},
 
