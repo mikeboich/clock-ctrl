@@ -31,6 +31,10 @@
         YSize       likewise
         shape       0 for sin, -sin, 1 for sin, sin, and 2 for sin, cos
         blanking    8 bit mask for blanking (or not) each of the 8 segments of the cir
+    *** new experimental additions:
+        lissajou    8 but int - 1 if figure is a lissajou, in which case xfreq and yfreq are defined
+        x_freq      an insigned 16 bit integer for x frequency
+        y_freq      an unsigned 16 bit int for y freq
         
 
 // I set the PSOC analog mux up so that mux0 = /, 1 = circle, and 2 = \, so some translating is required

@@ -185,9 +185,10 @@ CY_ISR_PROTO(times_up);  // test comment
 
 void times_up(){
     times_up_isr_ClearPending();
-    Times_up_timer_WriteCounter(100);  // so that tc will go low..
+    Times_up_timer_WriteCounter(100000);  // so that tc will go low..
     
     beam_off_now();
+    disable_timers();
     current_state = idle;
 }
 
@@ -195,16 +196,16 @@ void old_adjust_phase(){
     static int dds1_phase = 0;
     static int increment = 1;
     
-    dds1_phase += increment;
-    if(dds1_phase >= 255){
-        increment = -1;
-        LED_Reg_Write(!LED_Reg_Read());
-    }
-    
-    else if(dds1_phase <= 0){
-        increment = 1;
-        LED_Reg_Write(!LED_Reg_Read());
-    }
+    dds1_phase  = (dds1_phase + increment) % 256;
+//    if(dds1_phase >= 255){
+//        increment = -1;
+//        LED_Reg_Write(!LED_Reg_Read());
+//    }
+//    
+//    else if(dds1_phase <= 0){
+//        increment = 1;
+//        LED_Reg_Write(!LED_Reg_Read());
+//    }
     DDS_1_SetPhase(dds1_phase);
 }
 
@@ -233,13 +234,13 @@ void adjust_phase()
 }
 
 void adjust_freq(){
-    double x_freqs[] = {28000, 36000,42000};
-    double y_freqs[] = {14000, 36001,37000,42001.0};
+    double x_freqs[] = {28000,42000,56000,112000};
+    double y_freqs[] = {56000, 84000, 112000};
     static long long cycles = 0;
     
     
-    int nx = 3;
-    int ny = 4;
+    int nx = 4;
+    int ny = 3;
     static int xindex=0;
     static int yindex=0;
     
@@ -1477,6 +1478,31 @@ void draw_seg(seg_or_flag *v,int loops){
       while(! (current_state == idle));
 
 }
+
+void drawLissa(){
+  Load_Timer_clk_Start();
+  timer_isr_StartEx(dds_load_ready);
+
+  
+  Timer_Reg_Write(0);
+  DDS_0_SetFrequency(56000);
+  DDS_1_SetFrequency(60000);
+  DDS_0_SetPhase(0);
+  DDS_1_SetPhase(64);
+  dds_load();
+  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET);
+  button_clicked = 0;
+  adjust_freq();
+  while(!button_clicked){
+    if(load_ready){
+        old_adjust_phase();
+        adjust_freq();
+        load_ready = 0;
+    }
+}
+Load_Timer_clk_Stop();
+}
+
 void hw_test(){
   seg_or_flag small_circle[] = {
     {128,128,64,64,cir,0x0fe},
@@ -1544,28 +1570,7 @@ void hw_test(){
 //  wait_for_click();
 
 //Draw a Lissajou curve:
-
-  Load_Timer_clk_Start();
-  timer_isr_StartEx(dds_load_ready);
-
-  
-  Timer_Reg_Write(0);
-  DDS_0_SetFrequency(31250);
-  DDS_1_SetFrequency(15625);
-  DDS_0_SetPhase(0);
-  DDS_1_SetPhase(64);
-  dds_load();
-  Timer_Reg_Write(DDS_ENABLE | LOAD_CTRL | BEAM_ON | DDS_RESET);
-  button_clicked = 0;
-  while(!button_clicked){
-    if(load_ready){
-        old_adjust_phase();
-        adjust_freq();
-        load_ready = 0;
-    }
-}
-Load_Timer_clk_Stop();
-
+  drawLissa();
   // resetore the sinusoids to their normal state:
   DDS_0_SetFrequency(31250);
   DDS_1_SetFrequency(31250);
@@ -1574,22 +1579,23 @@ Load_Timer_clk_Stop();
   Timer_Reg_Write(DDS_RESET | LOAD_CTRL | DDS_ENABLE);
 
 
-  current_state = idle; 
-
-int radius,x,y;
-radius = 8;
-  while(radius < 64){
-    clear_buffer(MAIN_BUFFER);
-    for(x=radius;x<256-radius+1;x+=2*radius)
-      for(y=radius;y<256-radius+1;y+=2*radius){
-        circle(x,y,radius,MAIN_BUFFER);
-      }
-    while(!button_clicked){
-      display_buffer(MAIN_BUFFER);
-    }
-    button_clicked=0;
-    radius*=2;
-  }
+//  current_state = idle; 
+//
+//int radius,x,y;
+//radius = 8;
+//  while(radius < 64){
+//    clear_buffer(MAIN_BUFFER);
+//    for(x=radius;x<256-radius+1;x+=2*radius)
+//      for(y=radius;y<256-radius+1;y+=2*radius){
+//        circle(x,y,radius,MAIN_BUFFER);
+//      }
+//    while(!button_clicked){
+//      display_buffer(MAIN_BUFFER);
+//    }
+//    button_clicked=0;
+//    radius*=2;
+//  }
+  button_clicked = 0;
   current_state = idle; 
 
 }

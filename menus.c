@@ -248,8 +248,7 @@ void align_screen2(){
   x=y=0;
   for(i=0;i<10;i++){
     test_pattern[0].seg_data.mask=masks[i];//^0xff;
-    clear_buffer(MAIN_BUFFER);
-    compileSegments(test_pattern,MAIN_BUFFER,APPEND);
+    compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
 
     while(!button_clicked){
     ss_x_offset = 0;
