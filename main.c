@@ -234,7 +234,7 @@ void adjust_phase()
 }
 
 void adjust_freq(){
-    double x_freqs[] = {28000,42000,56000,112000};
+    double x_freqs[] = {28000,42000,49000,56000};
     double y_freqs[] = {56000, 84000, 112000};
     static long long cycles = 0;
     
@@ -245,7 +245,7 @@ void adjust_freq(){
     static int yindex=0;
     
     cycles+=1;
-    if(cycles % 360 == 0){
+    if(cycles % 120 == 0){
         DDS_0_SetFrequency(x_freqs[xindex]/2.0);
         DDS_1_SetFrequency(y_freqs[yindex]/2.0);
         xindex = (xindex + 1) % nx;
