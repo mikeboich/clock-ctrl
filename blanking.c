@@ -147,4 +147,51 @@ void set_timers_for_line(){
     Z_Off_Timer_WriteCounter(31*TIMER_CLK_FREQ);
 }
 
+void mask_to_bits(unsigned char  mask, unsigned int *result){
+  unsigned int  bits[8];
+  int i;
+
+  for(i=0;i<8;i++){
+    result[i] = mask & 0x80 ? 1 : 0;
+    mask = mask << 1;
+  }
+}
+
+void on_times(unsigned int  *bits, unsigned int *result){
+  int i;
+
+  for(i=0;i<8;i++){
+    result[i] = ((bits[i]==1 && i==0) || (bits[i] == 1 && bits[i-1]==0)) ? 1 : 0;
+  }
+}
+
+void off_times(unsigned int  *bits, unsigned int *result){
+  int i;
+
+  for(i=0;i<8;i++){
+    result[i] = ((bits[i] == 1 && i == 7) || (bits[i]==1 && bits[i+1]==0)) ? 1 : 0;
+  }
+}
+
+int  contig_masks(unsigned char mask, unsigned int *results){
+  int result_index=0;
+  unsigned int bits[8];
+  unsigned int powers_of_two[8] = {1,2,4,8,16,32,64,128};
+  int i;
+  
+  mask_to_bits(mask, bits);
+
+  results[0] = 0;
+  for(i=7;i>=0;i--){
+    if(bits[i]){
+      if(i!=7 && results[result_index] && bits[i+1] == 0) {
+	result_index +=1;
+	results[result_index] = 0;
+      }
+      results[result_index] |= powers_of_two[7-i];
+      //printf("interim result = %i\n",results[result_index]);
+    }
+  }
+  return result_index+1;
+}
 /* [] END OF FILE */
