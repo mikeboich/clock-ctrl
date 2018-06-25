@@ -54,6 +54,6 @@ void enable_dds();
 void disable_dds();
 void reset_dds();
 void dds_load();
-
+void process_buffer(int src_buf);
 
 /* [] END OF FILE */

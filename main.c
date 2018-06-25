@@ -950,6 +950,7 @@ void render_flw_animated_buffer(time_t now,struct tm *local_bdt, struct tm *utc_
       autocheck(5);
     }
     step_number += 1;
+    process_buffer(MAIN_BUFFER);
 }
 /*  Pendulum Clock *** */
 void render_pendulum_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
@@ -974,6 +975,8 @@ void render_pendulum_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt)
 
   //render the point from which the pendulum swings:
   circle(128,245,8,MAIN_BUFFER);
+
+  //process_buffer(MAIN_BUFFER);
 
   //auto-switch test:
   autocheck(5);
@@ -1005,7 +1008,7 @@ void render_text_clock(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
   char dw[12];
   sprintf(dw,"%s",day_names[day_of_week]);
   compileString(dw,255,202,MAIN_BUFFER,2,APPEND);
-
+  //process_buffer(MAIN_BUFFER);
 // autoswitch logic, since this is an auto-mode:
   autocheck(5);
 }
@@ -1290,7 +1293,8 @@ uint8_t cordicSqrt(uint16_t value){
 void display_buffer(uint8 which_buffer){
 #define PI 3
     
-  seg_or_flag *seg_ptr = seg_buffer[which_buffer];
+   // process_buffer(which_buffer);
+    seg_or_flag *seg_ptr = seg_buffer[which_buffer];
   //FrameDrawReg_Write(frame_toggle);
   frame_toggle = 1 - frame_toggle;
   sync_to_60Hz();

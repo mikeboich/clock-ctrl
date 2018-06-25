@@ -18,6 +18,8 @@
  which gives us finer control of where the beam is on and off
  *******************************************************************************/
 #include "blanking.h"
+#include "font.h"
+#include "draw.h"
 
 void beam_on_now(){
     uint8 reg = Timer_Reg_Read();
@@ -193,5 +195,37 @@ int  contig_masks(unsigned char mask, unsigned int *results){
     }
   }
   return result_index+1;
+}
+
+/* This function transforms a buffer of segments into a similar buffer, but with
+   all octants contiguous.  i.e. one timer-on/timer-off pair for each segment.
+   This requires splitting segments with non-contiguous blanking into multiple segments.
+*/
+
+void process_buffer(int src_buf){
+    //seg_or_flag scratch_buffer[BUF_ENTRIES];
+    
+    // first copy the src buffer into the scratch buffer:
+    clear_buffer(AUX_BUFFER);
+    copyBuf(src_buf,AUX_BUFFER);
+    
+    // now AUX_BUFFER is the src, and the original src_buf is the destination:
+    seg_or_flag *src = seg_buffer[AUX_BUFFER];
+    seg_or_flag *dst = seg_buffer[src_buf];
+    unsigned int masks[5];
+    unsigned int i;
+    unsigned int n_masks = 0;
+    
+    int num_entries = 0;
+    while(src->flag !=255 && num_entries <= BUF_ENTRIES){
+        contig_masks(src->seg_data.mask,&n_masks);
+        for(i=0;i<n_masks;i++){
+            src->seg_data.mask = masks[i];
+            (dst++)->seg_data = (src++)->seg_data;
+            num_entries += 1;
+        }
+        //src++;
+    }
+    dst->flag = 255;
 }
 /* [] END OF FILE */
