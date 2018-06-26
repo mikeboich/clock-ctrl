@@ -149,8 +149,7 @@ void set_timers_for_line(){
     Z_Off_Timer_WriteCounter(31*TIMER_CLK_FREQ);
 }
 
-void mask_to_bits(unsigned char  mask, unsigned int *result){
-  unsigned int  bits[8];
+void mask_to_bits(uint8  mask, uint8 *result){
   int i;
 
   for(i=0;i<8;i++){
@@ -175,23 +174,28 @@ void off_times(unsigned int  *bits, unsigned int *result){
   }
 }
 
-int  contig_masks(unsigned char mask, unsigned int *results){
+int  contig_masks(uint8 mask, uint8 *results){
   int result_index=0;
-  unsigned int bits[8];
-  unsigned int powers_of_two[8] = {1,2,4,8,16,32,64,128};
+  uint8 bits[8];
+  uint8 powers_of_two[8] = {1,2,4,8,16,32,64,128};
   int i;
-  
+  // special case the 0x99 mask:
+  if(mask == 0x99){
+    results[0] = 0x99;
+    return(1);
+}
   mask_to_bits(mask, bits);
 
   results[0] = 0;
   for(i=7;i>=0;i--){
     if(bits[i]){
       if(i!=7 && results[result_index] && bits[i+1] == 0) {
-	result_index +=1;
-	results[result_index] = 0;
+    	result_index +=1;
+        if(result_index > 4)
+            while(1);
+        results[result_index] = 0;
       }
-      results[result_index] |= powers_of_two[7-i];
-      //printf("interim result = %i\n",results[result_index]);
+    results[result_index] |= powers_of_two[7-i];
     }
   }
   return result_index+1;
@@ -208,24 +212,27 @@ void process_buffer(int src_buf){
     // first copy the src buffer into the scratch buffer:
     clear_buffer(AUX_BUFFER);
     copyBuf(src_buf,AUX_BUFFER);
-    
+#if 1
     // now AUX_BUFFER is the src, and the original src_buf is the destination:
     seg_or_flag *src = seg_buffer[AUX_BUFFER];
     seg_or_flag *dst = seg_buffer[src_buf];
-    unsigned int masks[5];
-    unsigned int i;
-    unsigned int n_masks = 0;
-    
+    uint8 masks[5];
+    uint8 n_masks = 0;
+    int i;
     int num_entries = 0;
+    
     while(src->flag !=255 && num_entries <= BUF_ENTRIES){
-        contig_masks(src->seg_data.mask,&n_masks);
+        n_masks = contig_masks(src->seg_data.mask,masks);        
         for(i=0;i<n_masks;i++){
             src->seg_data.mask = masks[i];
-            (dst++)->seg_data = (src++)->seg_data;
+            (dst++)->seg_data = (src)->seg_data;
             num_entries += 1;
         }
-        //src++;
+        src++;
     }
     dst->flag = 255;
+#else
+    copyBuf(AUX_BUFFER,MAIN_BUFFER);
+#endif
 }
 /* [] END OF FILE */

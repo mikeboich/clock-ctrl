@@ -318,6 +318,7 @@ void renderDebugInfo(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
 
   // autoswitch test:
  autocheck(4);
+ process_buffer(MAIN_BUFFER);
 
 }
 
@@ -330,6 +331,7 @@ void render_flw(){
     rw = random_word();
     //rw = next_word();  // uncomment this line to have sequential, rather than random words
     compileString(rw,255,88,MAIN_BUFFER,5,OVERWRITE);
+    process_buffer(MAIN_BUFFER);
     lastUpdate = cycle_count;
         
   }
@@ -430,7 +432,7 @@ void renderAnalogClockBuffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt
     float y = 128.0 + (SEC_HAND_LENGTH-4)*cos(2*M_PI*(cycle_count-phase_error)/31250.0);
     circle(x,y,16,MAIN_BUFFER);
   }
-
+  process_buffer(MAIN_BUFFER);
   autocheck(4);
 }
 
@@ -976,10 +978,10 @@ void render_pendulum_buffer(time_t now,struct tm *local_bdt, struct tm *utc_bdt)
   //render the point from which the pendulum swings:
   circle(128,245,8,MAIN_BUFFER);
 
-  //process_buffer(MAIN_BUFFER);
+  process_buffer(MAIN_BUFFER);
 
   //auto-switch test:
-  autocheck(5);
+  autocheck(15);
   
 
 }
@@ -1265,6 +1267,7 @@ void renderSR2(time_t now,struct tm *local_bdt, struct tm *utc_bdt){
     sprintf(fullness_str,"%.0f%% full",100*moon_fullness);
     compileString(fullness_str,255,230,MAIN_BUFFER,1,APPEND);
   }
+  process_buffer(MAIN_BUFFER);
   autocheck(6);
 }
 
@@ -1307,7 +1310,7 @@ void display_buffer(uint8 which_buffer){
       strobe_LDAC();
       if(current_mask==0x99)  
         x_set_timers_from_mask(current_mask);  
-        else
+      else
           set_timers_from_mask(current_mask);
 
 
@@ -1829,7 +1832,8 @@ int main()
       break;
 
     case bubble_mode:
-      render_bubble_buffer(now,&local_bdt,&utc_bdt);
+      //render_bubble_buffer(now,&local_bdt,&utc_bdt);
+      render_flw();
       break;
 
     case trumpMode:

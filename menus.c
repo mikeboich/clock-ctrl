@@ -26,6 +26,7 @@
 #include <time.h>
 
 #include "ds3231.h"
+#include "blanking.h"
 
 extern int cycle_count;
 extern int verbose_mode;
@@ -60,6 +61,7 @@ void wait_for_twist(){
 
 void render_menu(menu the_menu){
   compile_menu(&the_menu,MAIN_BUFFER);
+  process_buffer(MAIN_BUFFER);
   //active_menu = &the_menu;
   
 }
@@ -191,6 +193,7 @@ void char_test(){
   compileString("~`!@#$%^&*()_-+={}",255,130,0,1,APPEND);
   char str4[] = {128,129,130,131,132,0};  //Japanese extended characters
   compileString(str4,255,60,0,2,APPEND);
+  process_buffer(MAIN_BUFFER);
     
   while(!button_clicked){
     display_buffer(0);   
@@ -201,6 +204,7 @@ void char_test(){
   compileString("1234567890",255,130,0,1,APPEND);
   char str8[] = {133,134,135,136,0};   // More Japanese characters
   compileString(str8,255,60,0,2,APPEND);
+  process_buffer(MAIN_BUFFER);
     
   while(!button_clicked){
     display_buffer(0);   
@@ -221,14 +225,8 @@ void align_screen2(){
     {128-90,128+90,8,8,cir,0xff},
     {128+90,128-90,8,8,cir,0xff},
     {128+90,128+90,8,8,cir,0xff},
-    {128,128,128,0,pos,0x80},
-    {128,128,128,0,pos,0x10},
-    {128,128,128,0,pos,0x01},
-    {128,128,128,0,pos,0x08},
-    {128,128,0,128,pos,0x80},
-    {128,128,0,128,pos,0x10},
-    {128,128,0,128,pos,0x01},
-    {128,128,0,128,pos,0x08},
+    {128,128,128,0,pos,0x99},
+    {128,128,0,128,pos,0x99},
 //    {128,128,64,64,pos,0x09},
 //    {128,128,64,64,pos,0x90},
 //    {128,128,64,64,pos,0x09},
@@ -247,8 +245,10 @@ void align_screen2(){
    clear_buffer(MAIN_BUFFER);
   x=y=0;
   for(i=0;i<10;i++){
-    test_pattern[0].seg_data.mask=masks[i];//^0xff;
+    test_pattern[0].seg_data.mask=masks[i] ^ 0xff;
     compileSegments(test_pattern,MAIN_BUFFER,OVERWRITE);
+    process_buffer(MAIN_BUFFER);
+    
 
     while(!button_clicked){
     ss_x_offset = 0;
