@@ -65,9 +65,9 @@ time_t  midnightInTimeZone(time_t the_date, int gmt_offset){
   time_t result;
   the_date += gmt_offset * 3600;  //transform to local time
   today  = *gmtime(&the_date);
-  the_date -= 3600 * today.tm_hour;
-  the_date -= 60 * today.tm_min;
-  the_date -= today.tm_sec;
+  the_date -= 3600 * today.tm_hour;   // roll hours back to midnight
+  the_date -= 60 * today.tm_min;	// roll minutes back to midnight
+  the_date -= today.tm_sec;		// roll seconds back to midnight
   the_date -= gmt_offset*3600; // transform back to utc
   
   return(the_date);
